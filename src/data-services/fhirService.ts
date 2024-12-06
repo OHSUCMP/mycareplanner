@@ -19,8 +19,6 @@ const resourcesFrom = (response: fhirclient.JsonObject): Resource[] => {
     .filter((resource: Resource) => resource.resourceType !== 'OperationOutcome');
 };
 
-
-
 // TODO full date argument does not work correctly in Logica?  Use only yyyy-MM for now.
 // export const getDateParameter = (d: Date): string => `ge${format(d, 'yyyy-MM-dd')}`;
 export const getDateParameter = (d: Date): string => `ge${format(d, 'yyyy-MM')}`;
@@ -84,9 +82,9 @@ const onePageLimit: fhirclient.FhirOptions = {
 }
 
 /// key = Resource.id  value = Provenance[]
-var provenanceMap = new Map<string, Provenance[]>()
+let provenanceMap = new Map<string, Provenance[]>()
 
-var provenance: Provenance[] = []
+let provenance: Provenance[] = []
 
 function recordProvenance(resources: Resource[] | undefined) {
   const provResources = resources?.filter((item: any) => item?.resourceType === 'Provenance') as Provenance[]
@@ -95,7 +93,7 @@ function recordProvenance(resources: Resource[] | undefined) {
     prov.target.forEach((ref: Reference) => {
       let resourceId = ref.reference
       if (resourceId !== undefined) {
-        var provList: Provenance[] = provenanceMap.get(resourceId) ?? []
+        let provList: Provenance[] = provenanceMap.get(resourceId) ?? []
         provList = provList.concat([prov])
         provenanceMap.set(resourceId!, provList)
       }
@@ -108,7 +106,7 @@ function recordProvenance(resources: Resource[] | undefined) {
 }
 
 export async function getConditions(client: Client): Promise<Condition[]> {
-  var resources: Resource[] = []
+  let resources: Resource[] = []
   await doLog({
     level: 'debug',
     event: 'getConditions',
@@ -145,7 +143,7 @@ export async function getVitalSigns(client: Client): Promise<Observation[]> {
   //   return []
   // }
 
-  var resources: Resource[] = []
+  let resources: Resource[] = []
   // codes are ordered by preference for presentation: BP, Heart rate, O2 sat, temp, weight, height, BMI
   // const vitalsCodes = ['85354-9', '8867-4', '59408-5', '2708-6', '8310-5', '29463-7', '8302-2', '39156-5']
   // codes are ordered by preference for presentation: BP, O2 sat, temp, weight, height, BMI
@@ -222,7 +220,7 @@ export const getSupplementalDataClient = async (): Promise < Client | undefined 
           await extractFhirAccessDataObjectIfGivenEndpointMatchesAnyPriorEndpoint(authURL)
 
       if (authFhirAccessDataObject) {
-          console.log("getSupplementalDataClient authFhirAccessDataObject is truthy")
+          console.log("getSupplementalDataClient.authFhirAccessDataObject is defined")
           // Replace the serverURL and client scope with Shared Data endpoint and scope
           let sdsFhirAccessDataObject = authFhirAccessDataObject
           sdsFhirAccessDataObject.serverUrl = sdsURL
@@ -297,11 +295,11 @@ export const createAndPersistClientForSavedOrNewProvider = async (authorizedAndI
       console.log("Known to be authorized and previously stored in fhir-client-states-array, " +
         "reconnecting to given, prior - authorized client, and reloading data")
       if (serverUrl) {
-        console.log("serverUrl is truthy")
+        console.log("serverUrl is defined")
         const matchedFhirAccessDataObject: fhirclient.ClientState | undefined =
           await extractFhirAccessDataObjectIfGivenEndpointMatchesAnyPriorEndpoint(serverUrl)
         if (matchedFhirAccessDataObject) {
-          console.log("matchedFhirAccessDataObject is truthy, we should have a valid endpoint to pass to the client and reauthorize without redirect")
+          console.log("matchedFhirAccessDataObject is defined, we should have a valid endpoint to pass to the client and reauthorize without redirect")
           console.log("matchedFhirAccessDataObject", matchedFhirAccessDataObject)
           // FHIR.client is passed fhirclient.ClientState from localForage which allows for fetching data w/o an external redirect since already authorized
           // If for some reason we need an alternate impl to handle this, here are some options:
@@ -331,7 +329,7 @@ export const createAndPersistClientForSavedOrNewProvider = async (authorizedAndI
     // !FUNCTION DIFF! Commented out the following line
     // setAndLogProgressState("Verifying connection data and state", 15)
     if (!client) {
-      throw new Error("client isn't truthy, cannot connect to client or load FHIR data")
+      throw new Error("client is not defined, cannot connect to client or load FHIR data")
     }
 
     process.env.REACT_APP_TEST_PERSISTENCE === 'true' && console.log("client: ", JSON.stringify(client))
@@ -362,7 +360,7 @@ export const createAndPersistClientForNewProvider = async (serverUrl: string | u
     // !FUNCTION DIFF! Commented out the following line
     // setAndLogProgressState("Verifying connection data and state", 15)
     if (!client) {
-      throw new Error("client isn't truthy, cannot connect to client or load FHIR data")
+      throw new Error("client is not defined, cannot connect to client or load FHIR data")
     }
     process.env.REACT_APP_DEBUG_LOG === 'true' && console.log("client: ", JSON.stringify(client))
 
@@ -400,13 +398,13 @@ export const getFHIRData = async (authorized: boolean, serverUrl: string | null,
     if (authorized) {
       console.log("Known to be authorized, reconnecting to given, prior-authorized client, and reloading data")
       if (serverUrl) {
-        console.log("serverUrl is truthy")
+        console.log("serverUrl is defined")
         setAndLogProgressState("Connecting to FHIR client (for prior authorized client)", 5)
         if (!clientOverride) {
           const matchedFhirAccessDataObject: fhirclient.ClientState | undefined =
             await extractFhirAccessDataObjectIfGivenEndpointMatchesAnyPriorEndpoint(serverUrl)
           if (matchedFhirAccessDataObject) {
-            console.log("matchedFhirAccessDataObject is truthy, we should have a valid endpoint to pass to the client and reauthorize without redirect")
+            console.log("matchedFhirAccessDataObject is defined, we should have a valid endpoint to pass to the client and reauthorize without redirect")
             console.log("matchedFhirAccessDataObject", matchedFhirAccessDataObject)
           // FHIR.client is passed fhirclient.ClientState from localForage which allows for fetching data w/o an external redirect since already authorized
           // If for some reason we need an alternate impl to handle this, here are some options:
@@ -440,7 +438,7 @@ export const getFHIRData = async (authorized: boolean, serverUrl: string | null,
 
     setAndLogProgressState("Verifying connection data and state", 15)
     if (!client) {
-      throw new Error("client isn't truthy, cannot connect to client or load FHIR data")
+      throw new Error("client is not defined, cannot connect to client or load FHIR data")
     }
 
     if (process.env.REACT_APP_DEBUG_LOG === 'true') {
@@ -529,12 +527,12 @@ const getFHIRResources = async (client: Client, clientScope: string | undefined,
   console.log('client.getFhirUser(): ', client.getFhirUser())
 
   let fhirUser : Practitioner | Patient | RelatedPerson | undefined
-try {
-   fhirUser =    fhirUserPath ? await client.request(fhirUserPath) : undefined
-  } catch (error) {
-    // console.error(error)
-    // Assume this is SDS
-}
+  try {
+     fhirUser =    fhirUserPath ? await client.request(fhirUserPath) : undefined
+    } catch (error) {
+      // console.error(error)
+      // Assume this is SDS
+  }
 
   console.log('fhirUser: ', fhirUser)
   const caregiverName: String | undefined =
@@ -912,7 +910,7 @@ export function createSharedDataResource(resource: Resource) {
 }
 
 
-export function updateSharedDataResource(  client : Client, resource: Resource,serverUrl?: string ) {
+export function updateSharedDataResource(client : Client, resource: Resource,serverUrl?: string ) {
 
   // return 
     // .then((client: Client | undefined) => {
@@ -927,8 +925,7 @@ export function updateSharedDataResource(  client : Client, resource: Resource,s
         } else {
           return client?.update(resource as fhirclient.FHIR.Resource)
         }
-      }
-      catch (err) {     
+      } catch (err) {
         console.error("Error updating shared data resource: " + JSON.stringify(err))
         return undefined
       }
@@ -949,8 +946,7 @@ export async function getSharedGoals(): Promise<Goal[]> {
   await client?.patient.read()
   try {
     resources = resources.concat(resourcesFrom(await client?.patient.request(goalsPath, fhirOptions) as fhirclient.JsonObject))
-  }
-  catch (err) {
+  } catch (err) {
     console.log("Error reading shared Goals: " + JSON.stringify(err))
   }
 

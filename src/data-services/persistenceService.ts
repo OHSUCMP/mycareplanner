@@ -170,12 +170,11 @@ const extractFhirAccessDataObjectFromLastActiveEndpoint =
     console.log('givenEndpoint:', givenEndpoint)
 
     const fhirAccessData = await getFHIRAccessData(fcCurrentStateKey) as fhirclient.ClientState
-    console.log('fhirAccessData:', fhirAccessData)
     if (fhirAccessData) {
-      console.log('fhirAccessData inside truthy check:', fhirAccessData)
+      console.log('got fhirAccessData: ', fhirAccessData)
       return fhirAccessData
     }
-    console.log('returning null from extractFhirAccessDataObjectIfGivenEndpointMatchesLastActiveEndpoint')
+    console.log('returning null from extractFhirAccessDataObjectFromLastActiveEndpoint')
     return null
   }
 
@@ -190,7 +189,7 @@ export const extractFhirAccessDataObjectIfGivenEndpointMatchesAnyPriorEndpoint =
     console.log('arrayOfFhirAccessDataObjects:', JSON.stringify(arrayOfFhirAccessDataObjects))
 
     if (arrayOfFhirAccessDataObjects) {
-      console.log('arrayOfFhirAccessDataObject is truthy')
+      console.log('arrayOfFhirAccessDataObject is defined')
       return arrayOfFhirAccessDataObjects.find((curFhirAccessDataObject: fhirclient.ClientState) => {
         console.log('inside arrayOfFhirAccessDataObjects.find((curFhirAccessDataObject) function')
         const endpointInSavedData = curFhirAccessDataObject?.serverUrl
@@ -279,7 +278,7 @@ export const saveSelectedEndpoints = async (endpoints: string[]): Promise<string
       console.error("fetchedEndpoints length is less than 1, will not save")
     }
   } else {
-    console.error("saveSelectedEndpoints endpoints array arg is not truthy, will not save: " + endpoints)
+    console.error("saveSelectedEndpoints endpoints array arg is not defined, will not save: " + endpoints)
   }
   console.error("Unknown error saving selected endppoints, returning undefined")
   return undefined
@@ -308,7 +307,7 @@ export const getSelectedEndpoints = async (): Promise<string[] | undefined> => {
       const selectedEndpoints: string[] = await localForage.getItem(selectedEndpointsKey) as string[]
       if (selectedEndpoints) {
         if (selectedEndpoints.length > 0) {
-          console.log("getSelectedEndpoints selectedEndpoints is truthy and length is > 0," +
+          console.log("getSelectedEndpoints selectedEndpoints is defined and length is > 0," +
             "Returning data: ", JSON.stringify(selectedEndpoints))
           return selectedEndpoints
         } else {
@@ -317,7 +316,7 @@ export const getSelectedEndpoints = async (): Promise<string[] | undefined> => {
           return []
         }
       } else {
-        console.error("getSelectedEndpoints selectedEndpoints is not truthy" +
+        console.error("getSelectedEndpoints selectedEndpoints is not defined" +
           "Returning an empty array")
         return []
       }

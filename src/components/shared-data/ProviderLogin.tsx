@@ -102,7 +102,7 @@ export default function ProviderLogin(props: Props) {
           }
           setSdsClient(sdsClient)
         } else {
-          console.error("SDS client is untruthy")
+          console.error("SDS client is not defined")
         }
       } catch (error) {
         console.error("Error fetching SDS Client:", error)
@@ -194,13 +194,11 @@ export default function ProviderLogin(props: Props) {
 
           break
         }
-
       }
 
     } else {
-      console.log("endpointsToAuthorize is untruthy or has no data")
+      console.log("endpointsToAuthorize is not defined or contains no data")
     }
-
   }
 
   const loadAuthorizedSelectedEndpointMulti = async (selectedEndpoint: ProviderEndpoint,
@@ -290,7 +288,6 @@ export default function ProviderLogin(props: Props) {
     event.preventDefault()
 
     if (selectedEndpointNames) {
-
       if (selectedEndpointNames.length === 0) {
         console.log("selectedEndpoint array is empty")
         return // Cannot continue so returning but this should not be possible since we have disabled the login button in this case
@@ -325,7 +322,7 @@ export default function ProviderLogin(props: Props) {
             // Add it as the 2nd item in the array so that the order is:
             // 1: Launcher, 2: SDS 1..*, 3: Additional Providers
             if (sdsClient) { // TODO: Either here or in getSupplementalDataClient or in the useEffect, check URL is valid
-              console.log("SDS is truthy, adding to selected endpoints")
+              console.log("SDS is defined, adding to selected endpoints")
               const sdsEndpoint: ProviderEndpoint =
               {
                 // The name could be an env variable too, everything could be... 'SDS' could be there by default to enforce logic
@@ -343,7 +340,7 @@ export default function ProviderLogin(props: Props) {
               }
               matchingProviderEndpoints.splice(1, 0, sdsEndpoint) // inject at index 1 (2nd position)
             } else {
-              console.log("SDS is untruthy, not adding to selected endpoints")
+              console.log("SDS is not defined, not adding to selected endpoints")
             }
 
 
@@ -358,15 +355,13 @@ export default function ProviderLogin(props: Props) {
           }
 
         } else {
-          console.error('matchingProviderEndpoints is untruthy or empty')
+          console.error('matchingProviderEndpoints is not defined or is empty')
         }
-
       }
 
     } else {
-      console.error('selectedEndpointNames is untruthy', selectedEndpointNames)
+      console.error('selectedEndpointNames is not defined', selectedEndpointNames)
     }
-
   }
 
   // TODO: Consider this as a feature for TEST/DEBUG purposes, only visible in debug mode, to call this function, which will only load a single endpoint
@@ -407,7 +402,7 @@ export default function ProviderLogin(props: Props) {
           // If local storage becomes corrupt in production, it's external so difficult to manage - so want to ensure that is tested for all edge cases prior to prod deployment)
           if (fhirDataCollection && fhirDataCollection[fhirDataCollectionIndex]) {
             process.env.REACT_APP_TEST_PERSISTENCE === 'true' &&
-              console.log("fhirData is truthy, navigating home w/o reload or passing data:",
+              console.log("fhirDataCollection is defined, navigating home w/o reload or passing data:",
                 JSON.stringify(fhirDataCollection[fhirDataCollectionIndex]))
             if (!isMultipleProviders) {
               // If there is only one provider, and we already have the data, we can just navigate back
@@ -496,7 +491,7 @@ export default function ProviderLogin(props: Props) {
     console.log('targetVal:', targetVal)
 
     if (!targetVal) {
-      console.error("selectedEndpointNames is somehow untruthy, setting to empty")
+      console.error("selectedEndpointNames is somehow not defined, setting to empty")
       setselectedEndpointNames([])
     } else {
       const parsedProviderEndpoints: string[] =

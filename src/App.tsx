@@ -39,7 +39,6 @@ import {
     getMatchingProviderEndpointsFromUrl
 } from './data-services/providerEndpointService'
 
-
 //import { clearSession} from './log/log-service'
 import { doLog, initializeSession, LogRequest } from './log/log-service'
 import { GoalList } from "./components/summaries/GoalList";
@@ -127,9 +126,6 @@ const tabList = {
 // TODO: Convert this to a hook based function component so it easier to profile for performance, analyze, and integrate
 class App extends React.Component<AppProps, AppState> {
     constructor(props: AppProps) {
-
-
-
         super(props);
 
         this.state = {
@@ -171,8 +167,8 @@ class App extends React.Component<AppProps, AppState> {
         this.isExternalNavigation = externalNavigationState === "true"; // Initialize external navigation state
     }
 
-        // New state for tracking external navigation
-        isExternalNavigation: boolean = false;
+    // New state for tracking external navigation
+    isExternalNavigation: boolean = false;
 
     // TODO: Externalize everything we can out of componentDidMount into unique functions
     async componentDidMount() {
@@ -181,24 +177,21 @@ class App extends React.Component<AppProps, AppState> {
         window.addEventListener('beforeunload', this.handleBeforeUnload);
         document.addEventListener('visibilitychange', this.handleVisibilityChange);
 
-
         if (process.env.REACT_APP_READY_FHIR_ON_APP_MOUNT === 'true' && !this.state.isLogout) {
-
             // For Now, setting this right away so that it is not null.
             // However, we may need to wait until after a launcher is loaded
             // If so, there are multiple areas to identify it's a launcher (possible 100%?_ and include the logic:
-            // (mutli login code here and in ProviderLogin
+            // (multi login code here and in ProviderLogin
             // await this.setSupplementalDataClient('somePatientId')
 
             try {
-                if(await isSessionId()){
+                if (await isSessionId()) {
                     const retrievedSessionId = await getSessionId();
                     if(retrievedSessionId){
                         this.setState({ sessionId : retrievedSessionId });
                     }
                     console.log("I am in Retrieving the sessionID block ----------->",retrievedSessionId);
-                }
-                else{
+                } else {
                     const sessionId = await initializeSession(); // Initialize session when the application is launched
                     this.setState({ sessionId });
                     saveSessionId(sessionId);
@@ -216,7 +209,7 @@ class App extends React.Component<AppProps, AppState> {
                         console.log("Deleting the corrupted endpoints and creating an error")
                         throw new Error("Multi-select exists in local storage but an endpoint is null or undefined")
                     } else {
-                        console.log("Endpoints are truthy (at indexes as well) and have a length > 0")
+                        console.log("Endpoints defined (at indexes as well) and have a length > 0")
 
                         console.log("Convert string[] of endpoint urls to ProviderEndpoint[]")
                         // Can't use local storage to extract as some of these endpoints could be NEW
@@ -225,10 +218,10 @@ class App extends React.Component<AppProps, AppState> {
                             await getMatchingProviderEndpointsFromUrl(buildAvailableEndpoints(), selectedEndpoints)
                         console.log('endpointsToLoad (once authorized)', JSON.stringify(endpointsToAuthorize))
 
-                        // Check truthyness of endpointsToAuthorize and trigger termintating error if not truthy
+                        // Check existence of endpointsToAuthorize and trigger terminating error otherwise
                         if (endpointsToAuthorize && endpointsToAuthorize.length > 0) {
                             console.log("endpointsToAuthorize && endpointsToAuthorize.length > 0")
-                            // To supoort a dynamic launcher, and not have to have the launcher in availableEndpoints
+                            // To support a dynamic launcher, and not have to have the launcher in availableEndpoints
                             // Add launcher if missing. It will be missing if it doesn't exist in availableEndpoints
                             try {
                                 const launcherEndpointFromForage: ProviderEndpoint | null | undefined =
@@ -285,7 +278,7 @@ class App extends React.Component<AppProps, AppState> {
                                         console.log("All endpoints are already authorized.")
 
                                         // Do NOT need to save data for endpoints to be loaded as we don't need to reload the app
-                                        // Deleting multi-select endpoints from local storage so they don't intefere with future selections
+                                        // Deleting multi-select endpoints from local storage so they don't interfere with future selections
                                         // and so that this logic is not run if there are no multi-endpoints to auth/local
                                         // but instead, a loader is run or a single endpoint is run in such a case
                                         console.log("Deleting multi-select endpoints from local storage")
@@ -419,13 +412,17 @@ class App extends React.Component<AppProps, AppState> {
 
     // Handle beforeunload event
     handleBeforeUnload = async (event: BeforeUnloadEvent) => {
-        if (!this.isExternalNavigation) {
-            // If not navigating externally, proceed with logout
-            await this.handleLogout();
-        } else {
+        if (this.isExternalNavigation) {
             // Reset the external navigation state after the page reload
             localStorage.removeItem("isExternalNavigation");
         }
+        // if (!this.isExternalNavigation) {
+        //     // If not navigating externally, proceed with logout
+        //     await this.handleLogout();
+        // } else {
+        //     // Reset the external navigation state after the page reload
+        //     localStorage.removeItem("isExternalNavigation");
+        // }
     };
 
     // Set state to indicate external navigation is happening
@@ -468,7 +465,6 @@ class App extends React.Component<AppProps, AppState> {
     }
 
     setLoadAndMergeSDSIfAvailable = async (launcherPatientId: string | undefined, launcherData: FHIRData) => {
-
         if (launcherPatientId) {
             console.log('connect to SDS so we can verify it can exist')
             const tempSDSClient = await this.setSupplementalDataClient(launcherPatientId)
@@ -541,7 +537,6 @@ class App extends React.Component<AppProps, AppState> {
             console.log('No SDS due to !launcherPatientId, so just loading the launcher')
             this.setFhirDataStates([launcherData])
         }
-
     }
 
     // TODO: MULTI-PROVIDER: This code is copioed into this class for now from the function in ProviderLOgin
@@ -670,7 +665,6 @@ class App extends React.Component<AppProps, AppState> {
     }
 
     updateLogSummariesCount = async (fhirDataCollectionCount: FHIRData[] | undefined) => {
-
         if (fhirDataCollectionCount !== undefined) {
             for (const dictionary of fhirDataCollectionCount) {
                 for (const key of Object.keys(dictionary)) {
@@ -697,6 +691,14 @@ class App extends React.Component<AppProps, AppState> {
         }
     }
 
+    getGoalSummariesInit = () => {
+        return [
+            [
+                { Description: 'init' }
+            ]
+        ]
+    }
+
     getConditionAndMedicationSummariesInit = () => {
         return [
             [
@@ -716,11 +718,7 @@ class App extends React.Component<AppProps, AppState> {
     // Note: Low priority because the issue can only be reproduced on a non-redirect provider selection (so not a launcher or redirect provider selection)
     initializeSummaries = () => {
         this.setState({
-            goalSummaries: [
-                [
-                    { Description: 'init' }
-                ]
-            ]
+            goalSummaries: this.getGoalSummariesInit()
         })
         this.setState({
             conditionSummaries: this.getConditionAndMedicationSummariesInit()
@@ -741,6 +739,7 @@ class App extends React.Component<AppProps, AppState> {
         this.setState({ goalSummaries: newGoalSummaries })
     }
 
+    // setLogout called when un-sharing data to the SDS
     setLogout = () => {
         this.setState({ isLogout: true });
         sessionStorage.clear();
@@ -859,7 +858,7 @@ class App extends React.Component<AppProps, AppState> {
         errorCaught: Error | string | unknown) => {
         this.logErrorMessage(errorType, userErrorMessage, developerErrorMessage, errorCaught)
         // TODO: Consider converting errorType, userErrorMessage, developerErrorMessage, and errorCaught into an array so we can store all of the errors in the chain and display them.
-        // If we do this, we would remove the if check for truthy on all of them, as, we would set a new index in the array vs overwrite
+        // If we do this, we would remove the if check for existence on all of them, as, we would set a new index in the array vs overwrite
         // Even further, consider converting all 4 states into one state object, ErrorDetails (or ErrorMessage) and storing having an array of those objects in state
         this.setState({ errorType: errorType })
         this.setState({ developerErrorMessage: developerErrorMessage })
@@ -894,17 +893,18 @@ class App extends React.Component<AppProps, AppState> {
         this.setState({ userErrorMessage: undefined })
     }
 
-    private handleLogout = async () => {
-        if (!this.state.isLogout) {
-            // Clear session storage or perform other logout logic here
-            // console.log('Logging out and clearing session');
-            // this.setState({ isLogout: true });
-            // this.setState({ isLogout: true })
-            // sessionStorage.clear()
-            // await deleteAllDataFromLocalForage()
-            // this.props.history.push('/logout')
-        }
-    }
+    // storer: commenting out handleLogout and slating for deletion, as it does literally nothing
+    // private handleLogout = async () => {
+    //     if (!this.state.isLogout) {
+    //         // Clear session storage or perform other logout logic here
+    //         // console.log('Logging out and clearing session');
+    //         // this.setState({ isLogout: true });
+    //         // this.setState({ isLogout: true })
+    //         // sessionStorage.clear()
+    //         // await deleteAllDataFromLocalForage()
+    //         // this.props.history.push('/logout')
+    //     }
+    // }
 
     updateLogMainTab = async (event: any, value: any) => {
         this.setState({ mainTabIndex: value });

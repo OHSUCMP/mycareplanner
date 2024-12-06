@@ -108,7 +108,7 @@ export default function GoalEditForm(formData?: EditFormData) {
         // add the new goal
         updatedGoalSummaries[0].push(gs)
       } else {
-        // if goalSummaryMatrix is untruthy or has no subarrays,
+        // if goalSummaryMatrix is not defined or has no subarrays,
         // we create a summary as the only (first) GoalSummary in the matrix
         updatedGoalSummaries[0] = [gs]
       }

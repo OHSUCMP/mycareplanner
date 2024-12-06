@@ -107,7 +107,7 @@ export default function ConditionEditForm(formData?: EditFormData) {
         // add the new condition
         updatedConditionSummaries[0].push(cs)
       } else {
-        // if conditionSummaryMatrix is untruthy or has no subarrays,
+        // if conditionSummaryMatrix is not defined or has no subarrays,
         // we create a summary as the only (first) ConditionSummary in the matrix
         updatedConditionSummaries[0] = [cs]
       }

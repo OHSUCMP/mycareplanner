@@ -42,7 +42,7 @@ export const buildAvailableEndpoints = (endpointsToAdd?: ProviderEndpoint[]): Pr
     )
     console.log("availableEndpoints after concat: ", availableEndpoints)
   } else {
-    console.log(`Not adding SDS to the availableEndpoints with clientId as at least one of the following env vars are not truthy:
+    console.log(`Not adding SDS to the availableEndpoints with clientId as at least one of the following env vars are not defined:
     process.env.REACT_APP_SHARED_DATA_CLIENT_ID, process.env.REACT_APP_SHARED_DATA_ENDPOINT,
     or process.env.REACT_APP_SHARED_DATA_SCOPE).
     Note: We may still add the SDS without a clientId, though.`)
