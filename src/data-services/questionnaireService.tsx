@@ -16,22 +16,23 @@ export function getLocalQuestionnaire(id: String) {
         });
 }
 
-export function getQuestionnaire(serverUrl: any, questionnaireID: string) {
-    let url: string;
-    return getSupplementalDataClient()
-        .then((client: Client | undefined) => {
-            if (client) {
-                url = client.state.serverUrl;
-                return client.request('Questionnaire/' + questionnaireID);
-            }
-        })
-        .then((questionnaire) => {
-            serverUrl.push(url + '/Questionnaire/' + questionnaire.id);
-            return questionnaire;
-        }).catch(error => {
-            return error;
-        });
-}
+// storer: commenting out this function as it's never called
+// export function getQuestionnaire(serverUrl: any, questionnaireID: string) {
+//     let url: string;
+//     return getSupplementalDataClient()
+//         .then((client: Client | undefined) => {
+//             if (client) {
+//                 url = client.state.serverUrl;
+//                 return client.request('Questionnaire/' + questionnaireID);
+//             }
+//         })
+//         .then((questionnaire) => {
+//             serverUrl.push(url + '/Questionnaire/' + questionnaire.id);
+//             return questionnaire;
+//         }).catch(error => {
+//             return error;
+//         });
+// }
 
 export function submitQuestionnaireResponse(questionnaireResponse: QuestionnaireResponse) {
     return getSupplementalDataClient()

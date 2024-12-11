@@ -8,8 +8,8 @@ import { FHIRData, hasScope } from './models/fhirResources'
 import { format } from 'date-fns'
 import Client from 'fhirclient/lib/Client'
 import {
-  persistFHIRAccessData, extractFhirAccessDataObjectIfGivenEndpointMatchesAnyPriorEndpoint,
-  persistLauncherData
+  persistStateAsCurrent, getStateForEndpoint,
+  persistStateAsLauncherData
 } from './persistenceService'
 import { doLog } from '../log';
 
@@ -117,8 +117,8 @@ export async function getConditions(client: Client): Promise<Condition[]> {
   if (client.state.serverUrl.includes('allscripts.com')) {
     const conditionsPath = 'Condition?category=problem-list-item,health-concern' + provenanceSearch
     resources = resources.concat(resourcesFrom(await client.patient.request(conditionsPath, fhirOptions) as fhirclient.JsonObject))
-  }
-  else {
+
+  } else {
     // Epic allows multiple category codes in one query only >= Aug 2021 release
     resources = resources.concat(resourcesFrom(await client.patient.request(problemListPath, fhirOptions) as fhirclient.JsonObject))
     resources = resources.concat(resourcesFrom(await client.patient.request(healthConcernPath, fhirOptions) as fhirclient.JsonObject))
@@ -138,8 +138,8 @@ export async function getVitalSigns(client: Client): Promise<Observation[]> {
     page: 'get Vital Signs',
     message: `getVitalSigns: success`
   })
-  // if (client.state.serverUrl === 'https://fhir.epic.com/interconnect-fhir-oauth/api/FHIR/R4'
-  //   || client.state.serverUrl.includes('cerner.com')) {
+  // if (client.state.endpoint === 'https://fhir.epic.com/interconnect-fhir-oauth/api/FHIR/R4'
+  //   || client.state.endpoint.includes('cerner.com')) {
   //   return []
   // }
 
@@ -180,78 +180,78 @@ export async function getVitalSigns(client: Client): Promise<Observation[]> {
   return vitals
 }
 
-/*
-* TODO: enhance this to verify current access token for SDS.
-*/
-export const supplementalDataIsAvailable = (): Boolean => {
-  const authURL = process.env.REACT_APP_SHARED_DATA_AUTH_ENDPOINT
-  const sdsURL = process.env.REACT_APP_SHARED_DATA_ENDPOINT
-  const sdsScope = process.env.REACT_APP_SHARED_DATA_SCOPE
-
-  return authURL !== undefined && authURL?.length > 0
-    && sdsURL !== undefined && sdsURL?.length > 0
-    && sdsScope !== undefined && sdsScope?.length > 0
-}
+// storer: commenting this function out as it's never referenced
+// /*
+// * TODO: enhance this to verify current access token for SDS.
+// */
+// export const supplementalDataIsAvailable = (): Boolean => {
+//   const authURL = process.env.REACT_APP_SHARED_DATA_AUTH_ENDPOINT
+//   const sdsURL = process.env.REACT_APP_SHARED_DATA_ENDPOINT
+//   const sdsScope = process.env.REACT_APP_SHARED_DATA_SCOPE
+//
+//   return authURL !== undefined && authURL?.length > 0
+//     && sdsURL !== undefined && sdsURL?.length > 0
+//     && sdsScope !== undefined && sdsScope?.length > 0
+// }
 
 export const getSupplementalDataClient = async (): Promise < Client | undefined > => {
-  console.log('getSupplementalDataClient Start');
+  console.log('getSupplementalDataClient: Start');
   let sdsClient: Client | undefined
   const authURL = process.env.REACT_APP_SHARED_DATA_AUTH_ENDPOINT
   const sdsURL = process.env.REACT_APP_SHARED_DATA_ENDPOINT
   const sdsScope = 'patient/*.cruds patient/* user/*.cruds user/* goal/*.read '
   const sdsClientId = process.env.REACT_APP_SHARED_DATA_CLIENT_ID
 
-  console.log('getSupplementalDataClient authURL: ', authURL)
-  console.log('getSupplementalDataClient sdsURL: ', sdsURL)
-  console.log('getSupplementalDataClient sdsScope: ', sdsScope)
-  console.log('getSupplementalDataClient sdsClientId: ', sdsClientId)
+  console.log('getSupplementalDataClient: authURL: ', authURL)
+  console.log('getSupplementalDataClient: sdsURL: ', sdsURL)
+  console.log('getSupplementalDataClient: sdsScope: ', sdsScope)
+  console.log('getSupplementalDataClient: sdsClientId: ', sdsClientId)
 
   if (sdsClientId && sdsURL) {
-      console.log('getSupplementalDataClient if (sdsClientId && sdsURL) == true; authorize in using client id')
-      const sdsFhirAccessDataObject: fhirclient.ClientState | undefined =
-          await extractFhirAccessDataObjectIfGivenEndpointMatchesAnyPriorEndpoint(sdsURL)
-      if (sdsFhirAccessDataObject) {
-          sdsClient = FHIR.client(sdsFhirAccessDataObject)
+      console.log('getSupplementalDataClient: if (sdsClientId && sdsURL) == true; authorize in using client id')
+      const sdsState: fhirclient.ClientState | undefined = await getStateForEndpoint(sdsURL)
+      if (sdsState) {
+          sdsClient = FHIR.client(sdsState)
       }
+
   } else if (authURL && sdsURL && sdsScope) {
       console.log('getSupplementalDataClient else if (authURL && sdsURL && sdsScope) == true; authorize using existing token')
 
-      const authFhirAccessDataObject: fhirclient.ClientState | undefined =
-          await extractFhirAccessDataObjectIfGivenEndpointMatchesAnyPriorEndpoint(authURL)
+      const authState: fhirclient.ClientState | undefined =
+          await getStateForEndpoint(authURL)
 
-      if (authFhirAccessDataObject) {
-          console.log("getSupplementalDataClient.authFhirAccessDataObject is defined")
+      if (authState) {
+          console.log("getSupplementalDataClient: authState is defined")
           // Replace the serverURL and client scope with Shared Data endpoint and scope
-          let sdsFhirAccessDataObject = authFhirAccessDataObject
-          sdsFhirAccessDataObject.serverUrl = sdsURL
-          sdsFhirAccessDataObject.scope = sdsScope
-          if (sdsFhirAccessDataObject.tokenResponse) {
-              sdsFhirAccessDataObject.tokenResponse.scope = sdsScope
+          let sdsState = authState
+          sdsState.serverUrl = sdsURL
+          sdsState.scope = sdsScope
+          if (sdsState.tokenResponse) {
+              sdsState.tokenResponse.scope = sdsScope
           }
           // Connect to the client
-          let sdsClient: Client | undefined
-          sdsClient = FHIR.client(sdsFhirAccessDataObject)
+          let sdsClient: Client | undefined = FHIR.client(sdsState)
           const linkages = await sdsClient.request('Linkage');
-          if (sdsFhirAccessDataObject.tokenResponse) {
+          if (sdsState.tokenResponse) {
               if (linkages.entry === undefined) {
-                  console.log('getSupplementalDataClient Create Patient:');
+                  console.log('getSupplementalDataClient: Create Patient:');
                   const patientResource = {
                       resourceType: 'Patient'
                   };
                   await sdsClient.create(patientResource).then(async (response) => {
-                          console.log('getSupplementalDataClient Patient resource created successfully:', response);
-                          console.log('getSupplementalDataClient start wait for patient create:');
+                          console.log('getSupplementalDataClient: Patient resource created successfully:', response);
+                          console.log('getSupplementalDataClient: start wait for patient create:');
                           await new Promise(resolve => setTimeout(resolve, 3000)); // 3 sec
-                          console.log('getSupplementalDataClient end wait for patient create:');
+                          console.log('getSupplementalDataClient: end wait for patient create:');
                           const yy = await sdsClient?.request('Linkage');
-                    console.log('getSupplementalDataClient Patient resource created linkage :' + JSON.stringify(yy));
-                          var patientReference = yy.entry[0].resource?.item[0].resource.reference
-                          var identifier = patientReference.split("/")
-                          if (sdsFhirAccessDataObject) {
-                              if (sdsFhirAccessDataObject.tokenResponse) {
-                                  if (sdsFhirAccessDataObject.tokenResponse.patient) {
-                                      sdsFhirAccessDataObject.tokenResponse.patient = identifier[1]
-                                      sdsClient = FHIR.client(sdsFhirAccessDataObject)
+                          console.log('getSupplementalDataClient: Patient resource created linkage :' + JSON.stringify(yy));
+                          let patientReference = yy.entry[0].resource?.item[0].resource.reference
+                          let identifier = patientReference.split("/")
+                          if (sdsState) {
+                              if (sdsState.tokenResponse) {
+                                  if (sdsState.tokenResponse.patient) {
+                                      sdsState.tokenResponse.patient = identifier[1]
+                                      sdsClient = FHIR.client(sdsState)
                                       return sdsClient
                                   }
                               }
@@ -261,16 +261,17 @@ export const getSupplementalDataClient = async (): Promise < Client | undefined 
                           console.error('getSupplementalDataClient Error creating Patient resource:', error);
                       });
               } else {
-                  var patientReference = linkages.entry[0].resource?.item[0].resource.reference
-                  var identifier = patientReference.split("/")
-                  sdsFhirAccessDataObject.tokenResponse.patient = identifier[1]
-                  sdsClient = FHIR.client(sdsFhirAccessDataObject)
+                  let patientReference = linkages.entry[0].resource?.item[0].resource.reference
+                  let identifier = patientReference.split("/")
+                  sdsState.tokenResponse.patient = identifier[1]
+                  sdsClient = FHIR.client(sdsState)
                   return sdsClient
               }
           }
-          console.error("getSupplementalDataClient FHIR.client(sdsFhirAccessDataObject) sdsClient = ", sdsClient)
+          console.log('getSupplementalDataClient: FHIR.client(sdsState) sdsClient = ', sdsClient)
+
       } else {
-          console.log("getSupplementalDataClient() authFhirAccessDataObject is currently null, cannot connect to client")
+          console.error('getSupplementalDataClient: authState is currently null, cannot connect to client')
       }
   }
 
@@ -282,84 +283,85 @@ export const getSupplementalDataClient = async (): Promise < Client | undefined 
   return sdsClient
 }
 
-// TODO: MULTI-PROVIDER: Call this with getFHIRData/remove duplicate code there. Or, have this be called first.
-// Due to the eventual merge of code, I have left in the majority of the dead code which will be live after the merge
-// That dead code is everything within authorizedAndInLocalStorage === true because we won't have it in local storage until after we call this
-export const createAndPersistClientForSavedOrNewProvider = async (authorizedAndInLocalStorage: boolean,
-  serverUrl: string | null): Promise<void> => {
-  console.log("createAndPersistClient()")
-
-  try {
-    let client: Client
-    if (authorizedAndInLocalStorage) {
-      console.log("Known to be authorized and previously stored in fhir-client-states-array, " +
-        "reconnecting to given, prior - authorized client, and reloading data")
-      if (serverUrl) {
-        console.log("serverUrl is defined")
-        const matchedFhirAccessDataObject: fhirclient.ClientState | undefined =
-          await extractFhirAccessDataObjectIfGivenEndpointMatchesAnyPriorEndpoint(serverUrl)
-        if (matchedFhirAccessDataObject) {
-          console.log("matchedFhirAccessDataObject is defined, we should have a valid endpoint to pass to the client and reauthorize without redirect")
-          console.log("matchedFhirAccessDataObject", matchedFhirAccessDataObject)
-          // FHIR.client is passed fhirclient.ClientState from localForage which allows for fetching data w/o an external redirect since already authorized
-          // If for some reason we need an alternate impl to handle this, here are some options:
-          // 1: Using the API, if possible, use fetch after some connection is made (with object or endpoint), or use ready in similar manner
-          // 2: Store encrypted fhirData (actual patient data, hence encryption) in local storage and retrieve that
-          // 3: Bypass authentication using the fakeTokenResponse/access_token or an access token directly
-          // Note: Unfortunately, this is not an asynchronous operation
-          // !FUNCTION DIFF! Commented out the following line
-          // setAndLogProgressState("Connecting to FHIR client (for prior authorized client)", 5)
-          client = FHIR.client(matchedFhirAccessDataObject)
-          console.log('Executed: client = FHIR.client(matchedFhirAccessDataObject)')
-        } else {
-          throw new Error("A matching fhirAccessDataObject could not be found against the given serverUrl, cannot connect to client or load FHIR data")
-        }
-      } else {
-        throw new Error("Given serverUrl is null, cannot connect to client or load FHIR data")
-      }
-    } else { // prior/default
-      console.log("Not known to be authorized, but could be, either a launcher, app startup, or FHIR.oauth2.authorize was called due to expiration")
-      console.log('Starting default OAuth2 authentication')
-      // !FUNCTION DIFF! Commented out the following line
-      // setAndLogProgressState("Connecting to FHIR client", 10)
-      client = await FHIR.oauth2.ready();
-      console.log('Executed: client = await FHIR.oauth2.ready()')
-    }
-
-    // !FUNCTION DIFF! Commented out the following line
-    // setAndLogProgressState("Verifying connection data and state", 15)
-    if (!client) {
-      throw new Error("client is not defined, cannot connect to client or load FHIR data")
-    }
-
-    process.env.REACT_APP_TEST_PERSISTENCE === 'true' && console.log("client: ", JSON.stringify(client))
-
-    // We have a connected/populated client now, get the state/make use of the data
-    const clientState: fhirclient.ClientState = client?.state
-    if (clientState) {
-      await persistFHIRAccessData(clientState)
-    } else {
-      console.log("Unable to persist data as no client?.state<fhirclient.ClientState> is available")
-    }
-
-  } catch (err) {
-    throw (err)
-  }
-}
+// storer: commenting out this function as it's never used
+// // TODO: MULTI-PROVIDER: Call this with getFHIRData/remove duplicate code there. Or, have this be called first.
+// // Due to the eventual merge of code, I have left in the majority of the dead code which will be live after the merge
+// // That dead code is everything within authorizedAndInLocalStorage === true because we won't have it in local storage until after we call this
+// export const createAndPersistClientForSavedOrNewProvider = async (authorizedAndInLocalStorage: boolean,
+//   serverUrl: string | null): Promise<void> => {
+//   console.log("createAndPersistClient()")
+//
+//   try {
+//     let client: Client
+//     if (authorizedAndInLocalStorage) {
+//       console.log("Known to be authorized and previously stored in fhir-client-states-array, " +
+//         "reconnecting to given, prior - authorized client, and reloading data")
+//       if (serverUrl) {
+//         console.log("endpoint is defined")
+//         const matchedFhirAccessDataObject: fhirclient.ClientState | undefined =
+//           await getStateForEndpoint(serverUrl)
+//         if (matchedFhirAccessDataObject) {
+//           console.log("matchedFhirAccessDataObject is defined, we should have a valid endpoint to pass to the client and reauthorize without redirect")
+//           console.log("matchedFhirAccessDataObject", matchedFhirAccessDataObject)
+//           // FHIR.client is passed fhirclient.ClientState from localForage which allows for fetching data w/o an external redirect since already authorized
+//           // If for some reason we need an alternate impl to handle this, here are some options:
+//           // 1: Using the API, if possible, use fetch after some connection is made (with object or endpoint), or use ready in similar manner
+//           // 2: Store encrypted fhirData (actual patient data, hence encryption) in local storage and retrieve that
+//           // 3: Bypass authentication using the fakeTokenResponse/access_token or an access token directly
+//           // Note: Unfortunately, this is not an asynchronous operation
+//           // !FUNCTION DIFF! Commented out the following line
+//           // setAndLogProgressState("Connecting to FHIR client (for prior authorized client)", 5)
+//           client = FHIR.client(matchedFhirAccessDataObject)
+//           console.log('Executed: client = FHIR.client(matchedFhirAccessDataObject)')
+//         } else {
+//           throw new Error("A matching fhirAccessDataObject could not be found against the given endpoint, cannot connect to client or load FHIR data")
+//         }
+//       } else {
+//         throw new Error("Given endpoint is null, cannot connect to client or load FHIR data")
+//       }
+//     } else { // prior/default
+//       console.log("Not known to be authorized, but could be, either a launcher, app startup, or FHIR.oauth2.authorize was called due to expiration")
+//       console.log('Starting default OAuth2 authentication')
+//       // !FUNCTION DIFF! Commented out the following line
+//       // setAndLogProgressState("Connecting to FHIR client", 10)
+//       client = await FHIR.oauth2.ready();
+//       console.log('Executed: client = await FHIR.oauth2.ready()')
+//     }
+//
+//     // !FUNCTION DIFF! Commented out the following line
+//     // setAndLogProgressState("Verifying connection data and state", 15)
+//     if (!client) {
+//       throw new Error("client is not defined, cannot connect to client or load FHIR data")
+//     }
+//
+//     process.env.REACT_APP_TEST_PERSISTENCE === 'true' && console.log("client: ", JSON.stringify(client))
+//
+//     // We have a connected/populated client now, get the state/make use of the data
+//     const clientState: fhirclient.ClientState = client?.state
+//     if (clientState) {
+//       await persistState(clientState)
+//     } else {
+//       console.log("Unable to persist data as no client?.state<fhirclient.ClientState> is available")
+//     }
+//
+//   } catch (err) {
+//     throw (err)
+//   }
+// }
 
 export const createAndPersistClientForNewProvider = async (serverUrl: string | undefined): Promise<boolean> => {
-  console.log("createAndPersistClientForNewProvider()")
+  console.log("in createAndPersistClientForNewProvider()")
 
   try {
     let client: Client
-    console.log('Starting default OAuth2 authentication')
+    console.log('createAndPersistClientForNewProvider: Starting default OAuth2 authentication')
     // !FUNCTION DIFF! Commented out the following line
     // setAndLogProgressState("Connecting to FHIR client", 10)
     client = await FHIR.oauth2.ready()
-    console.log('Executed: client = await FHIR.oauth2.ready()')
+    console.log('createAndPersistClientForNewProvider: Executed: client = await FHIR.oauth2.ready()')
     // !FUNCTION DIFF! Commented out the following line
     // setAndLogProgressState("Verifying connection data and state", 15)
-    if (!client) {
+    if ( ! client ) {
       throw new Error("client is not defined, cannot connect to client or load FHIR data")
     }
     process.env.REACT_APP_DEBUG_LOG === 'true' && console.log("client: ", JSON.stringify(client))
@@ -367,27 +369,29 @@ export const createAndPersistClientForNewProvider = async (serverUrl: string | u
     // We have a connected/populated client now, get and store the state, but don't load the data (FHIRData, CQL, etc.)
     const clientState: fhirclient.ClientState = client?.state
     if (clientState) {
-      await persistFHIRAccessData(clientState)
+      await persistStateAsCurrent(clientState)
+
     } else {
-      console.log("Unable to persist data as no client?.state<fhirclient.ClientState> is available")
+      console.error('createAndPersistClientForNewProvider: clientState is not defined')
     }
     return true
+
   } catch (err) {
     throw (err)
   }
 }
 
 export const getFHIRData = async (authorized: boolean, serverUrl: string | null, clientOverride: Client | null,
-  setAndLogProgressState: (message: string, value: number) => void,
-  setResourcesLoadedCountState: (count: number) => void,
-  setAndLogErrorMessageState: (errorType: string, userErrorMessage: string,
-    developerErrorMessage: string, errorCaught: Error | string | unknown) => void): Promise<FHIRData> => {
-  console.log("Enter getFHIRData()")
+                                  setAndLogProgressState: (message: string, value: number) => void,
+                                  setResourcesLoadedCountState: (count: number) => void,
+                                  setAndLogErrorMessageState: (errorType: string, userErrorMessage: string,
+                                                               developerErrorMessage: string, errorCaught: Error | string | unknown) => void): Promise<FHIRData> => {
+  console.log('Enter getFHIRData()')
 
   try {
     if (process.env.REACT_APP_LOAD_MELD_ON_STARTUP === 'true') {
       // TODO: For testing, implement when time
-      console.log('Load Meld Sandbox automatically w/o a user-provided launcher and on startup')
+      console.log('getFHIRData: Load Meld Sandbox automatically w/o a user-provided launcher and on startup')
       // { iss: process.env.REACT_APP_MELD_SANDBOX_ENDPOINT_ISS,
       //   redirectUri: "./index.html",
       //   clientId: process.env.REACT_APP_CLIENT_ID_meld_mcc,
@@ -396,16 +400,16 @@ export const getFHIRData = async (authorized: boolean, serverUrl: string | null,
 
     let client: Client
     if (authorized) {
-      console.log("Known to be authorized, reconnecting to given, prior-authorized client, and reloading data")
+      console.log('getFHIRData: Known to be authorized, reconnecting to given, prior-authorized client, and reloading data')
       if (serverUrl) {
-        console.log("serverUrl is defined")
+        console.log('getFHIRData: endpoint is defined')
         setAndLogProgressState("Connecting to FHIR client (for prior authorized client)", 5)
         if (!clientOverride) {
           const matchedFhirAccessDataObject: fhirclient.ClientState | undefined =
-            await extractFhirAccessDataObjectIfGivenEndpointMatchesAnyPriorEndpoint(serverUrl)
+            await getStateForEndpoint(serverUrl)
           if (matchedFhirAccessDataObject) {
-            console.log("matchedFhirAccessDataObject is defined, we should have a valid endpoint to pass to the client and reauthorize without redirect")
-            console.log("matchedFhirAccessDataObject", matchedFhirAccessDataObject)
+            console.log('getFHIRData: matchedFhirAccessDataObject is defined, we should have a valid endpoint to pass to the client and reauthorize without redirect')
+            console.log('getFHIRData: matchedFhirAccessDataObject', matchedFhirAccessDataObject)
           // FHIR.client is passed fhirclient.ClientState from localForage which allows for fetching data w/o an external redirect since already authorized
           // If for some reason we need an alternate impl to handle this, here are some options:
           // 1: Using the API, if possible, use fetch after some connection is made (with object or endpoint), or use ready in similar manner
@@ -413,27 +417,26 @@ export const getFHIRData = async (authorized: boolean, serverUrl: string | null,
           // 3: Bypass authentication using the fakeTokenResponse/access_token or an access token directly
             // Note: Unfortunately, this is not an asynchronous operation
             client = FHIR.client(matchedFhirAccessDataObject)
-            console.log('Executed: client = FHIR.client(matchedFhirAccessDataObject)')
+            console.log('getFHIRData: Executed: client = FHIR.client(matchedFhirAccessDataObject)')
           } else {
-            throw new Error("A matching fhirAccessDataObject could not be found against the given serverUrl, cannot connect to client or load FHIR data")
+            throw new Error("A matching fhirAccessDataObject could not be found against the given endpoint, cannot connect to client or load FHIR data")
           }
         } else {
-          console.log('Overriding client...')
+          console.log('getFHIRData: Overriding client...')
           client = clientOverride
-          console.log('Overridden: client.state', client.state)
-          console.log('Overridden: client.state.tokenResponse', client.state.tokenResponse)
-          console.log('Overridden: client.state.tokenResponse.patient', client.state.tokenResponse?.patient)
+          console.log('getFHIRData: Overridden: client.state', client.state)
+          console.log('getFHIRData: Overridden: client.state.tokenResponse', client.state.tokenResponse)
+          console.log('getFHIRData: Overridden: client.state.tokenResponse.patient', client.state.tokenResponse?.patient)
         }
       } else {
-        throw new Error("Given serverUrl is null, cannot connect to client or load FHIR data")
+        throw new Error("Given endpoint is null, cannot connect to client or load FHIR data")
       }
     } else { // prior/default
-      console.log("Not known to be authorized, but could be, either a launcher, app startup, " +
-        "or FHIR.oauth2.authorize was called due to expiration")
-      console.log('Starting default OAuth2 authentication')
+      console.log('getFHIRData: Not known to be authorized, but could be, either a launcher, app startup, or FHIR.oauth2.authorize was called due to expiration')
+      console.log('getFHIRData: Starting default OAuth2 authentication')
       setAndLogProgressState("Connecting to FHIR client", 10)
       client = await FHIR.oauth2.ready()
-      console.log('Executed: client = await FHIR.oauth2.ready()')
+      console.log('getFHIRData: Executed: client = await FHIR.oauth2.ready()')
     }
 
     setAndLogProgressState("Verifying connection data and state", 15)
@@ -442,23 +445,23 @@ export const getFHIRData = async (authorized: boolean, serverUrl: string | null,
     }
 
     if (process.env.REACT_APP_DEBUG_LOG === 'true') {
-      console.log('client: ', client)
-      console.log('Client JSON: ', JSON.stringify(client))
-      console.log('client.state', client.state)
-      console.log('client.state.tokenResponse', client.state.tokenResponse)
-      console.log('client.state.tokenResponse.patient', client.state.tokenResponse?.patient)
+      console.log('getFHIRData: client: ', client)
+      console.log('getFHIRData: Client JSON: ', JSON.stringify(client))
+      console.log('getFHIRData: client.state', client.state)
+      console.log('getFHIRData: client.state.tokenResponse', client.state.tokenResponse)
+      console.log('getFHIRData: client.state.tokenResponse.patient', client.state.tokenResponse?.patient)
     }
 
     // We have a connected/populated client now, get the state/make use of the data
     const clientState: fhirclient.ClientState = client?.state
     if (clientState) {
-      await persistFHIRAccessData(clientState)
+      await persistStateAsCurrent(clientState)
       if (!authorized && !serverUrl) {
         // Likely a launcher ***TODO: May need further identification***
-        await persistLauncherData(clientState)
+        await persistStateAsLauncherData(clientState)
       }
     } else {
-      console.log("Unable to persist data as no client?.state<fhirclient.ClientState> is available")
+      console.log("getFHIRData: Unable to persist data as no client?.state<fhirclient.ClientState> is available")
     }
 
     const clientScope = client?.state.tokenResponse?.scope
@@ -468,14 +471,15 @@ export const getFHIRData = async (authorized: boolean, serverUrl: string | null,
     const supportsInclude = !(
       serverURL.includes('cerner.com') || serverURL.includes('allscripts.com')
     )
-    console.log("Server URL: " + serverURL)
-    console.log("Supports _include: " + supportsInclude)
-    console.log('clientScope: ' + clientScope)
+    console.log('getFHIRData: Server URL: ' + serverURL)
+    console.log('getFHIRData: Supports _include: ' + supportsInclude)
+    console.log('getFHIRData: clientScope: ' + clientScope)
 
     // return await getFHIRResources(client, clientScope, supportsInclude,
     //   setAndLogProgressState, setResourcesLoadedCountState, setAndLogErrorMessageState)
     const getFHIRDataResult: FHIRData = await getFHIRResources(client, clientScope, supportsInclude,
       setAndLogProgressState, setResourcesLoadedCountState, setAndLogErrorMessageState)
+
     if (clientOverride) {
       getFHIRDataResult.isSDS = true
       getFHIRDataResult.serverName = "SDS"
@@ -495,10 +499,10 @@ export const getFHIRData = async (authorized: boolean, serverUrl: string | null,
 }
 
 const getFHIRResources = async (client: Client, clientScope: string | undefined, supportsInclude: boolean,
-  setAndLogProgressState: (message: string, value: number) => void,
-  setResourcesLoadedCountState: (count: number) => void,
-  setAndLogErrorMessageState: (errorType: string, userErrorMessage: string,
-    developerErrorMessage: string, errorCaught: Error | string | unknown) => void): Promise<FHIRData> => {
+                                setAndLogProgressState: (message: string, value: number) => void,
+                                setResourcesLoadedCountState: (count: number) => void,
+                                setAndLogErrorMessageState: (errorType: string, userErrorMessage: string,
+                                                             developerErrorMessage: string, errorCaught: Error | string | unknown) => void): Promise<FHIRData> => {
   /*
    *  Allscripts does not return patient, so also try user if patient is missing.
    */
@@ -512,7 +516,7 @@ const getFHIRResources = async (client: Client, clientScope: string | undefined,
   const patient: Patient = client.patient.id !== null
     ? await client.patient.read() as Patient
     : await client.user.read() as Patient
-  console.log('Patient resource:', patient)
+  console.log('getFHIRResources: Patient resource:', patient)
 
   var pcpPath = patient.generalPractitioner ? patient.generalPractitioner?.[0]?.reference : undefined
   // workaround for Allscripts bug
@@ -524,7 +528,7 @@ const getFHIRResources = async (client: Client, clientScope: string | undefined,
   const patientPath = 'Patient/' + client.getPatientId();
   const fhirUserPath = client.getFhirUser();
   const serverUrl = client.state.serverUrl;
-  console.log('client.getFhirUser(): ', client.getFhirUser())
+  console.log('getFHIRResources: client.getFhirUser(): ', client.getFhirUser())
 
   let fhirUser : Practitioner | Patient | RelatedPerson | undefined
   try {
@@ -534,14 +538,14 @@ const getFHIRResources = async (client: Client, clientScope: string | undefined,
       // Assume this is SDS
   }
 
-  console.log('fhirUser: ', fhirUser)
+  console.log('getFHIRResources: fhirUser: ', fhirUser)
   const caregiverName: String | undefined =
     (patientPath === fhirUserPath) ? undefined : fhirUser?.name?.[0]?.text ?? fhirUser?.name?.[0]?.family
 
 
   let fhirQueries = {} // empty object for speed of development/testing purposes, remains empty if env var is false
   const getFhirQueriesEnvVar = process.env.REACT_APP_GET_FHIR_QUERIES
-  console.log('process.env.REACT_APP_GET_FHIR_QUERIES', getFhirQueriesEnvVar)
+  console.log('getFHIRResources: process.env.REACT_APP_GET_FHIR_QUERIES', getFhirQueriesEnvVar)
   if (getFhirQueriesEnvVar === undefined || getFhirQueriesEnvVar === 'true') {
     // we allow undefined or true as we want the default to always be to load the queries
     setAndLogProgressState("Retrieving FHIR queries", 35)
@@ -572,8 +576,8 @@ const getFHIRQueries = async (client: Client, clientScope: string | undefined,
   let resourcesLoadedCount: number = 0
   let curResourceName: string = "Unknown"
 
-  var careTeamMembers = new Map<string, Practitioner>()
-  var resourceRequesters = new Map<string, Practitioner>()
+  let careTeamMembers = new Map<string, Practitioner>()
+  let resourceRequesters = new Map<string, Practitioner>()
 
   if (patientPCP?.id !== undefined) {
     careTeamMembers.set(patientPCP?.id!, patientPCP!)
@@ -604,7 +608,7 @@ const getFHIRQueries = async (client: Client, clientScope: string | undefined,
     })
     recordProvenance(careTeamData)
   } catch (err) {
-    setAndLogNonTerminatingErrorMessageStateForResource(curResourceName, err, setAndLogErrorMessageState)
+    await setAndLogNonTerminatingErrorMessageStateForResource(curResourceName, err, setAndLogErrorMessageState)
   } finally {
     careTeams && setResourcesLoadedCountState(++resourcesLoadedCount)
   }
@@ -614,7 +618,7 @@ const getFHIRQueries = async (client: Client, clientScope: string | undefined,
     goalsPath, true, client, clientScope, 50, setAndLogProgressState, setAndLogErrorMessageState)
   goals && setResourcesLoadedCountState(++resourcesLoadedCount)
   setAndLogProgressState('Found ' + (goals?.length ?? 0) + ' Goals.', 50)
-  console.log('Found ' + (goals?.length ?? 0) + ' Goals.')
+  console.log('getFHIRQueries: Found ' + (goals?.length ?? 0) + ' Goals.')
 
   curResourceName = 'Condition'
   let conditions: Condition[] | undefined
@@ -624,7 +628,7 @@ const getFHIRQueries = async (client: Client, clientScope: string | undefined,
       ? await getConditions(client)
       : undefined)
   } catch (err) {
-    setAndLogNonTerminatingErrorMessageStateForResource(curResourceName, err, setAndLogErrorMessageState)
+    await setAndLogNonTerminatingErrorMessageStateForResource(curResourceName, err, setAndLogErrorMessageState)
   } finally {
     conditions && setResourcesLoadedCountState(++resourcesLoadedCount)
   }
@@ -646,7 +650,7 @@ const getFHIRQueries = async (client: Client, clientScope: string | undefined,
     procedures = procedureData?.filter((item: any) => item.resourceType === curResourceName) as Procedure[]
     recordProvenance(procedureData)
   } catch (err) {
-    setAndLogNonTerminatingErrorMessageStateForResource(curResourceName, err, setAndLogErrorMessageState)
+    await setAndLogNonTerminatingErrorMessageStateForResource(curResourceName, err, setAndLogErrorMessageState)
   } finally {
     procedures && setResourcesLoadedCountState(++resourcesLoadedCount)
   }
@@ -704,7 +708,7 @@ const getFHIRQueries = async (client: Client, clientScope: string | undefined,
       medications = undefined
     }
   } catch (err) {
-    setAndLogNonTerminatingErrorMessageStateForResource(curResourceName, err, setAndLogErrorMessageState)
+    await setAndLogNonTerminatingErrorMessageStateForResource(curResourceName, err, setAndLogErrorMessageState)
   } finally {
     medications && setResourcesLoadedCountState(++resourcesLoadedCount)
   }
@@ -737,7 +741,7 @@ const getFHIRQueries = async (client: Client, clientScope: string | undefined,
       serviceRequests = undefined
     }
   } catch (err) {
-    setAndLogNonTerminatingErrorMessageStateForResource(curResourceName, err, setAndLogErrorMessageState)
+    await setAndLogNonTerminatingErrorMessageStateForResource(curResourceName, err, setAndLogErrorMessageState)
   } finally {
     serviceRequests && setResourcesLoadedCountState(++resourcesLoadedCount)
   }
@@ -761,8 +765,10 @@ const getFHIRQueries = async (client: Client, clientScope: string | undefined,
       ? await getVitalSigns(client)
       : undefined)
     setAndLogProgressState('Found ' + (vitalSigns?.length ?? 0) + ' vital signs.', 96)
+
   } catch (err) {
-    setAndLogNonTerminatingErrorMessageStateForResource(curResourceName, err, setAndLogErrorMessageState)
+    await setAndLogNonTerminatingErrorMessageStateForResource(curResourceName, err, setAndLogErrorMessageState)
+
   } finally {
     vitalSigns && setResourcesLoadedCountState(++resourcesLoadedCount)
   }
@@ -861,34 +867,36 @@ const getFHIRQueries = async (client: Client, clientScope: string | undefined,
 }
 
 const loadFHIRQuery = async <T extends Resource>(
-  resourceCommonName: string, resourceSrcCodeName: string, resourcePath: string,
-  isRecordProvenance: boolean, client: Client, clientScope: string | undefined, progressValue: number,
-  setAndLogProgressState: (message: string, value: number) => void,
-  setAndLogErrorMessageState: (errorType: string, userErrorMessage: string,
-    developerErrorMessage: string, errorCaught: Error | string | unknown) => void)
-  : Promise<T[] | undefined> => {
+    resourceCommonName: string, resourceSrcCodeName: string, resourcePath: string,
+    isRecordProvenance: boolean, client: Client, clientScope: string | undefined, progressValue: number,
+    setAndLogProgressState: (message: string, value: number) => void,
+    setAndLogErrorMessageState: (errorType: string, userErrorMessage: string,
+    developerErrorMessage: string, errorCaught: Error | string | unknown) => void) : Promise<T[] | undefined> => {
 
   let resourceData: Resource[] | undefined
   let resources: T[] | undefined
+
   setAndLogProgressState(`${resourceCommonName} request: ` + new Date().toLocaleTimeString(), progressValue)
+
   try {
     resourceData = (hasScope(clientScope, `${resourceSrcCodeName}.read`)
       ? resourcesFrom(await client.patient.request(resourcePath, fhirOptions) as fhirclient.JsonObject)
       : undefined)
     resources = resourceData?.filter((item: any) => item.resourceType === resourceSrcCodeName) as T[]
-    console.log("resources:", resources)
+    console.log("loadFHIRQuery: resources:", resources)
     isRecordProvenance && recordProvenance(resourceData)
+
   } catch (err) {
     await setAndLogNonTerminatingErrorMessageStateForResource(resourceCommonName, err, setAndLogErrorMessageState)
   }
+
   return resources
 }
 
 const setAndLogNonTerminatingErrorMessageStateForResource = async (
-  resourceName: string, errorCaught: Error | string | unknown,
-  setAndLogErrorMessageState: (errorType: string, userErrorMessage: string,
-    developerErrorMessage: string, errorCaught: Error | string | unknown) => void)
-  : Promise<void> => {
+    resourceName: string, errorCaught: Error | string | unknown,
+    setAndLogErrorMessageState: (errorType: string, userErrorMessage: string,
+    developerErrorMessage: string, errorCaught: Error | string | unknown) => void) : Promise<void> => {
 
   const message: string = process.env.REACT_APP_NT_USER_ERROR_MESSAGE_FAILED_RESOURCE ?
     process.env.REACT_APP_NT_USER_ERROR_MESSAGE_FAILED_RESOURCE : 'None: Environment variable for message not set.'
@@ -896,23 +904,21 @@ const setAndLogNonTerminatingErrorMessageStateForResource = async (
   setAndLogErrorMessageState('Non-terminating', message.replaceAll('<RESOURCE_NAME>', resourceName),
     `Failure in getFHIRData retrieving ${resourceName} data.`, errorCaught)
 }
+
 export function createSharedDataResource(resource: Resource) {
   return getSupplementalDataClient()
-  
     .then((client: Client | undefined) => {
       // console.log('SDS client: ' + JSON.stringify(client))
       return client?.create(resource as fhirclient.FHIR.Resource)
     })
     .catch(error => {
-      console.log('Cannot create shared data resource: ' + resource.resourceType + '/' + resource.id + ' error: ', error)
+      console.error('Cannot create shared data resource: ' + resource.resourceType + '/' + resource.id + ' error: ', error)
       return undefined
     })
 }
 
-
 export function updateSharedDataResource(client : Client, resource: Resource,serverUrl?: string ) {
-
-  // return 
+  // return
     // .then((client: Client | undefined) => {
       try {
         if (serverUrl) {
@@ -922,9 +928,11 @@ export function updateSharedDataResource(client : Client, resource: Resource,ser
           };  
           fhirHeaderRequestOption.headers = fhirHeaders;
           return client?.update(resource as fhirclient.FHIR.Resource,fhirHeaderRequestOption)
+
         } else {
           return client?.update(resource as fhirclient.FHIR.Resource)
         }
+
       } catch (err) {
         console.error("Error updating shared data resource: " + JSON.stringify(err))
         return undefined
@@ -938,26 +946,27 @@ export function updateSharedDataResource(client : Client, resource: Resource,ser
     // })
 }
 
-export async function getSharedGoals(): Promise<Goal[]> {
-  console.log("getSharedGoals()")
-  var resources: Resource[] = []
-  var client = await getSupplementalDataClient()
-  // console.log("Patient.id = " + client?.patient.id)
-  await client?.patient.read()
-  try {
-    resources = resources.concat(resourcesFrom(await client?.patient.request(goalsPath, fhirOptions) as fhirclient.JsonObject))
-  } catch (err) {
-    console.log("Error reading shared Goals: " + JSON.stringify(err))
-  }
-
-  let goals = resources.filter((item: any) => item?.resourceType === 'Goal') as Goal[]
-  console.log("getSharedGoals() Goals:")
-  goals?.forEach(function (resource) {
-    console.log(JSON.stringify(resource))
-  })
-
-  return goals
-}
+// storer: commenting out this function as it's never referenced
+// export async function getSharedGoals(): Promise<Goal[]> {
+//   console.log("getSharedGoals()")
+//   let resources: Resource[] = []
+//   let client = await getSupplementalDataClient()
+//   // console.log("Patient.id = " + client?.patient.id)
+//   await client?.patient.read()
+//   try {
+//     resources = resources.concat(resourcesFrom(await client?.patient.request(goalsPath, fhirOptions) as fhirclient.JsonObject))
+//   } catch (err) {
+//     console.log("Error reading shared Goals: " + JSON.stringify(err))
+//   }
+//
+//   let goals = resources.filter((item: any) => item?.resourceType === 'Goal') as Goal[]
+//   console.log("getSharedGoals() Goals:")
+//   goals?.forEach(function (resource) {
+//     console.log(JSON.stringify(resource))
+//   })
+//
+//   return goals
+// }
 
 
 // function delay(arg0: number) {

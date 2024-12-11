@@ -28,15 +28,15 @@ import { GoalSummary, ConditionSummary, MedicationSummary, ObservationSummary } 
 //import {deleteSessionId} from './data-services/persistenceService'
 import {
     isEndpointStillAuthorized, getSelectedEndpoints, deleteSelectedEndpoints,
-    getLauncherData, deleteAllDataFromLocalForage, saveSessionId, isSessionId, getSessionId
+    getLauncherData, deleteAllDataFromLocalForage, saveSessionId, sessionIdExistsInLocalForage, getSessionId
 } from './data-services/persistenceService'
 import {
     getGoalSummaries, getLabResultSummaries, getConditionSummaries,
     getMedicationSummaries, getVitalSignSummaries
 } from './data-services/mccCqlService';
 import {
-    ProviderEndpoint, buildAvailableEndpoints,
-    getMatchingProviderEndpointsFromUrl
+    LauncherData, buildLauncherDataArray,
+    getLauncherDataArrayForEndpoints
 } from './data-services/providerEndpointService'
 
 //import { clearSession} from './log/log-service'
@@ -103,7 +103,7 @@ interface AppState {
 
     isAuthDialogOpen: boolean,
     isAuthorizeSelected: null | boolean,
-    currentUnauthorizedEndpoint: ProviderEndpoint | null
+    currentUnauthorizedEndpoint: LauncherData | null
 }
 
 type SummaryFunctionType = (fhirData?: FHIRData[]) =>
@@ -185,18 +185,20 @@ class App extends React.Component<AppProps, AppState> {
             // await this.setSupplementalDataClient('somePatientId')
 
             try {
-                if (await isSessionId()) {
-                    const retrievedSessionId = await getSessionId();
-                    if(retrievedSessionId){
-                        this.setState({ sessionId : retrievedSessionId });
+                if (await sessionIdExistsInLocalForage()) {
+                    const sessionId = await getSessionId();
+                    if (sessionId) {
+                        this.setState({ sessionId : sessionId });
                     }
-                    console.log("I am in Retrieving the sessionID block ----------->",retrievedSessionId);
+                    console.log("session ID retrieved from local forage: ", sessionId);
+
                 } else {
-                    const sessionId = await initializeSession(); // Initialize session when the application is launched
+                    const sessionId = initializeSession(); // Initialize session when the application is launched
                     this.setState({ sessionId });
-                    saveSessionId(sessionId);
-                    console.log("I am in Creating the sessionID block ----------------->", sessionId)
+                    await saveSessionId(sessionId);
+                    console.log("session ID created and saved to local forage: ", sessionId)
                 }
+
                 console.log("Checking if this is a multi-select, single, or a loader...")
                 const selectedEndpoints: string[] | undefined = await getSelectedEndpoints()
                 if (selectedEndpoints && selectedEndpoints.length > 0) {
@@ -205,60 +207,63 @@ class App extends React.Component<AppProps, AppState> {
                         console.log("isAnyEndpointNullOrUndefined selectedEndpoints.some(endpoint) : " + endpoint)
                         return endpoint === null || endpoint === undefined
                     })
+
                     if (isAnyEndpointNullOrUndefined) {
                         console.log("Deleting the corrupted endpoints and creating an error")
                         throw new Error("Multi-select exists in local storage but an endpoint is null or undefined")
+
                     } else {
                         console.log("Endpoints defined (at indexes as well) and have a length > 0")
 
                         console.log("Convert string[] of endpoint urls to ProviderEndpoint[]")
                         // Can't use local storage to extract as some of these endpoints could be NEW
                         // endpoints and not exist in local storage
-                        const endpointsToAuthorize: ProviderEndpoint[] =
-                            await getMatchingProviderEndpointsFromUrl(buildAvailableEndpoints(), selectedEndpoints)
-                        console.log('endpointsToLoad (once authorized)', JSON.stringify(endpointsToAuthorize))
+                        const toAuthorizeLauncherDataArray: LauncherData[] =
+                            await getLauncherDataArrayForEndpoints(buildLauncherDataArray(), selectedEndpoints)
+                        console.log('toAuthorizeLauncherDataArray (once authorized)', JSON.stringify(toAuthorizeLauncherDataArray))
 
                         // Check existence of endpointsToAuthorize and trigger terminating error otherwise
-                        if (endpointsToAuthorize && endpointsToAuthorize.length > 0) {
-                            console.log("endpointsToAuthorize && endpointsToAuthorize.length > 0")
+                        if (toAuthorizeLauncherDataArray && toAuthorizeLauncherDataArray.length > 0) {
+                            console.log("toAuthorizeLauncherDataArray && toAuthorizeLauncherDataArray.length > 0")
                             // To support a dynamic launcher, and not have to have the launcher in availableEndpoints
                             // Add launcher if missing. It will be missing if it doesn't exist in availableEndpoints
                             try {
-                                const launcherEndpointFromForage: ProviderEndpoint | null | undefined =
-                                    await getLauncherData()
-                                console.log("launcherEndpointFromForage to add to endpointsToAuthorize: ",
-                                    launcherEndpointFromForage)
-                                if (launcherEndpointFromForage) {
-                                    const isLauncherAlreadyInEndpointsToAuthorize: boolean =
-                                        endpointsToAuthorize.some(endpoint => {
-                                            return endpoint?.config?.iss === launcherEndpointFromForage?.config?.iss
+                                const launcherDataFromForage: LauncherData | null | undefined = await getLauncherData()
+                                console.log('launcherDataFromForage to add to toAuthorizeLauncherDataArray: ', launcherDataFromForage)
+                                if (launcherDataFromForage) {
+                                    const isLauncherDataAlreadyInArrayToAuthorize: boolean =
+                                        toAuthorizeLauncherDataArray.some(launcherData => {
+                                            return launcherData?.config?.iss === launcherDataFromForage?.config?.iss
                                         })
-                                    if (!isLauncherAlreadyInEndpointsToAuthorize) {
-                                        console.log("Adding launcher to endpointsToAuthorize")
-                                        endpointsToAuthorize.unshift(launcherEndpointFromForage)
-                                        console.log('endpointsToLoad (after adding launcher)',
-                                            JSON.stringify(endpointsToAuthorize))
+
+                                    if ( ! isLauncherDataAlreadyInArrayToAuthorize ) {
+                                        console.log("Adding launcher to toAuthorizeLauncherDataArray")
+                                        toAuthorizeLauncherDataArray.unshift(launcherDataFromForage)
+                                        console.log('toAuthorizeLauncherDataArray (after adding launcher)',
+                                            JSON.stringify(toAuthorizeLauncherDataArray))
                                     } else {
-                                        console.log("Not adding launcher to endpointsToAuthorize as it's already there")
+                                        console.debug("Not adding launcher to toAuthorizeLauncherDataArray as it's already there")
                                     }
                                 }
+
                             } catch (e) {
                                 console.error(`Error fetching launcher data within App.tsx(): ${e}`)
                             }
+
                         } else {
-                            throw new Error("endpointsToAuthorize is null or undefined")
+                            throw new Error('toAuthorizeLauncherDataArray is null or undefined')
                         }
 
                         // TODO: MULTI-PROVIDER: Externalize the logic in authorizeSelectedEndpoints in ProviderLogin
                         // so that both ProviderLogin and App.tsx (right here) can use it vs having duplicate code
                         // If all authorized, load all, else authorize the current one
-                        const endpointsLength = endpointsToAuthorize.length
-                        for (let i = 0; i < endpointsLength; i++) {
-                            const curEndpoint: ProviderEndpoint = endpointsToAuthorize[i]
-                            console.log("curEndpoint", curEndpoint)
-                            const issServerUrl = curEndpoint.config!.iss
-                            console.log("issServerUrl", issServerUrl)
-                            const isLastIndex = i === endpointsLength - 1
+                        const launcherDataArrayLength = toAuthorizeLauncherDataArray.length
+                        for (let i = 0; i < launcherDataArrayLength; i++) {
+                            const launcherData: LauncherData = toAuthorizeLauncherDataArray[i]
+                            console.log("launcherData=", launcherData)
+                            const issServerUrl = launcherData.config!.iss
+                            console.log("issServerUrl=", issServerUrl)
+                            const isLastIndex = i === launcherDataArrayLength - 1
                             console.log("isLastIndex: " + isLastIndex)
 
                             // !FUNCTION DIFF! *MAJOR DIFF*: Before checking authorization we need to create and persist the fhir client
@@ -266,13 +271,13 @@ class App extends React.Component<AppProps, AppState> {
                             // will fail authorization. This is only an issue for multi select, because on single, the local storage
                             // data is saved during the load process. For multi, we can't do that as we have to auth all first, then load
                             // (with multiple exits of the application for every auth to boot)
-                            if (await createAndPersistClientForNewProvider(issServerUrl)) {
+                            if (await createAndPersistClientForNewProvider(issServerUrl)) { // todo: this function never uses issServerUrl??!
                                 // Check for prior auths from another load or session just in case so we can save some time
-                                if (await isEndpointStillAuthorized(issServerUrl!, false)) { // false so checking ALL endpoints in local storage vs just last one
+                                if (await isEndpointStillAuthorized(issServerUrl!)) {
                                     console.log("This endpoint IS authorized")
                                     console.log("curEndpoint issServerUrl " + issServerUrl + " at index " + i +
-                                        " and count " + (i + 1) + "/" + endpointsLength +
-                                        " is still authorized. Will not waste time reauthorizing: ", curEndpoint)
+                                        " and count " + (i + 1) + "/" + launcherDataArrayLength +
+                                        " is still authorized. Will not waste time reauthorizing: ", launcherData)
 
                                     if (isLastIndex) {
                                         console.log("All endpoints are already authorized.")
@@ -282,16 +287,16 @@ class App extends React.Component<AppProps, AppState> {
                                         // and so that this logic is not run if there are no multi-endpoints to auth/local
                                         // but instead, a loader is run or a single endpoint is run in such a case
                                         console.log("Deleting multi-select endpoints from local storage")
-                                        deleteSelectedEndpoints()
+                                        await deleteSelectedEndpoints()
 
                                         console.log("Nothing left to authorize, loading all multi-selected and authorized endpoints w/o leaving app...")
-                                        await this.loadSelectedEndpoints(endpointsToAuthorize)
+                                        await this.loadSelectedEndpoints(toAuthorizeLauncherDataArray)
                                     }
                                 } else {
                                     console.log("This endpoint is NOT authorized (App.tsx)")
                                     console.log("curEndpoint issServerUrl " + issServerUrl +
-                                        " at index " + i + " and count " + (i + 1) + "/" + endpointsLength +
-                                        " is NOT authorized.", curEndpoint)
+                                        " at index " + i + " and count " + (i + 1) + "/" + launcherDataArrayLength +
+                                        " is NOT authorized.", launcherData)
 
                                     // !FUNCTION DIFF!: NO need to save selected endpoints as they were already saved by ProviderLogin version of the code
                                     // Save selected endpoints so app load after exiting app for auth knows that it is a multi load of specific endpoints.
@@ -324,7 +329,7 @@ class App extends React.Component<AppProps, AppState> {
                                     // as it ends up being removed through normal logic anyway
 
                                     // Open the Auth Dialog and Wait for the user's decision
-                                    this.openAuthDialog(curEndpoint)
+                                    this.openAuthDialog(launcherData)
                                     await new Promise<void>((resolve) => {
                                         const checkUserDecision = () => {
                                             if (this.state.isAuthorizeSelected !== null) { // null is the default
@@ -339,7 +344,7 @@ class App extends React.Component<AppProps, AppState> {
                                     })
 
                                     if (this.state.isAuthorizeSelected) {
-                                        console.log("Reauthorizing curEndpoint.config!:", curEndpoint.config!)
+                                        console.log("Reauthorizing curEndpoint.config!:", launcherData.config!)
                                         // The following authorization will exit the application. Therefore, if it's not the last index,
                                         // then we will have more endpoints to authorize when we return, on load
                                         if (isLastIndex) {
@@ -348,7 +353,7 @@ class App extends React.Component<AppProps, AppState> {
                                             console.log("Not last index, Authorizing index " + i)
                                         }
                                         this.handleAuthDialogClose()
-                                        FHIR.oauth2.authorize(curEndpoint.config!)
+                                        FHIR.oauth2.authorize(launcherData.config!)
                                         break
                                     } else {
                                         console.log("User does not agree to authorization. Skipping authorization...")
@@ -368,7 +373,7 @@ class App extends React.Component<AppProps, AppState> {
                     // Load a single item in an array
                     // TODO: MULTI-PROVIDER:: Determine how to handle a reload (refresh-situation) when the last load was a multi-select
                     console.log("Getting and setting fhirData state in componentDidMount")
-                    // false: authorized null: serverUrl
+                    // false: authorized null: endpoint
                     // We don't have access to the server URL for a launcher until we create a client
 
                     // LAUNCHER
@@ -445,7 +450,7 @@ class App extends React.Component<AppProps, AppState> {
         }
     }
 
-    openAuthDialog = (curEndpoint: ProviderEndpoint) => {
+    openAuthDialog = (curEndpoint: LauncherData) => {
         this.setState({ isAuthDialogOpen: true, currentUnauthorizedEndpoint: curEndpoint });
     }
 
@@ -542,7 +547,7 @@ class App extends React.Component<AppProps, AppState> {
     // TODO: MULTI-PROVIDER: This code is copioed into this class for now from the function in ProviderLOgin
     // Need to externalize and make part of a service for both, though
     // OR, this could exist here, and be passed to ProviderLogin.tsx
-    loadSelectedEndpoints = async (endpointsToLoad: ProviderEndpoint[]): Promise<void> => {
+    loadSelectedEndpoints = async (endpointsToLoad: LauncherData[]): Promise<void> => {
         console.log('loadSelectedEndpoints()')
         const fhirDataCollection: FHIRData[] = []
 
@@ -593,7 +598,7 @@ class App extends React.Component<AppProps, AppState> {
     // TODO: MULTI-PROVIDER: This code is copied into this class for now from the function in ProviderLOgin
     // Need to externalize and make part of a service for both, though
     // OR, this could exist here, and be passed to ProviderLogin.tsx
-    loadAuthorizedSelectedEndpointMulti = async (selectedEndpoint: ProviderEndpoint,
+    loadAuthorizedSelectedEndpointMulti = async (selectedEndpoint: LauncherData,
         isMultipleProviders: boolean, fhirDataCollectionIndex: number): Promise<FHIRData | undefined> => {
         console.log('loadAuthorizedSelectedEndpointMulti(): selectedEndpoint: ' + JSON.stringify(selectedEndpoint))
         console.log('loadAuthorizedSelectedEndpointMulti(): isMultipleProviders: ' + isMultipleProviders)
@@ -765,16 +770,15 @@ class App extends React.Component<AppProps, AppState> {
     }
 
     setSupplementalDataClient = async (patientId: string): Promise<Client | undefined> => {
-
         let client = await getSupplementalDataClient()
 
         // wait for client to get online to fix refresh issue
-        var attempts = 0
-        while (!client) {
+        let attempts = 0
+        while ( ! client ) {
             client = await getSupplementalDataClient();
             attempts++;
-            if (attempts < 10) {
-            break;
+            if (attempts < 10) {    // todo : why is this like this?  attempts will be 1 the first time it gets here, so will always break immediately
+                break;              // todo : this hasn't been fixed, so it apparently isn't a problem.  do we need this loop at all?
             }
         }
 
@@ -814,7 +818,7 @@ class App extends React.Component<AppProps, AppState> {
             // if (!isSDSReadError) {
             //     console.log("Valid SDS patient read: Using SDS client", sdsPatient ? sdsPatient : "unknown")
 
-            //     const stillValid = await isSavedTokenStillValid(client.state)
+            //     const stillValid = await isStateStillValid(client.state)
                 this.setState({ supplementalDataClient: client })
                 this.setState({ canShareData: true })
 
