@@ -23,13 +23,10 @@ const resourcesFrom = (response: fhirclient.JsonObject): Resource[] => {
 // export const getDateParameter = (d: Date): string => `ge${format(d, 'yyyy-MM-dd')}`;
 export const getDateParameter = (d: Date): string => `ge${format(d, 'yyyy-MM')}`;
 const today: Date = new Date()
-const oneDay = 24 * 3600 * 1000
-// const threeMonthsAgo = new Date(today.getTime() - (365/4 * oneDay))
-// const sixMonthsAgo = new Date(today.getTime() - (365/2 * oneDay))
-const oneYearAgo = new Date(today.getTime() - (365 * oneDay))
-const threeYearsAgo = new Date(today.getTime() - (365 * oneDay * 3))
-const fiveYearsAgo = new Date(today.getTime() - (365 * oneDay * 5))
-// const tenYearsAgo = new Date(today.getTime() - (365 * oneDay * 10))
+const oneYearAgo = addPeriodToDate(today, {years: -1})
+const threeYearsAgo = addPeriodToDate(today, {years: -3})
+const fiveYearsAgo = addPeriodToDate(today, {years: -5})
+const eighteenMonthsAgo = addPeriodToDate(today, {months: -18})
 
 const provenanceSearch = '&_revinclude=Provenance:target'
 
@@ -85,6 +82,19 @@ const onePageLimit: fhirclient.FhirOptions = {
 let provenanceMap = new Map<string, Provenance[]>()
 
 let provenance: Provenance[] = []
+
+function addPeriodToDate(date:Date, {years = 0, months = 0, days = 0, hours = 0, minutes = 0, seconds = 0}) {
+  let newDate = new Date(date);
+
+  newDate.setFullYear(newDate.getFullYear() + years);
+  newDate.setMonth(newDate.getMonth() + months);
+  newDate.setDate(newDate.getDate() + days);
+  newDate.setHours(newDate.getHours() + hours);
+  newDate.setMinutes(newDate.getMinutes() + minutes);
+  newDate.setSeconds(newDate.getSeconds() + seconds);
+
+  return newDate;
+}
 
 function recordProvenance(resources: Resource[] | undefined) {
   const provResources = resources?.filter((item: any) => item?.resourceType === 'Provenance') as Provenance[]
@@ -165,8 +175,8 @@ export async function getVitalSigns(client: Client): Promise<Observation[]> {
   // resources = resources.concat( resourcesFrom(await client.patient.request(queryPaths[6], onePageLimit) as fhirclient.JsonObject) as Observation[] )
   // resources = resources.concat( resourcesFrom(await client.patient.request(queryPaths[7], onePageLimit) as fhirclient.JsonObject) as Observation[] )
 
-  // storer: issue1 - increase count for office BPs from 10 to 12
-  const officeBPPath = 'Observation?code=http://loinc.org|85354-9&_count=12' + provenanceSearch
+  // storer: issue1 - pull office BPs from 18 months ago
+  const officeBPPath = 'Observation?code=http://loinc.org|85354-9&date=' + getDateParameter(eighteenMonthsAgo) + provenanceSearch
   resources = resources.concat(resourcesFrom(await client.patient.request(officeBPPath, onePageLimit) as fhirclient.JsonObject) as Observation[])
 
   // One year of history for Home BP vitals, which are returned as separate systolic and diastolic Observation resources.
