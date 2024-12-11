@@ -33,6 +33,9 @@ export default function ShareData(props: ShareDataProps) {
 
           if (!fhirData.isSDS) {
             Promise.resolve(updateSharedDataResource(sdsClient, fhirData.patient!, fhirData.serverUrl)).then(() => {
+              if (fhirData.encounters) {
+                Promise.all(fhirData.encounters!.map(encounter => updateSharedDataResource(sdsClient, encounter, fhirData.serverUrl))).then(() => { });
+              }
               if (fhirData.conditions) {
                 Promise.all(fhirData.conditions!.map(condition => updateSharedDataResource(sdsClient, condition, fhirData.serverUrl))).then(() => { });
               }            

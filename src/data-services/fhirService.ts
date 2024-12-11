@@ -1,7 +1,7 @@
 import FHIR from 'fhirclient'
 import { fhirclient } from 'fhirclient/lib/types'
 import {
-  Resource, Patient, Practitioner, RelatedPerson, CarePlan, CareTeam, Condition, DiagnosticReport, Goal,
+  Resource, Patient, Practitioner, RelatedPerson, CarePlan, CareTeam, Encounter, Condition, DiagnosticReport, Goal,
   Observation, Procedure, Immunization, MedicationRequest, ServiceRequest, Provenance, Reference
 } from './fhir-types/fhir-r4'
 import { FHIRData, hasScope } from './models/fhirResources'
@@ -42,6 +42,8 @@ const careTeamPath = 'CareTeam?category=longitudinal' + provenanceSearch
 const careTeamPath_include = 'CareTeam?_include=CareTeam:participant' + provenanceSearch
 
 const goalsPath = 'Goal?lifecycle-status=active,completed,cancelled' + provenanceSearch
+
+const encountersPath = 'Encounter?date=' + getDateParameter(eighteenMonthsAgo) + provenanceSearch
 
 /// Epic allows multiple category codes only >= Aug 2021 release
 // const conditionsPath = 'Condition?category=problem-list-item,health-concern,LG41762-2&clinical-status=active';
@@ -114,6 +116,25 @@ function recordProvenance(resources: Resource[] | undefined) {
   if (provResources !== undefined) {
     provenance = provenance.concat(provResources!)
   }
+}
+
+// storer: get Encounters for #5
+export async function getEncounters(client: Client): Promise<Encounter[]> {
+  let resources: Resource[] = []
+  await doLog({
+    level: 'debug',
+    event: 'getEncounters',
+    page: 'get Encounters',
+    message: `getEncounters: success`
+  })
+  // workaround for Allscripts lack of support for both category and status args
+    // Epic allows multiple category codes in one query only >= Aug 2021 release
+  resources = resources.concat(resourcesFrom(await client.patient.request(encountersPath, fhirOptions) as fhirclient.JsonObject))
+
+  const encounters = resources.filter((item: any) => item?.resourceType === 'Encounter') as Encounter[]
+  recordProvenance(resources)
+
+  return encounters
 }
 
 export async function getConditions(client: Client): Promise<Condition[]> {
@@ -632,6 +653,21 @@ const getFHIRQueries = async (client: Client, clientScope: string | undefined,
   setAndLogProgressState('Found ' + (goals?.length ?? 0) + ' Goals.', 50)
   console.log('getFHIRQueries: Found ' + (goals?.length ?? 0) + ' Goals.')
 
+  // storer: get Encounters for #5
+  curResourceName = 'Encounter'
+  let encounters: Encounter[] | undefined
+  setAndLogProgressState(`${curResourceName} request: ` + new Date().toLocaleTimeString(), 55)
+  try {
+    encounters = (hasScope(clientScope, `${curResourceName}.read`)
+        ? await getEncounters(client)
+        : undefined)
+  } catch (err) {
+    await setAndLogNonTerminatingErrorMessageStateForResource(curResourceName, err, setAndLogErrorMessageState)
+  } finally {
+    encounters && setResourcesLoadedCountState(++resourcesLoadedCount)
+  }
+  setAndLogProgressState('Found ' + (encounters?.length ?? 0) + ' Encounters.', 55)
+
   curResourceName = 'Condition'
   let conditions: Condition[] | undefined
   setAndLogProgressState(`${curResourceName} request: ` + new Date().toLocaleTimeString(), 55)
@@ -862,6 +898,7 @@ const getFHIRQueries = async (client: Client, clientScope: string | undefined,
     careTeams,
     careTeamMembers,
     resourceRequesters,
+    encounters,
     conditions,
     diagnosticReports,
     goals,
