@@ -179,8 +179,9 @@ export async function getVitalSigns(client: Client): Promise<Observation[]> {
   const officeBPPath = 'Observation?code=http://loinc.org|85354-9&date=' + getDateParameter(eighteenMonthsAgo) + provenanceSearch
   resources = resources.concat(resourcesFrom(await client.patient.request(officeBPPath, onePageLimit) as fhirclient.JsonObject) as Observation[])
 
+  // storer: issue2 - pull home BPs from 18 months ago
   // One year of history for Home BP vitals, which are returned as separate systolic and diastolic Observation resources.
-  const homeBPPath = 'Observation?code=http://loinc.org|72076-3&date=' + getDateParameter(oneYearAgo) + provenanceSearch
+  const homeBPPath = 'Observation?code=http://loinc.org|72076-3&date=' + getDateParameter(eighteenMonthsAgo) + provenanceSearch
   resources = resources.concat(resourcesFrom(await client.patient.request(homeBPPath, onePageLimit) as fhirclient.JsonObject) as Observation[])
 
   resources = resources.filter(v => v !== undefined)
