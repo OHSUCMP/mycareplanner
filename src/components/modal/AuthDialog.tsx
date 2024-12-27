@@ -1,10 +1,10 @@
 import React from 'react'
 import { Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Button, Typography } from '@mui/material'
-import { ProviderEndpoint } from '../../data-services/providerEndpointService'
+import { LauncherData } from '../../data-services/providerEndpointService'
 
 interface AuthDialogProps {
   open: boolean
-  currentUnauthorizedEndpoint: ProviderEndpoint | null
+  currentUnauthorizedEndpoint: LauncherData | null
   handleClose: () => void
   handleAuthorizeSelected: () => void
   handleSkipSelected: () => void

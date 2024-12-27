@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { getSessionId, isSessionId, saveSessionId } from '../data-services/persistenceService';
+import { getSessionId, sessionIdExistsInLocalForage, saveSessionId } from '../data-services/persistenceService';
 
 const API_PATH = process.env.REACT_APP_LOG_ENDPOINT_URI;
 const BEARER_TOKEN = process.env.REACT_APP_LOG_API_KEY;
@@ -38,7 +38,7 @@ export const clearSession = (): void => {
 }
 
 const ensureSessionId = async (): Promise<void> => {
-  if (await isSessionId()) {
+  if (await sessionIdExistsInLocalForage()) {
     const retrievedSessionId = await getSessionId();
     if (retrievedSessionId) {
       sessionId = retrievedSessionId;
