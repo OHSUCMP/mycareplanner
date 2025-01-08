@@ -184,7 +184,7 @@ export async function getVitalSigns(client: Client): Promise<Observation[]> {
     // Issue: UCHealth returns 400 error if include both category and code.
     // return 'Observation?category=vital-signs&code=http://loinc.org|' + code + '&_sort:desc=date&_count=1'
     // return 'Observation?code=http://loinc.org|' + code + '&_sort:desc=date&_count=1' + provenanceSearch
-    return 'Observation?code=http://loinc.org|' + code + '&_count=10' + provenanceSearch
+    return 'Observation?code=http://loinc.org|' + code + '&date=' + getDateParameter(eighteenMonthsAgo) + '&_count=10' + provenanceSearch
   })
 
   // await can be used only at top-level within a function, cannot use queryPaths.forEach()
