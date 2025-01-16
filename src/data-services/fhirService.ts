@@ -60,7 +60,7 @@ const medicationRequestActivePath = 'MedicationRequest?status=active' + provenan
 const medicationRequestInactivePath = 'MedicationRequest?status=on-hold,cancelled,completed,stopped&_count=10' + provenanceSearch
 const medicationRequesterInclude = '&_include=MedicationRequest:requester'
 
-const serviceRequestPath = 'ServiceRequest?status=active' + provenanceSearch
+const serviceRequestPath = 'ServiceRequest?status=active&authored=' + getDateParameter(eighteenMonthsAgo) + provenanceSearch
 const serviceRequesterInclude = '&_include=ServiceRequest:requester'
 
 const proceduresTimePath = 'Procedure?date=' + getDateParameter(threeYearsAgo) + provenanceSearch
