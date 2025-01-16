@@ -653,12 +653,12 @@ class App extends React.Component<AppProps, AppState> {
         console.time(message);
         const Summaries = summariesProcessor(this.state.fhirDataCollection)
 
-        this.updateLogSummariesCount(this.state.fhirDataCollection) // Logging the count for the patient details bundle.
+        await this.updateLogSummariesCount(this.state.fhirDataCollection) // Logging the count for the patient details bundle.
 
         // Timeout set to 0 makes async and defers processing until after the event loop so it doesn't block UI
         // TODO: Consider updating to a worker instead when time for a more complete solution
         //       I don't think the timeout solution is needed because we are on a loading page, and,
-        //       since these states are local now we are techincally fully loading them as part of the progress.
+        //       since these states are local now we are technically fully loading them as part of the progress.
         //       We know we don't want to lazy load, so this is a start, but will want to consider if we want to spread the loading
         //       out past inital progress and not wait during that. If staying like this, will want to update progress to show that.
         // setTimeout(() => {
