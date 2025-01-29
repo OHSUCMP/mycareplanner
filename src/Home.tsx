@@ -240,22 +240,21 @@ export default class Home extends React.Component<HomeProps, HomeState> {
                 </div>
 
             </div>
-            <div>
-            { this.props.canShareData  ? (
-                <div>
-                  <h5 style={{ paddingTop: '20px' }}>Share your health data</h5>
-                  <Link to={{ pathname: '/share-data' }}>Share your health data</Link></div>
-                ) : (<p></p>)}
-            </div>
+            {/*<div>*/}
+            {/*{ this.props.canShareData  ? (*/}
+            {/*    <div>*/}
+            {/*      <h5 style={{ paddingTop: '20px' }}>Share your health data</h5>*/}
+            {/*      <Link to={{ pathname: '/share-data' }}>Share your health data</Link></div>*/}
+            {/*    ) : (<p></p>)}*/}
+            {/*</div>*/}
 
-
-            <div>
-              { this.props.canShareData  && unshare ? (
-                <div>
-                  <h5 style={{ paddingTop: '20px' }}>Withdraw your health data</h5>
-                  <Link to={{ pathname: '/unshare-data' }}>Opt out of sharing your health data</Link></div>
-              ) : (<p></p>)}
-            </div>
+            {/*<div>*/}
+            {/*  { this.props.canShareData  && unshare ? (*/}
+            {/*    <div>*/}
+            {/*      <h5 style={{ paddingTop: '20px' }}>Withdraw your health data</h5>*/}
+            {/*      <Link to={{ pathname: '/unshare-data' }}>Opt out of sharing your health data</Link></div>*/}
+            {/*  ) : (<p></p>)}*/}
+            {/*</div>*/}
 
 
             <h5 style={{ paddingTop: '20px' }}>Disclaimer</h5>
