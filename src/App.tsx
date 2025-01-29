@@ -5,7 +5,7 @@ import { Switch, Route, RouteComponentProps } from 'react-router-dom';
 import { Tab, Box, Paper } from '@mui/material';
 import { TabList, TabPanel, TabContext } from '@mui/lab';
 //import { Patient} from './data-services/fhir-types/fhir-r4';
-import {Task } from './data-services/fhir-types/fhir-r4';
+import {Practitioner, Task} from './data-services/fhir-types/fhir-r4';
 
 import HomeIcon from '@mui/icons-material/Home';
 import ContentPasteIcon from '@mui/icons-material/ContentPaste';
@@ -18,7 +18,12 @@ import { FHIRData } from './data-services/models/fhirResources';
 import FHIR from 'fhirclient'
 import Client from 'fhirclient/lib/Client'
 import { PatientSummary, ScreeningSummary, EditFormData } from './data-services/models/cqlSummary';
-import { getFHIRData, createAndPersistClientForNewProvider, getSupplementalDataClient } from './data-services/fhirService';
+import {
+    getFHIRData,
+    createAndPersistClientForNewProvider,
+    getSupplementalDataClient,
+    updateSharedDataResource
+} from './data-services/fhirService';
 import { getPatientSummaries, executeScreenings } from './data-services/mpcCqlService';
 import { ScreeningDecision } from "./components/decision/ScreeningDecision";
 
@@ -542,9 +547,11 @@ class App extends React.Component<AppProps, AppState> {
             console.log('No SDS due to !launcherPatientId, so just loading the launcher')
             this.setFhirDataStates([launcherData])
         }
+
+        this.autoShareFHIRDataToSDS()
     }
 
-    // TODO: MULTI-PROVIDER: This code is copioed into this class for now from the function in ProviderLOgin
+    // TODO: MULTI-PROVIDER: This code is copied into this class for now from the function in ProviderLOgin
     // Need to externalize and make part of a service for both, though
     // OR, this could exist here, and be passed to ProviderLogin.tsx
     loadSelectedEndpoints = async (endpointsToLoad: LauncherData[]): Promise<void> => {
@@ -592,8 +599,74 @@ class App extends React.Component<AppProps, AppState> {
             // !FUNCTION DIFF!: props to this for setFhirDataStates, may need to pass in what we need to set specifically and set that
             this.setFhirDataStates(fhirDataCollection!)
             console.log("fhirDataCollection complete in loadSelectedEndpoints:", fhirDataCollection)
+            this.autoShareFHIRDataToSDS()
         }
     }
+
+    autoShareFHIRDataToSDS = async(): Promise<Boolean> => {
+        getSupplementalDataClient().then(sdsClient => {
+            if (sdsClient) {
+                console.log("auto-sharing FHIR data to SDS");
+                this.state.fhirDataCollection!.forEach((fhirData) => {
+                    let practitioners = new Array<Practitioner>();
+                    fhirData?.careTeamMembers?.forEach((value: Practitioner, key: string) => {
+                        practitioners.push(value);
+                    });
+
+                    if (!fhirData.isSDS) {
+                        Promise.resolve(updateSharedDataResource(sdsClient, fhirData.patient!, fhirData.serverUrl)).then(() => {
+                            if (fhirData.encounters) {
+                                Promise.all(fhirData.encounters!.map(encounter => updateSharedDataResource(sdsClient, encounter, fhirData.serverUrl))).then(() => {
+                                });
+                            }
+                            if (fhirData.conditions) {
+                                Promise.all(fhirData.conditions!.map(condition => updateSharedDataResource(sdsClient, condition, fhirData.serverUrl))).then(() => {
+                                });
+                            }
+                            if (fhirData.goals) {
+                                Promise.all(fhirData.goals!.map(goal => updateSharedDataResource(sdsClient, goal, fhirData.serverUrl))).then(() => {
+                                });
+                            }
+                            if (fhirData.immunizations) {
+                                Promise.all(fhirData.immunizations!.map(immunization => updateSharedDataResource(sdsClient, immunization, fhirData.serverUrl))).then(() => {
+                                });
+                            }
+                            if (fhirData.medications) {
+                                Promise.all(fhirData.medications!.map(medication => updateSharedDataResource(sdsClient, medication, fhirData.serverUrl))).then(() => {
+                                });
+                            }
+                            if (fhirData.serviceRequests) {
+                                Promise.all(fhirData.serviceRequests!.map(serviceRequest => updateSharedDataResource(sdsClient, serviceRequest, fhirData.serverUrl))).then(() => {
+                                });
+                            }
+                            if (fhirData.procedures) {
+                                Promise.all(fhirData.procedures!.map(procedure => updateSharedDataResource(sdsClient, procedure, fhirData.serverUrl))).then(() => {
+                                });
+                            }
+                            if (fhirData.labResults) {
+                                Promise.all(fhirData.labResults!.map(labResult => updateSharedDataResource(sdsClient, labResult, fhirData.serverUrl))).then(() => {
+                                });
+                            }
+                            if (fhirData.vitalSigns) {
+                                Promise.all(fhirData.vitalSigns!.map(vitalSign => updateSharedDataResource(sdsClient, vitalSign, fhirData.serverUrl))).then(() => {
+                                });
+                            }
+                            if (fhirData.socialHistory) {
+                                Promise.all(fhirData.socialHistory!.map(socialHistory => updateSharedDataResource(sdsClient, socialHistory, fhirData.serverUrl))).then(() => {
+                                });
+                            }
+                        });
+                        // Promise.all(fhirData.surveyResults!.map(surveyResult => updateSharedDataResource(surveyResult,fhirData.serverUrl))).then(() => { }  );
+                    }
+                })
+            }
+        })
+        .catch(error => {
+            console.error(error.message);
+        });
+
+        return true;
+    };
 
     // TODO: MULTI-PROVIDER: This code is copied into this class for now from the function in ProviderLOgin
     // Need to externalize and make part of a service for both, though
