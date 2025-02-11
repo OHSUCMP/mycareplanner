@@ -146,7 +146,9 @@ export async function getConditions(client: Client): Promise<Condition[]> {
         message: `getConditions: success`
     })
     // workaround for Allscripts lack of support for both category and status args
-    if (client.state.serverUrl.includes('allscripts.com')) {
+    const url = new URL(client.state.serverUrl);
+    const allowedHosts = ['allscripts.com'];
+    if (allowedHosts.includes(url.host)) {
         const conditionsPath = 'Condition?category=problem-list-item,health-concern' + provenanceSearch
         resources = resources.concat(resourcesFrom(await client.patient.request(conditionsPath, fhirOptions) as fhirclient.JsonObject))
 
