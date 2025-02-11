@@ -503,9 +503,9 @@ export const getFHIRData = async (authorized: boolean, serverUrl: string | null,
         const serverURL = client?.state.serverUrl
 
         // TODO design a way to move this into configuration settings, and/or check CapabilityStatement
-        const supportsInclude = !(
-            serverURL.includes('cerner.com') || serverURL.includes('allscripts.com')
-        )
+        const allowedHosts = ['cerner.com', 'allscripts.com'];
+        const parsedUrl = new URL(serverURL);
+        const supportsInclude = !allowedHosts.includes(parsedUrl.host);
         console.log('getFHIRData: Server URL: ' + serverURL)
         console.log('getFHIRData: Supports _include: ' + supportsInclude)
         console.log('getFHIRData: clientScope: ' + clientScope)
