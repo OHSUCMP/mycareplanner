@@ -611,6 +611,9 @@ class App extends React.Component<AppProps, AppState> {
     autoShareFHIRDataToSDS = async (): Promise<Boolean> => {
         let sdsClient: Client | undefined = await getSupplementalDataClient()
         if (sdsClient && this.state.fhirDataCollection !== undefined) {
+            let successCount:number = 0;
+            let failCount:number = 0;
+
             try {
                 this.setState({sharingData: true});
                 this.setState({progressMessage: 'Initializing'});
@@ -623,25 +626,28 @@ class App extends React.Component<AppProps, AppState> {
                         console.log('ProgressMessage: Begin share data operation for ' + fhirData.serverName);
 
                         let start: number = new Date().getTime();
-                        let progressResourceType: string = '';
                         let progressValue: number = 0;
 
                         let resources: Resource[] = allShareableResources(fhirData);
+                        let j = 0;
 
-                        for (let i = 0; i < resources.length; i++) {
-                            if (progressResourceType != resources[i].resourceType) {
-                                progressResourceType = resources[i].resourceType;
-                                this.setState({progressMessage: 'Processing ' + progressResourceType + ' resources'});
-                            }
+                        let callback = (c:React.Component, isSuccess:boolean):any => {
+                            j = j + 1;
+                            c.setState({progressMessage: 'Processed resource ' + j + ' of ' + resources.length});
 
-                            await updateSharedDataResource(sdsClient, resources[i], fhirData.serverUrl);
-
-                            let percentComplete = Math.floor((i / resources.length) * 100);
+                            let percentComplete = Math.floor((j / resources.length) * 100);
                             if (percentComplete != progressValue) {
                                 progressValue = percentComplete;
-                                this.setState({progressValue: progressValue})
+                                c.setState({progressValue: progressValue})
                             }
+
+                            if (isSuccess)  successCount++;
+                            else            failCount++;
                         }
+
+                        await Promise.resolve(
+                            Promise.all(resources.map(resource => updateSharedDataResource(this, sdsClient, resource, fhirData.serverUrl, callback)))
+                        );
 
                         let exectime: number = new Date().getTime() - start;
 
@@ -659,7 +665,7 @@ class App extends React.Component<AppProps, AppState> {
                 }
 
             } finally {
-                this.setState({progressMessage: 'Completed.'});
+                this.setState({progressMessage: 'Completed sharing data.  ' + successCount + ' succeeded, ' + failCount + ' failed.'})
                 this.setState({progressValue: 100});
                 this.setState({sharingData: false});
             }
