@@ -10,17 +10,24 @@ import {SortModal} from '../sort-modal/sortModal';
 import {SortOnlyModal} from '../sort-only-modal/sortOnlyModal';
 import EditIcon from '@mui/icons-material/Edit';
 import Button from '@mui/material/Button';
+import {DeterminateProgress} from "../determinate-progress/DeterminateProgress";
+import {CircularProgress} from "@mui/material";
 
 //import GoalEditForm from '../edit-forms/GoalEditForm';
 
 interface GoalListProps {
-    sharingData?: boolean,
+    sharingData: boolean;
     fhirDataCollection?: FHIRData[];
+    progressTitle: string;
+    progressValue: number;
+    progressMessage: string;
     goalSummaryMatrix?: GoalSummary[][];
     canShareData?: boolean;
 }
 
-export const GoalList: FC<GoalListProps> = ({sharingData, fhirDataCollection, goalSummaryMatrix, canShareData}) => {
+export const GoalList: FC<GoalListProps> = ({sharingData, fhirDataCollection,
+                                                progressTitle, progressValue, progressMessage,
+                                                goalSummaryMatrix, canShareData}) => {
     const history = useHistory();
     process.env.REACT_APP_DEBUG_LOG === "true" && console.log("GoalList component RENDERED!")
     const [showModal, setShowModal] = useState(false);
@@ -134,8 +141,10 @@ export const GoalList: FC<GoalListProps> = ({sharingData, fhirDataCollection, go
 
                 {(fhirDataCollection === undefined || sharingData) && (
                     <div>
-                        <p>Working...</p>
-                        <BusySpinner busy={fhirDataCollection === undefined || sharingData}/>
+                        <h6>{progressTitle}</h6>
+                        <DeterminateProgress progressValue={progressValue}/>
+                        <p>{progressMessage}...<span style={{paddingLeft: '10px'}}><CircularProgress
+                            size="1rem"/></span></p>
                     </div>
                 )}
 
@@ -143,7 +152,7 @@ export const GoalList: FC<GoalListProps> = ({sharingData, fhirDataCollection, go
                     <p>
                         <Button variant="contained" color="primary"
                                 onClick={() => handleEditClick({} as GoalSummary, goalSummaryMatrix as GoalSummary[][])}>
-                            Add a New Goal
+                        Add a New Goal
                         </Button>
                     </p>
                 )}

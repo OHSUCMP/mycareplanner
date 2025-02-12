@@ -7,14 +7,21 @@ import {Summary, SummaryRowItem, SummaryRowItems} from './Summary';
 import {BusySpinner} from '../busy-spinner/BusySpinner';
 import {SortModal} from '../sort-modal/sortModal';
 import {SortOnlyModal} from '../sort-only-modal/sortOnlyModal';
+import {DeterminateProgress} from "../determinate-progress/DeterminateProgress";
+import {CircularProgress} from "@mui/material";
 
 interface MedicationListProps {
-    sharingData?: boolean,
-    fhirDataCollection?: FHIRData[],
+    sharingData: boolean;
+    fhirDataCollection?: FHIRData[];
+    progressTitle: string;
+    progressValue: number;
+    progressMessage: string;
     medicationSummaryMatrix?: MedicationSummary[][],
 }
 
-export const MedicationList: FC<MedicationListProps> = ({sharingData, fhirDataCollection, medicationSummaryMatrix}) => {
+export const MedicationList: FC<MedicationListProps> = ({sharingData, fhirDataCollection,
+                                                            progressTitle, progressValue, progressMessage,
+                                                            medicationSummaryMatrix}) => {
     process.env.REACT_APP_DEBUG_LOG === "true" && console.log("MedicationList component RENDERED!")
     const [showModal, setShowModal] = useState(false);
     const [sortingOption, setSortingOption] = useState<string>('');
@@ -115,8 +122,10 @@ export const MedicationList: FC<MedicationListProps> = ({sharingData, fhirDataCo
 
                 {(fhirDataCollection === undefined || sharingData) && (
                     <div>
-                        <p>Working...</p>
-                        <BusySpinner busy={fhirDataCollection === undefined || sharingData}/>
+                        <h6>{progressTitle}</h6>
+                        <DeterminateProgress progressValue={progressValue}/>
+                        <p>{progressMessage}...<span style={{paddingLeft: '10px'}}><CircularProgress
+                            size="1rem"/></span></p>
                     </div>
                 )}
 

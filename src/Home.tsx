@@ -168,14 +168,14 @@ export default class Home extends React.Component<HomeProps, HomeState> {
 
                         {
                             (!this.props.userErrorMessage || (this.props.userErrorMessage && this.props.errorType !== 'Terminating')) &&
-                            <>
+                            <div>
                                 <h6>{this.props.progressTitle}</h6>
                                 {/* // Display realtime loading data to visually determine progress: e.g. FHIR resource Query Type and Load Time */}
                                 <DeterminateProgress progressValue={this.props.progressValue}/>
                                 <p>{this.props.progressMessage}...<span style={{paddingLeft: '10px'}}><CircularProgress
                                     size="1rem"/></span></p>
                                 <p>Resources loaded: {this.props.resourcesLoadedCount}</p>
-                            </>
+                            </div>
                         }
                         <ErrorMessage fhirDataCollection={this.props.fhirDataCollection}
                                       progressMessage={this.props.progressMessage}

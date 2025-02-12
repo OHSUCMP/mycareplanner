@@ -7,16 +7,22 @@ import {Summary, SummaryRowItem, SummaryRowItems} from './Summary';
 import {BusySpinner} from '../busy-spinner/BusySpinner';
 import {SortModal} from '../sort-modal/sortModal';
 import {SortOnlyModal} from '../sort-only-modal/sortOnlyModal';
-import {Accordion, AccordionSummary, AccordionDetails, Typography, Grid} from '@mui/material';
+import {Accordion, AccordionSummary, AccordionDetails, Typography, Grid, CircularProgress} from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import {DeterminateProgress} from "../determinate-progress/DeterminateProgress";
 
 interface LabResultListProps {
-    sharingData?: boolean,
+    sharingData: boolean;
     fhirDataCollection?: FHIRData[];
+    progressTitle: string;
+    progressValue: number;
+    progressMessage: string;
     labResultSummaryMatrix?: ObservationSummary[][];
 }
 
-export const LabResultList: FC<LabResultListProps> = ({sharingData, fhirDataCollection, labResultSummaryMatrix}) => {
+export const LabResultList: FC<LabResultListProps> = ({sharingData, fhirDataCollection,
+                                                          progressTitle, progressValue, progressMessage,
+                                                          labResultSummaryMatrix}) => {
     process.env.REACT_APP_DEBUG_LOG === "true" && console.log("LabResultList component RENDERED!")
     const [showModal, setShowModal] = useState(false);
     const [sortingOption, setSortingOption] = useState<string>('');
@@ -117,8 +123,10 @@ export const LabResultList: FC<LabResultListProps> = ({sharingData, fhirDataColl
 
                 {(fhirDataCollection === undefined || sharingData) && (
                     <div>
-                        <p>Working...</p>
-                        <BusySpinner busy={fhirDataCollection === undefined || sharingData}/>
+                        <h6>{progressTitle}</h6>
+                        <DeterminateProgress progressValue={progressValue}/>
+                        <p>{progressMessage}...<span style={{paddingLeft: '10px'}}><CircularProgress
+                            size="1rem"/></span></p>
                     </div>
                 )}
 
