@@ -8,20 +8,22 @@ import {Summary, SummaryRowItem, SummaryRowItems} from './Summary';
 import {BusySpinner} from '../busy-spinner/BusySpinner';
 import {SortModal} from '../sort-modal/sortModal';
 import {SortOnlyModal} from '../sort-only-modal/sortOnlyModal';
-import {Button} from '@mui/material';
+import {Button, CircularProgress} from '@mui/material';
+import {DeterminateProgress} from "../determinate-progress/DeterminateProgress";
 
 interface ConditionListProps {
-    sharingData?: boolean,
+    sharingData: boolean;
     fhirDataCollection?: FHIRData[];
+    progressTitle: string;
+    progressValue: number;
+    progressMessage: string;
     conditionSummaryMatrix?: ConditionSummary[][];
     canShareData?: boolean;
 }
 
-export const ConditionList: FC<ConditionListProps> = ({
-                                                          sharingData,
-                                                          fhirDataCollection,
-                                                          conditionSummaryMatrix,
-                                                          canShareData
+export const ConditionList: FC<ConditionListProps> = ({sharingData, fhirDataCollection,
+                                                          progressTitle, progressValue, progressMessage,
+                                                          conditionSummaryMatrix, canShareData
                                                       }) => {
     const history = useHistory();
     process.env.REACT_APP_DEBUG_LOG === "true" && console.log("ConditionList component RENDERED!")
@@ -133,8 +135,10 @@ export const ConditionList: FC<ConditionListProps> = ({
 
                 {(fhirDataCollection === undefined || sharingData) && (
                     <div>
-                        <p>Working...</p>
-                        <BusySpinner busy={fhirDataCollection === undefined || sharingData}/>
+                        <h6>{progressTitle}</h6>
+                        <DeterminateProgress progressValue={progressValue}/>
+                        <p>{progressMessage}...<span style={{paddingLeft: '10px'}}><CircularProgress
+                            size="1rem"/></span></p>
                     </div>
                 )}
 

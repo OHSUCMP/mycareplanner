@@ -3,9 +3,15 @@ import React from 'react';
 import { FHIRData, displayPeriod } from '../../data-services/models/fhirResources';
 import { CareTeamParticipant, Practitioner, Reference } from '../../data-services/fhir-types/fhir-r4';
 import { Summary } from './Summary';
+import {DeterminateProgress} from "../determinate-progress/DeterminateProgress";
+import {CircularProgress} from "@mui/material";
 
 interface CareTeamListProps {
-  fhirDataCollection?: FHIRData[],
+  sharingData: boolean;
+  fhirDataCollection?: FHIRData[];
+  progressTitle: string;
+  progressValue: number;
+  progressMessage: string;
 }
 
 function flatten(arr?: any) {
@@ -25,6 +31,17 @@ export const CareTeamList: React.FC<CareTeamListProps> = (props: CareTeamListPro
   return (
     <div className="home-view">
       <div className="welcome">
+
+        <h4 className="title">Care Team</h4>
+
+        {(props.fhirDataCollection === undefined || props.sharingData) && (
+            <div>
+              <h6>{props.progressTitle}</h6>
+              <DeterminateProgress progressValue={props.progressValue}/>
+              <p>{props.progressMessage}...<span style={{paddingLeft: '10px'}}><CircularProgress
+                  size="1rem"/></span></p>
+            </div>
+        )}
 
         {props.fhirDataCollection?.map((data, idx) => {
           let participants: CareTeamParticipant[] = [];

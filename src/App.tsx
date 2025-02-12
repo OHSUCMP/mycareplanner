@@ -645,7 +645,9 @@ class App extends React.Component<AppProps, AppState> {
                         }
 
                         await Promise.resolve(
-                            Promise.all(resources.map(resource => updateSharedDataResource(this, sdsClient, resource, fhirData.serverUrl, callback)))
+                            Promise.all(resources.map(resource =>
+                                updateSharedDataResource(this, sdsClient, resource, fhirData.serverUrl, callback)
+                            ))
                         );
 
                         let exectime: number = new Date().getTime() - start;
@@ -1200,12 +1202,18 @@ class App extends React.Component<AppProps, AppState> {
                                             <TabPanel value="5" sx={{padding: '0px 15px'}}>
                                                 <GoalList sharingData={this.state.sharingData}
                                                           fhirDataCollection={this.state.fhirDataCollection}
+                                                          progressTitle={this.state.progressTitle}
+                                                          progressValue={this.state.progressValue}
+                                                          progressMessage={this.state.progressMessage}
                                                           goalSummaryMatrix={this.state.goalSummaries}
                                                           canShareData={this.state.canShareData}/>
                                             </TabPanel>
                                             <TabPanel value="6" sx={{padding: '0px 15px'}}>
                                                 <ConditionList sharingData={this.state.sharingData}
                                                                fhirDataCollection={this.state.fhirDataCollection}
+                                                               progressTitle={this.state.progressTitle}
+                                                               progressValue={this.state.progressValue}
+                                                               progressMessage={this.state.progressMessage}
                                                                conditionSummaryMatrix={this.state.conditionSummaries}
                                                                canShareData={this.state.canShareData}/>
                                             </TabPanel>
@@ -1213,11 +1221,17 @@ class App extends React.Component<AppProps, AppState> {
                                                 {/* <MedicationList fhirDataCollection={this.state.fhirDataCollection} medicationSummary={this.state.medicationSummary} /> */}
                                                 <MedicationList sharingData={this.state.sharingData}
                                                                 fhirDataCollection={this.state.fhirDataCollection}
+                                                                progressTitle={this.state.progressTitle}
+                                                                progressValue={this.state.progressValue}
+                                                                progressMessage={this.state.progressMessage}
                                                                 medicationSummaryMatrix={this.state.medicationSummaries}/>
                                             </TabPanel>
                                             <TabPanel value="8" sx={{padding: '0px 15px'}}>
                                                 <ServiceRequestList sharingData={this.state.sharingData}
-                                                                    fhirDataCollection={this.state.fhirDataCollection}/>
+                                                                    fhirDataCollection={this.state.fhirDataCollection}
+                                                                    progressTitle={this.state.progressTitle}
+                                                                    progressValue={this.state.progressValue}
+                                                                    progressMessage={this.state.progressMessage}/>
                                             </TabPanel>
                                         </TabContext>
                                     </TabPanel>
@@ -1232,11 +1246,17 @@ class App extends React.Component<AppProps, AppState> {
                                             <TabPanel value="9" sx={{padding: '0px 15px'}}>
                                                 <LabResultList sharingData={this.state.sharingData}
                                                                fhirDataCollection={this.state.fhirDataCollection}
+                                                               progressTitle={this.state.progressTitle}
+                                                               progressValue={this.state.progressValue}
+                                                               progressMessage={this.state.progressMessage}
                                                                labResultSummaryMatrix={this.state.labResultSummaries}/>
                                             </TabPanel>
                                             <TabPanel value="10" sx={{padding: '0px 15px'}}>
                                                 <VitalsList sharingData={this.state.sharingData}
                                                             fhirDataCollection={this.state.fhirDataCollection}
+                                                            progressTitle={this.state.progressTitle}
+                                                            progressValue={this.state.progressValue}
+                                                            progressMessage={this.state.progressMessage}
                                                             vitalSignSummaryMatrix={this.state.vitalSignSummaries}/>
                                             </TabPanel>
                                             {/* <TabPanel>
@@ -1245,12 +1265,19 @@ class App extends React.Component<AppProps, AppState> {
                                         </TabPanel> */}
                                             <TabPanel value="11">
                                                 <ImmunizationList sharingData={this.state.sharingData}
-                                                                  fhirDataCollection={this.state.fhirDataCollection}/>
+                                                                  fhirDataCollection={this.state.fhirDataCollection}
+                                                                  progressTitle={this.state.progressTitle}
+                                                                  progressValue={this.state.progressValue}
+                                                                  progressMessage={this.state.progressMessage}/>
                                             </TabPanel>
                                         </TabContext>
                                     </TabPanel>
                                     <TabPanel value="4" sx={{padding: '10px 15px 100px'}}>
-                                        <CareTeamList fhirDataCollection={this.state.fhirDataCollection}/>
+                                        <CareTeamList sharingData={this.state.sharingData}
+                                                      fhirDataCollection={this.state.fhirDataCollection}
+                                                      progressTitle={this.state.progressTitle}
+                                                      progressValue={this.state.progressValue}
+                                                      progressMessage={this.state.progressMessage}/>
                                     </TabPanel>
                                 </Box>
                             </TabContext>

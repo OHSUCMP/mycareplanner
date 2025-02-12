@@ -7,13 +7,19 @@ import {Summary, SummaryRowItem, SummaryRowItems} from './Summary';
 import {BusySpinner} from '../busy-spinner/BusySpinner';
 import {SortModal} from '../sort-modal/sortModal';
 import {SortOnlyModal} from '../sort-only-modal/sortOnlyModal';
+import {DeterminateProgress} from "../determinate-progress/DeterminateProgress";
+import {CircularProgress} from "@mui/material";
 
 interface ServiceRequestListProps {
-    sharingData?: boolean,
+    sharingData: boolean;
     fhirDataCollection?: FHIRData[];
+    progressTitle: string;
+    progressValue: number;
+    progressMessage: string;
 }
 
-export const ServiceRequestList: FC<ServiceRequestListProps> = ({sharingData, fhirDataCollection}) => {
+export const ServiceRequestList: FC<ServiceRequestListProps> = ({sharingData, fhirDataCollection,
+                                                                    progressTitle, progressValue, progressMessage}) => {
     process.env.REACT_APP_DEBUG_LOG === "true" && console.log("ServiceRequestList component RENDERED!");
 
     const [showModal, setShowModal] = useState<boolean>(false);
@@ -197,8 +203,10 @@ export const ServiceRequestList: FC<ServiceRequestListProps> = ({sharingData, fh
 
                 {(fhirDataCollection === undefined || sharingData) && (
                     <div>
-                        <p>Working...</p>
-                        <BusySpinner busy={fhirDataCollection === undefined || sharingData}/>
+                        <h6>{progressTitle}</h6>
+                        <DeterminateProgress progressValue={progressValue}/>
+                        <p>{progressMessage}...<span style={{paddingLeft: '10px'}}><CircularProgress
+                            size="1rem"/></span></p>
                     </div>
                 )}
 

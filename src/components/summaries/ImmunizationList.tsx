@@ -5,13 +5,19 @@ import {Immunization} from '../../data-services/fhir-types/fhir-r4';
 import {BusySpinner} from '../busy-spinner/BusySpinner';
 import {SortModal} from '../sort-modal/sortModal';
 import {SortOnlyModal} from '../sort-only-modal/sortOnlyModal';
+import {DeterminateProgress} from "../determinate-progress/DeterminateProgress";
+import {CircularProgress} from "@mui/material";
 
 interface ImmunizationListProps {
-    sharingData?: boolean,
+    sharingData: boolean;
     fhirDataCollection?: FHIRData[];
+    progressTitle: string;
+    progressValue: number;
+    progressMessage: string;
 }
 
-export const ImmunizationList: FC<ImmunizationListProps> = ({sharingData, fhirDataCollection}) => {
+export const ImmunizationList: FC<ImmunizationListProps> = ({sharingData, fhirDataCollection,
+                                                                progressTitle, progressValue, progressMessage}) => {
     process.env.REACT_APP_DEBUG_LOG === "true" && console.log("ImmunizationList component RENDERED!");
     const [showModal, setShowModal] = useState<boolean>(false);
     const [sortOption, setSortOption] = useState<string>('');
@@ -123,8 +129,10 @@ export const ImmunizationList: FC<ImmunizationListProps> = ({sharingData, fhirDa
 
                 {(fhirDataCollection === undefined || sharingData) && (
                     <div>
-                        <p>Working...</p>
-                        <BusySpinner busy={fhirDataCollection === undefined || sharingData}/>
+                        <h6>{progressTitle}</h6>
+                        <DeterminateProgress progressValue={progressValue}/>
+                        <p>{progressMessage}...<span style={{paddingLeft: '10px'}}><CircularProgress
+                            size="1rem"/></span></p>
                     </div>
                 )}
 
