@@ -968,7 +968,8 @@ export function createSharedDataResource(resource: Resource) {
         })
 }
 
-export async function updateSharedDataResource(client: Client | undefined, resource: Resource, serverUrl?: string) {
+export async function updateSharedDataResource(component:React.Component, client: Client | undefined, resource: Resource, serverUrl?: string,
+                                               callback?: (c:React.Component, isSuccess:boolean) => any) {
     try {
         if (serverUrl) {
             const fhirHeaderRequestOption = {} as fhirclient.RequestOptions;
@@ -982,8 +983,11 @@ export async function updateSharedDataResource(client: Client | undefined, resou
             await client?.update(resource as fhirclient.FHIR.Resource)
         }
 
+        if (callback) callback(component, true);
+
     } catch (err) {
         console.error("Error updating shared data resource: " + JSON.stringify(err))
+        if (callback) callback(component, false);
         return undefined
     }
 }
