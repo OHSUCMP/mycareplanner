@@ -64,7 +64,6 @@ import {ErrorPage} from "./components/error-page/ErrorPage";
 import ConditionEditForm from './components/edit-forms/ConditionEditForm';
 import GoalEditForm from './components/edit-forms/GoalEditForm';
 import ProviderLogin from "./components/shared-data/ProviderLogin";
-import ShareData from "./components/shared-data/ShareData";
 import UnShareData from "./components/unshared-data/UnShareData";
 
 import SharedDataSummary from "./components/shared-data/SharedDataSummary";
@@ -1109,11 +1108,6 @@ class App extends React.Component<AppProps, AppState> {
                                />
                            )}
                     />
-                    <Route path="/share-data">
-                        <SessionProtected isLoggedIn={!this.state.isLogout}>
-                            <ShareData fhirDataCollection={this.state.fhirDataCollection}/>
-                        </SessionProtected>
-                    </Route>
                     <Route path="/unshare-data">
                         <SessionProtected isLoggedIn={!this.state.isLogout}>
                             <UnShareData fhirDataCollection={this.state.fhirDataCollection} setLogout={this.setLogout}/>
