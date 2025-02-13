@@ -131,7 +131,6 @@ export const ConditionList: FC<ConditionListProps> = ({sharingData, fhirDataColl
     return (
         <div className="home-view">
             <div className="welcome">
-                <h4 className="title">Current Health Issues</h4>
 
                 {(fhirDataCollection === undefined || sharingData) && (
                     <div>
@@ -141,6 +140,8 @@ export const ConditionList: FC<ConditionListProps> = ({sharingData, fhirDataColl
                             size="1rem"/></span></p>
                     </div>
                 )}
+
+                <h4 className="title">Current Health Issues</h4>
 
                 {canShareData && (
                     <p>

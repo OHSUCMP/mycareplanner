@@ -137,7 +137,6 @@ export const GoalList: FC<GoalListProps> = ({sharingData, fhirDataCollection,
         <div className="home-view">
 
             <div className="welcome">
-                <h4 className="title">Health Goals</h4>
 
                 {(fhirDataCollection === undefined || sharingData) && (
                     <div>
@@ -148,11 +147,13 @@ export const GoalList: FC<GoalListProps> = ({sharingData, fhirDataCollection,
                     </div>
                 )}
 
+                <h4 className="title">Health Goals</h4>
+
                 {canShareData && (
                     <p>
                         <Button variant="contained" color="primary"
                                 onClick={() => handleEditClick({} as GoalSummary, goalSummaryMatrix as GoalSummary[][])}>
-                        Add a New Goal
+                            Add a New Goal
                         </Button>
                     </p>
                 )}

@@ -125,7 +125,6 @@ export const ImmunizationList: FC<ImmunizationListProps> = ({sharingData, fhirDa
     return (
         <div className="home-view">
             <div className="welcome">
-                <h4 className="title">Immunizations</h4>
 
                 {(fhirDataCollection === undefined || sharingData) && (
                     <div>
@@ -135,6 +134,8 @@ export const ImmunizationList: FC<ImmunizationListProps> = ({sharingData, fhirDa
                             size="1rem"/></span></p>
                     </div>
                 )}
+
+                <h4 className="title">Immunizations</h4>
 
                 {fhirDataCollection && fhirDataCollection.length === 1 ? (
                     <a className="text-right" onClick={() => setShowModal(true)}>

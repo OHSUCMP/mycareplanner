@@ -119,8 +119,6 @@ export const LabResultList: FC<LabResultListProps> = ({sharingData, fhirDataColl
         <div className="home-view">
             <div className="welcome">
 
-                <h4 className="title">Lab Results</h4>
-
                 {(fhirDataCollection === undefined || sharingData) && (
                     <div>
                         <h6>{progressTitle}</h6>
@@ -129,6 +127,8 @@ export const LabResultList: FC<LabResultListProps> = ({sharingData, fhirDataColl
                             size="1rem"/></span></p>
                     </div>
                 )}
+
+                <h4 className="title">Lab Results</h4>
 
                 {fhirDataCollection && fhirDataCollection.length === 1 ? (
                     <a className="text-right" onClick={() => setShowModal(true)}>
