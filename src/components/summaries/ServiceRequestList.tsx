@@ -82,7 +82,7 @@ export const ServiceRequestList: FC<ServiceRequestListProps> = ({sharingData, fh
         fhirDataCollection.forEach((data, providerIndex) => {
             const providerName = data.serverName || 'Unknown';
             (data.serviceRequests || []).forEach(serviceRequest => {
-                let provenance = data.provenanceMap?.get("ServiceRequest/" + serviceRequest.id ?? 'missingId')?.[0]
+                let provenance = data.provenanceMap?.get("ServiceRequest/" + (serviceRequest.id ?? 'missingId'))?.[0]
                 combinedServiceRequests.push({
                     serviceRequest,
                     provider: providerName,
@@ -296,7 +296,7 @@ const buildRows = (service: ServiceRequest, theSource?: string, provenance?: str
         const row: SummaryRowItem = {
             isHeader: false,
             twoColumns: false,
-            data1: 'Reason: ' + service.reasonReference?.[0].display ?? '',
+            data1: 'Reason: ' + (service.reasonReference?.[0].display ?? ''),
             data2: '',
         }
         rows.push(row)
