@@ -52,7 +52,7 @@
         "cors": "^2.8.5",
         "cql-exec-vsac": "^1.2.2",
         "cross-env": "^7.0.3",
-        "express": "^4.17.1",
+        "express": "^4.21.2",
         "temp": "^0.9.1",
         "typescript": "^5.7.3"
     },
