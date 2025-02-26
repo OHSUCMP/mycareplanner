@@ -1225,22 +1225,82 @@
                "annotation" : [ ],
                "signature" : [ ],
                "operand" : [ {
-                  "dataType" : "{http://hl7.org/fhir}Observation",
-                  "templateId" : "http://hl7.org/fhir/StructureDefinition/Observation",
-                  "codeProperty" : "code",
-                  "codeComparator" : "in",
-                  "type" : "Retrieve",
+                  "type" : "Query",
                   "annotation" : [ ],
-                  "codes" : {
-                     "name" : "Estimated Glomerular Filtration Rate (eGFR)",
-                     "libraryName" : "Cx",
-                     "type" : "ValueSetRef",
-                     "annotation" : [ ]
-                  },
-                  "include" : [ ],
-                  "codeFilter" : [ ],
-                  "dateFilter" : [ ],
-                  "otherFilter" : [ ]
+                  "source" : [ {
+                     "alias" : "o",
+                     "annotation" : [ ],
+                     "expression" : {
+                        "dataType" : "{http://hl7.org/fhir}Observation",
+                        "templateId" : "http://hl7.org/fhir/StructureDefinition/Observation",
+                        "type" : "Retrieve",
+                        "annotation" : [ ],
+                        "include" : [ ],
+                        "codeFilter" : [ ],
+                        "dateFilter" : [ ],
+                        "otherFilter" : [ ]
+                     }
+                  } ],
+                  "let" : [ ],
+                  "relationship" : [ ],
+                  "where" : {
+                     "type" : "Or",
+                     "annotation" : [ ],
+                     "signature" : [ ],
+                     "operand" : [ {
+                        "type" : "InValueSet",
+                        "annotation" : [ ],
+                        "signature" : [ {
+                           "name" : "{urn:hl7-org:elm-types:r1}Concept",
+                           "type" : "NamedTypeSpecifier",
+                           "annotation" : [ ]
+                        } ],
+                        "code" : {
+                           "name" : "ToConcept",
+                           "libraryName" : "FHIRHelpers",
+                           "type" : "FunctionRef",
+                           "annotation" : [ ],
+                           "signature" : [ ],
+                           "operand" : [ {
+                              "path" : "code",
+                              "scope" : "o",
+                              "type" : "Property",
+                              "annotation" : [ ]
+                           } ]
+                        },
+                        "valueset" : {
+                           "name" : "Estimated Glomerular Filtration Rate (eGFR)",
+                           "libraryName" : "Cx",
+                           "annotation" : [ ]
+                        }
+                     }, {
+                        "type" : "InValueSet",
+                        "annotation" : [ ],
+                        "signature" : [ {
+                           "name" : "{urn:hl7-org:elm-types:r1}Concept",
+                           "type" : "NamedTypeSpecifier",
+                           "annotation" : [ ]
+                        } ],
+                        "code" : {
+                           "name" : "ToConcept",
+                           "libraryName" : "FHIRHelpers",
+                           "type" : "FunctionRef",
+                           "annotation" : [ ],
+                           "signature" : [ ],
+                           "operand" : [ {
+                              "path" : "code",
+                              "scope" : "o",
+                              "type" : "Property",
+                              "annotation" : [ ]
+                           } ]
+                        },
+                        "valueset" : {
+                           "name" : "Estimated Glomerular Filtration Rate NKF",
+                           "libraryName" : "Cx",
+                           "annotation" : [ ]
+                        }
+                     } ]
+                  }
                } ]
             }
          }, {

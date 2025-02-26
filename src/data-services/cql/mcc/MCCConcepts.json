@@ -921,6 +921,12 @@
             "annotation" : [ ],
             "codeSystem" : [ ]
          }, {
+            "name" : "Estimated Glomerular Filtration Rate NKF",
+            "id" : "http://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.6929.3.1000",
+            "accessLevel" : "Public",
+            "annotation" : [ ],
+            "codeSystem" : [ ]
+         }, {
             "name" : "Fasting Blood Glucose",
             "id" : "http://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113762.1.4.1222.808",
             "accessLevel" : "Public",

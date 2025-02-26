@@ -229,7 +229,7 @@ define "Estimated Average Glucose":
   DE.SelectByStatus([Observation: Cx."Estimated Average Glucose"])
 
 define "Estimated Glomerular Filtration Rate (eGFR)":
-  DE.SelectByStatus([Observation: Cx."Estimated Glomerular Filtration Rate (eGFR)"])
+  DE.SelectByStatus([Observation] o where o.code in Cx."Estimated Glomerular Filtration Rate (eGFR)" or o.code in Cx."Estimated Glomerular Filtration Rate NKF")
 
 define "Fasting Blood Glucose":
   DE.SelectByStatus([Observation: Cx."Fasting Blood Glucose"])
