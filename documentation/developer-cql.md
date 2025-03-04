@@ -30,14 +30,15 @@ To rebuild the CQL source files to ELM files used in application runtime:
 2. All value sets must be defined in VSAC, and the VSAC URI identifier is referenced in the CQL declaration.
 3. A CQL value set declaration name is referenced from within MCCConditions.cql or MCCLabResults.cql
 4. In MCCConditions.cql,
-   * An expression is added for each value set, which returns a List of Condition resources for that value set, or an empty list if not found.
+   * An expression is added for each value set, which returns a list of Resources for that value set, or an empty list if not found.
      * For example, see `define "Type II Diabetes":`
    * In some cases, these classified Conditions are grouped into more general sets, e.g. see `define ReportDiabetesConditions: `.
    * All FHIR Conditions included in the CQL execution data set are summarized and displayed in MyCarePlanner, regardless of whether a corresponding CQL expression and value set are present. Those unclassified Conditions are display as "Other Conditions".
    * By using a value set to classify FHIR Condition resources, you can also assign a patient-friendly name to their display in the app, e.g.
      * `DE.ReportConditions("Hypertension Conditions", 'Cardiovascular Disease', 'High Blood Pressure')`
      * You can update any of the patient-friendly name display strings in these expressions to modify the app presentation to users.
-5. A similar approch is followed in MCCLabResults.cql to classify lab Observation resources and assign patient-frienly names.
+5. A similar approach is followed in MCCLabResults.cql to classify lab Observation resources and assign patient-friendly names.
+6. If you want to capture more than one valueset, you can post-filter a query response. For example, we have two valuesets for eGFR lab results. See `define "Estimated Glomerular Filtration Rate (eGFR)"`.
 
 ## To update the valueset-db.json file
 
