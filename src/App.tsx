@@ -346,7 +346,7 @@ class App extends React.Component<AppProps, AppState> {
                                                 resolve()
                                             } else {
                                                 // Check again in 50ms
-                                                setTimeout(checkUserDecision, 50)
+                                                setTimeout(checkUserDecision, 250)
                                             }
                                         }
                                         checkUserDecision()
@@ -362,7 +362,7 @@ class App extends React.Component<AppProps, AppState> {
                                             console.log("Not last index, Authorizing index " + i)
                                         }
                                         this.handleAuthDialogClose()
-                                        FHIR.oauth2.authorize(launcherData.config!)
+                                        await FHIR.oauth2.authorize(launcherData.config!)
                                         break
                                     } else {
                                         console.log("User does not agree to authorization. Skipping authorization...")
@@ -464,6 +464,7 @@ class App extends React.Component<AppProps, AppState> {
     }
 
     handleAuthDialogClose = () => {
+        console.log('handleAuthDialogClose()')
         this.setState({isAuthDialogOpen: false, currentUnauthorizedEndpoint: null});
         this.resetExternalNavigation(); // Reset navigation state if auth dialog is closed
     }
@@ -1106,6 +1107,10 @@ class App extends React.Component<AppProps, AppState> {
                                    setResourcesLoadedCountState={this.setResourcesLoadedCountState}
                                    setAndLogErrorMessageState={this.setAndLogErrorMessageState}
                                    resetErrorMessageState={this.resetErrorMessageState}
+                                   openAuthDialog={this.openAuthDialog}
+                                   handleAuthDialogClose={this.handleAuthDialogClose}
+                                   isAuthDialogOpen={this.state.isAuthDialogOpen}
+                                   isAuthorizeSelected={this.state.isAuthorizeSelected}
                                    {...routeProps}
                                />
                            )}

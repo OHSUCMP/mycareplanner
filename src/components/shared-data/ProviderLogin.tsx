@@ -37,6 +37,10 @@ interface Props extends RouteComponentProps {
   setAndLogErrorMessageState: (errorType: string, userErrorMessage: string,
     developerErrorMessage: string, errorCaught: Error | string | unknown) => void,
   resetErrorMessageState: () => void,
+  openAuthDialog: (endpoint: LauncherData) => void,
+  handleAuthDialogClose: () => void,
+  isAuthDialogOpen: boolean,
+  isAuthorizeSelected: null | boolean
 }
 
 interface LocationState {
@@ -179,20 +183,41 @@ export default function ProviderLogin(props: Props) {
           console.log("selectedEndpointsToSave: ", JSON.stringify(selectedEndpointsToSave))
           await saveSelectedEndpoints(selectedEndpointsToSave)
 
-          console.log("Reauthorizing curEndpoint.config!:", curEndpoint.config!)
-          // The following authorization will exit the application. Therefore, if it's not the last index,
-          // then we will have more endpoints to authorize when we return, on load.
-          if (isLastIndex) {
-            console.log("Authorizing last index")
+          props.openAuthDialog(curEndpoint)
+          await new Promise<void>((resolve) => {
+            const checkUserDecision = () => {
+              console.log('checkUserDecision() - isAuthorizeSelected: ' + props.isAuthorizeSelected)
+              if (props.isAuthorizeSelected !== null) { // null is the default
+                // User has made a decision
+                resolve()
+              } else {
+                // Check again in 50ms
+                setTimeout(checkUserDecision, 250)
+              }
+            }
+            checkUserDecision()
+          })
+
+          if (props.isAuthorizeSelected) {
+            console.log("Reauthorizing curEndpoint.config!:", curEndpoint.config!)
+            // The following authorization will exit the application. Therefore, if it's not the last index,
+            // then we will have more endpoints to authorize when we return, on load.
+            if (isLastIndex) {
+              console.log("Authorizing last index")
+            } else {
+              console.log("Not last index, Authorizing index " + i)
+            }
+
+            console.warn("Before authorize: curEndpoint.config! " + JSON.stringify(curEndpoint.config!))
+            await FHIR.oauth2.authorize(curEndpoint.config!)
+            console.warn("After authorize: curEndpoint.config! " + JSON.stringify(curEndpoint.config!))
+
+            break
           } else {
-            console.log("Not last index, Authorizing index " + i)
+            console.log("User does not agree to authorization. Skipping authorization...")
+            props.handleAuthDialogClose()
+            continue
           }
-
-          console.warn("Before authorize: curEndpoint.config! " + JSON.stringify(curEndpoint.config!))
-          await FHIR.oauth2.authorize(curEndpoint.config!)
-          console.warn("After authorize: curEndpoint.config! " + JSON.stringify(curEndpoint.config!))
-
-          break
         }
       }
 
