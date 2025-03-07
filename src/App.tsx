@@ -1,11 +1,11 @@
 import './App.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import React from 'react';
-import { Switch, Route, RouteComponentProps } from 'react-router-dom';
-import { Tab, Box, Paper } from '@mui/material';
-import { TabList, TabPanel, TabContext } from '@mui/lab';
+import {Switch, Route, RouteComponentProps} from 'react-router-dom';
+import {Tab, Box, Paper} from '@mui/material';
+import {TabList, TabPanel, TabContext} from '@mui/lab';
 //import { Patient} from './data-services/fhir-types/fhir-r4';
-import {Task } from './data-services/fhir-types/fhir-r4';
+import {Practitioner, Task} from './data-services/fhir-types/fhir-r4';
 
 import HomeIcon from '@mui/icons-material/Home';
 import ContentPasteIcon from '@mui/icons-material/ContentPaste';
@@ -14,15 +14,21 @@ import PeopleIcon from '@mui/icons-material/People';
 
 import Home from "./Home";
 
-import { FHIRData } from './data-services/models/fhirResources';
-import FHIR from 'fhirclient'
-import Client from 'fhirclient/lib/Client'
-import { PatientSummary, ScreeningSummary, EditFormData } from './data-services/models/cqlSummary';
-import { getFHIRData, createAndPersistClientForNewProvider, getSupplementalDataClient } from './data-services/fhirService';
-import { getPatientSummaries, executeScreenings } from './data-services/mpcCqlService';
-import { ScreeningDecision } from "./components/decision/ScreeningDecision";
+import {Resource} from './data-services/fhir-types/fhir-r4';
+import {allShareableResources, FHIRData} from './data-services/models/fhirResources';
+import FHIR from 'fhirclient';
+import Client from 'fhirclient/lib/Client';
+import {PatientSummary, ScreeningSummary, EditFormData} from './data-services/models/cqlSummary';
+import {
+    getFHIRData,
+    createAndPersistClientForNewProvider,
+    getSupplementalDataClient,
+    updateSharedDataResource
+} from './data-services/fhirService';
+import {getPatientSummaries, executeScreenings} from './data-services/mpcCqlService';
+import {ScreeningDecision} from "./components/decision/ScreeningDecision";
 
-import { GoalSummary, ConditionSummary, MedicationSummary, ObservationSummary } from './data-services/models/cqlSummary';
+import {GoalSummary, ConditionSummary, MedicationSummary, ObservationSummary} from './data-services/models/cqlSummary';
 //import {isSavedTokenStillValid} from './data-services/persistenceService'
 
 //import {deleteSessionId} from './data-services/persistenceService'
@@ -40,30 +46,29 @@ import {
 } from './data-services/providerEndpointService'
 
 //import { clearSession} from './log/log-service'
-import { doLog, initializeSession, LogRequest } from './log/log-service'
-import { GoalList } from "./components/summaries/GoalList";
-import { ConditionList } from "./components/summaries/ConditionList";
-import { MedicationList } from "./components/summaries/MedicationList";
-import { LabResultList } from "./components/summaries/LabResultList";
-import { VitalsList } from "./components/summaries/VitalsList";
+import {doLog, initializeSession, LogRequest} from './log/log-service'
+import {GoalList} from "./components/summaries/GoalList";
+import {ConditionList} from "./components/summaries/ConditionList";
+import {MedicationList} from "./components/summaries/MedicationList";
+import {LabResultList} from "./components/summaries/LabResultList";
+import {VitalsList} from "./components/summaries/VitalsList";
 
-import { CareTeamList } from "./components/summaries/CareTeamList";
-import { ImmunizationList } from "./components/summaries/ImmunizationList";
-import { ServiceRequestList } from "./components/summaries/ServiceRequestList";
+import {CareTeamList} from "./components/summaries/CareTeamList";
+import {ImmunizationList} from "./components/summaries/ImmunizationList";
+import {ServiceRequestList} from "./components/summaries/ServiceRequestList";
 
-import { QuestionnaireHandler } from "./components/questionnaire/QuestionnaireHandler";
-import { ConfirmationPage } from './components/confirmation-page/ConfirmationPage'
-import { ErrorPage } from "./components/error-page/ErrorPage";
+import {QuestionnaireHandler} from "./components/questionnaire/QuestionnaireHandler";
+import {ConfirmationPage} from './components/confirmation-page/ConfirmationPage'
+import {ErrorPage} from "./components/error-page/ErrorPage";
 
 import ConditionEditForm from './components/edit-forms/ConditionEditForm';
 import GoalEditForm from './components/edit-forms/GoalEditForm';
 import ProviderLogin from "./components/shared-data/ProviderLogin";
-import ShareData from "./components/shared-data/ShareData";
 import UnShareData from "./components/unshared-data/UnShareData";
 
 import SharedDataSummary from "./components/shared-data/SharedDataSummary";
 import SessionProtected from './components/session-timeout/SessionProtected';
-import { SessionTimeoutPage } from './components/session-timeout/SessionTimeoutPage';
+import {SessionTimeoutPage} from './components/session-timeout/SessionTimeoutPage';
 import localforage from 'localforage';
 import AuthDialog from './components/modal/AuthDialog';
 
@@ -81,7 +86,9 @@ interface AppState {
 
     supplementalDataClient?: Client,
     canShareData: boolean,
+    sharingData: boolean,
 
+    progressTitle: string,
     progressMessage: string,
     progressValue: number,
     resourcesLoadedCount: number
@@ -135,7 +142,9 @@ class App extends React.Component<AppProps, AppState> {
             fhirDataCollection: undefined,
 
             canShareData: false,
+            sharingData: false,
 
+            progressTitle: "Initializing",
             progressMessage: "Initializing",
             progressValue: 0,
             resourcesLoadedCount: 0,
@@ -162,7 +171,7 @@ class App extends React.Component<AppProps, AppState> {
         this.setSupplementalDataClient('launcherPatientId')
         this.initializeSummaries()
 
-         // Load external navigation state from local storage
+        // Load external navigation state from local storage
         const externalNavigationState = localStorage.getItem("isExternalNavigation");
         this.isExternalNavigation = externalNavigationState === "true"; // Initialize external navigation state
     }
@@ -188,13 +197,13 @@ class App extends React.Component<AppProps, AppState> {
                 if (await sessionIdExistsInLocalForage()) {
                     const sessionId = await getSessionId();
                     if (sessionId) {
-                        this.setState({ sessionId : sessionId });
+                        this.setState({sessionId: sessionId});
                     }
                     console.log("session ID retrieved from local forage: ", sessionId);
 
                 } else {
                     const sessionId = initializeSession(); // Initialize session when the application is launched
-                    this.setState({ sessionId });
+                    this.setState({sessionId});
                     await saveSessionId(sessionId);
                     console.log("session ID created and saved to local forage: ", sessionId)
                 }
@@ -236,7 +245,7 @@ class App extends React.Component<AppProps, AppState> {
                                             return launcherData?.config?.iss === launcherDataFromForage?.config?.iss
                                         })
 
-                                    if ( ! isLauncherDataAlreadyInArrayToAuthorize ) {
+                                    if (!isLauncherDataAlreadyInArrayToAuthorize) {
                                         console.log("Adding launcher to toAuthorizeLauncherDataArray")
                                         toAuthorizeLauncherDataArray.unshift(launcherDataFromForage)
                                         console.log('toAuthorizeLauncherDataArray (after adding launcher)',
@@ -337,7 +346,7 @@ class App extends React.Component<AppProps, AppState> {
                                                 resolve()
                                             } else {
                                                 // Check again in 50ms
-                                                setTimeout(checkUserDecision, 50)
+                                                setTimeout(checkUserDecision, 250)
                                             }
                                         }
                                         checkUserDecision()
@@ -353,7 +362,7 @@ class App extends React.Component<AppProps, AppState> {
                                             console.log("Not last index, Authorizing index " + i)
                                         }
                                         this.handleAuthDialogClose()
-                                        FHIR.oauth2.authorize(launcherData.config!)
+                                        await FHIR.oauth2.authorize(launcherData.config!)
                                         break
                                     } else {
                                         console.log("User does not agree to authorization. Skipping authorization...")
@@ -451,22 +460,23 @@ class App extends React.Component<AppProps, AppState> {
     }
 
     openAuthDialog = (curEndpoint: LauncherData) => {
-        this.setState({ isAuthDialogOpen: true, currentUnauthorizedEndpoint: curEndpoint });
+        this.setState({isAuthDialogOpen: true, currentUnauthorizedEndpoint: curEndpoint});
     }
 
     handleAuthDialogClose = () => {
-        this.setState({ isAuthDialogOpen: false, currentUnauthorizedEndpoint: null });
+        console.log('handleAuthDialogClose()')
+        this.setState({isAuthDialogOpen: false, currentUnauthorizedEndpoint: null});
         this.resetExternalNavigation(); // Reset navigation state if auth dialog is closed
     }
 
     handleAuthorizeSelected = () => {
         console.log('handleAuthorizeSelected()')
-        this.setState({ isAuthorizeSelected: true })
+        this.setState({isAuthorizeSelected: true})
     }
 
     handleSkipAuthSelected = () => {
         console.log('handleSkipAuthSelected()')
-        this.setState({ isAuthorizeSelected: false })
+        this.setState({isAuthorizeSelected: false})
     }
 
     setLoadAndMergeSDSIfAvailable = async (launcherPatientId: string | undefined, launcherData: FHIRData) => {
@@ -512,9 +522,9 @@ class App extends React.Component<AppProps, AppState> {
                     this.setAndLogErrorMessageState('Non-terminating', userMessage, devMessage, err)
 
                     // Ensure the app doesn't try to use this invalid client
-                    this.setState({ supplementalDataClient: undefined })
+                    this.setState({supplementalDataClient: undefined})
 
-                    this.setState({ canShareData: false })
+                    this.setState({canShareData: false})
                     // TODO: What other issues might this cause... leftover localForage in getFhirData, etc.?
                 }
 
@@ -529,9 +539,9 @@ class App extends React.Component<AppProps, AppState> {
                     "!this.state.supplementalDataClient || !this.state.canShareData")
 
                 // Ensure the app doesn't try to use this invalid client
-                this.setState({ supplementalDataClient: undefined })
+                this.setState({supplementalDataClient: undefined})
 
-                this.setState({ canShareData: false })
+                this.setState({canShareData: false})
                 // TODO: What other issues might this cause... leftover localForage in getFhirData, etc.?
 
                 this.setFhirDataStates([launcherData])
@@ -542,9 +552,11 @@ class App extends React.Component<AppProps, AppState> {
             console.log('No SDS due to !launcherPatientId, so just loading the launcher')
             this.setFhirDataStates([launcherData])
         }
+
+        this.autoShareFHIRDataToSDS()
     }
 
-    // TODO: MULTI-PROVIDER: This code is copioed into this class for now from the function in ProviderLOgin
+    // TODO: MULTI-PROVIDER: This code is copied into this class for now from the function in ProviderLOgin
     // Need to externalize and make part of a service for both, though
     // OR, this could exist here, and be passed to ProviderLogin.tsx
     loadSelectedEndpoints = async (endpointsToLoad: LauncherData[]): Promise<void> => {
@@ -592,14 +604,83 @@ class App extends React.Component<AppProps, AppState> {
             // !FUNCTION DIFF!: props to this for setFhirDataStates, may need to pass in what we need to set specifically and set that
             this.setFhirDataStates(fhirDataCollection!)
             console.log("fhirDataCollection complete in loadSelectedEndpoints:", fhirDataCollection)
+            this.autoShareFHIRDataToSDS()
         }
     }
+
+    autoShareFHIRDataToSDS = async (): Promise<Boolean> => {
+        let sdsClient: Client | undefined = await getSupplementalDataClient()
+        if (sdsClient && this.state.fhirDataCollection !== undefined) {
+            let successCount:number = 0;
+            let failCount:number = 0;
+
+            try {
+                this.setState({sharingData: true});
+                this.setState({progressMessage: 'Initializing'});
+                this.setState({progressValue: 0});
+
+                for (let i = 0; i < this.state.fhirDataCollection!.length; i++) {
+                    let fhirData: FHIRData = this.state.fhirDataCollection[i];
+                    if (!fhirData.isSDS) {
+                        this.setState({progressTitle: 'Sharing data from ' + fhirData.serverName + ' to SDS'})
+                        console.log('ProgressMessage: Begin share data operation for ' + fhirData.serverName);
+
+                        let start: number = new Date().getTime();
+                        let progressValue: number = 0;
+
+                        let resources: Resource[] = allShareableResources(fhirData);
+                        let j = 0;
+
+                        let callback = (c:React.Component, isSuccess:boolean):any => {
+                            j = j + 1;
+                            c.setState({progressMessage: 'Processed resource ' + j + ' of ' + resources.length});
+
+                            let percentComplete = Math.floor((j / resources.length) * 100);
+                            if (percentComplete != progressValue) {
+                                progressValue = percentComplete;
+                                c.setState({progressValue: progressValue})
+                            }
+
+                            if (isSuccess)  successCount++;
+                            else            failCount++;
+                        }
+
+                        await Promise.resolve(
+                            Promise.all(resources.map(resource =>
+                                updateSharedDataResource(this, sdsClient, resource, fhirData.serverUrl, callback)
+                            ))
+                        );
+
+                        let exectime: number = new Date().getTime() - start;
+
+                        let request: LogRequest = {
+                            level: 'info',
+                            event: 'Sharing data',
+                            page: 'Home',
+                            message: resources.length + ' resources from ' + fhirData.serverName + ', took ' + exectime + 'ms.',
+                            sessionId: this.state.sessionId
+                        }
+                        doLog(request);
+
+                        console.log('ProgressMessage: End share data operation for ' + fhirData.serverName + ', took ' + exectime + 'ms.');
+                    }
+                }
+
+            } finally {
+                this.setState({progressMessage: 'Completed sharing data.  ' + successCount + ' succeeded, ' + failCount + ' failed.'})
+                this.setState({progressValue: 100});
+                this.setState({sharingData: false});
+            }
+        }
+
+        return true;
+    };
 
     // TODO: MULTI-PROVIDER: This code is copied into this class for now from the function in ProviderLOgin
     // Need to externalize and make part of a service for both, though
     // OR, this could exist here, and be passed to ProviderLogin.tsx
     loadAuthorizedSelectedEndpointMulti = async (selectedEndpoint: LauncherData,
-        isMultipleProviders: boolean, fhirDataCollectionIndex: number): Promise<FHIRData | undefined> => {
+                                                 isMultipleProviders: boolean, fhirDataCollectionIndex: number): Promise<FHIRData | undefined> => {
         console.log('loadAuthorizedSelectedEndpointMulti(): selectedEndpoint: ' + JSON.stringify(selectedEndpoint))
         console.log('loadAuthorizedSelectedEndpointMulti(): isMultipleProviders: ' + isMultipleProviders)
         console.log('loadAuthorizedSelectedEndpointMulti(): fhirDataCollectionIndex: ' + fhirDataCollectionIndex)
@@ -624,7 +705,7 @@ class App extends React.Component<AppProps, AppState> {
             } else {
                 fhirDataFromStoredEndpoint = await getFHIRData(true, issServerUrl!, null,
                     this.setAndLogProgressState, this.setResourcesLoadedCountState, this.setAndLogErrorMessageState)
-                    fhirDataFromStoredEndpoint.serverName = selectedEndpoint.name
+                fhirDataFromStoredEndpoint.serverName = selectedEndpoint.name
             }
             console.log("fhirDataFromStoredEndpoint", JSON.stringify(fhirDataFromStoredEndpoint))
             return fhirDataFromStoredEndpoint
@@ -653,17 +734,17 @@ class App extends React.Component<AppProps, AppState> {
         console.time(message);
         const Summaries = summariesProcessor(this.state.fhirDataCollection)
 
-        this.updateLogSummariesCount(this.state.fhirDataCollection) // Logging the count for the patient details bundle.
+        await this.updateLogSummariesCount(this.state.fhirDataCollection) // Logging the count for the patient details bundle.
 
         // Timeout set to 0 makes async and defers processing until after the event loop so it doesn't block UI
         // TODO: Consider updating to a worker instead when time for a more complete solution
         //       I don't think the timeout solution is needed because we are on a loading page, and,
-        //       since these states are local now we are techincally fully loading them as part of the progress.
+        //       since these states are local now we are technically fully loading them as part of the progress.
         //       We know we don't want to lazy load, so this is a start, but will want to consider if we want to spread the loading
         //       out past inital progress and not wait during that. If staying like this, will want to update progress to show that.
         // setTimeout(() => {
         this.setState(prevState => {
-            return { ...prevState, [propertyName]: Summaries }
+            return {...prevState, [propertyName]: Summaries}
         })
         // }, 0)
         console.timeEnd(message)
@@ -689,9 +770,7 @@ class App extends React.Component<AppProps, AppState> {
                     }
                 }
             }
-        }
-
-        else {
+        } else {
             console.error("fhirDataCollectionCount is undefined");
         }
     }
@@ -699,7 +778,7 @@ class App extends React.Component<AppProps, AppState> {
     getGoalSummariesInit = () => {
         return [
             [
-                { Description: 'init' }
+                {Description: 'init'}
             ]
         ]
     }
@@ -707,14 +786,14 @@ class App extends React.Component<AppProps, AppState> {
     getConditionAndMedicationSummariesInit = () => {
         return [
             [
-                { ConceptName: 'init' }
+                {ConceptName: 'init'}
             ]
         ]
     }
     getLabResultAndVitalSignSummariesInit = () => {
         return [
             [
-                { ConceptName: 'init', DisplayName: 'init', ResultText: 'init' }
+                {ConceptName: 'init', DisplayName: 'init', ResultText: 'init'}
             ]
         ]
     }
@@ -741,12 +820,12 @@ class App extends React.Component<AppProps, AppState> {
 
     // callback function to update goals from GoalEditForm
     setGoalSummaries = (newGoalSummaries: GoalSummary[][]) => {
-        this.setState({ goalSummaries: newGoalSummaries })
+        this.setState({goalSummaries: newGoalSummaries})
     }
 
     // setLogout called when un-sharing data to the SDS
     setLogout = () => {
-        this.setState({ isLogout: true });
+        this.setState({isLogout: true});
         sessionStorage.clear();
         deleteAllDataFromLocalForage();
         this.props.history.push('/logout')
@@ -755,7 +834,7 @@ class App extends React.Component<AppProps, AppState> {
 
     // callback function to update conditions from ConditionEditForm
     setConditionSummaries = (newConditionSummaries: ConditionSummary[][]) => {
-        this.setState({ conditionSummaries: newConditionSummaries })
+        this.setState({conditionSummaries: newConditionSummaries})
     }
 
     // TODO: Performance: Examine if we even need this callback or not as it may be called more than needed (before and after change vs just after):
@@ -763,10 +842,10 @@ class App extends React.Component<AppProps, AppState> {
     // callback function to update fhir data states and give ProviderLogin access to it
     setFhirDataStates = (dataArray: FHIRData[] | undefined) => {
         process.env.REACT_APP_DEBUG_LOG === "true" && console.log("setFhirDataStates(dataArray: FHIRData[] | undefined): void")
-        this.setState({ fhirDataCollection: dataArray })
-        this.setState({ patientSummaries: dataArray ? getPatientSummaries(dataArray) : undefined })
-        this.setState({ screenings: dataArray ? executeScreenings(dataArray) : undefined })
-        this.setState({ tasks: undefined })
+        this.setState({fhirDataCollection: dataArray})
+        this.setState({patientSummaries: dataArray ? getPatientSummaries(dataArray) : undefined})
+        this.setState({screenings: dataArray ? executeScreenings(dataArray) : undefined})
+        this.setState({tasks: undefined})
     }
 
     setSupplementalDataClient = async (patientId: string): Promise<Client | undefined> => {
@@ -774,7 +853,7 @@ class App extends React.Component<AppProps, AppState> {
 
         // wait for client to get online to fix refresh issue
         let attempts = 0
-        while ( ! client ) {
+        while (!client) {
             client = await getSupplementalDataClient();
             attempts++;
             if (attempts < 10) {    // todo : why is this like this?  attempts will be 1 the first time it gets here, so will always break immediately
@@ -819,8 +898,8 @@ class App extends React.Component<AppProps, AppState> {
             //     console.log("Valid SDS patient read: Using SDS client", sdsPatient ? sdsPatient : "unknown")
 
             //     const stillValid = await isStateStillValid(client.state)
-                this.setState({ supplementalDataClient: client })
-                this.setState({ canShareData: true })
+            this.setState({supplementalDataClient: client})
+            this.setState({canShareData: true})
 
             //     console.log("***** PatientID = " + client.getPatientId() ?? "")
             //     console.log("***** User ID = " + client.getUserId() ?? "")
@@ -847,33 +926,35 @@ class App extends React.Component<AppProps, AppState> {
             sessionId: this.state.sessionId,
         }
         doLog(request)
-        this.setState({ progressMessage: message })
-        this.setState({ progressValue: value })
+        this.setState({progressTitle: "Reading your clinical records:"})
+        this.setState({progressMessage: message})
+        this.setState({progressValue: value})
     }
+
     // callback functions to update/access resourcesLoadedCount state (passed to fhirService functions as arg and ProviderLogin as prop)
     setResourcesLoadedCountState = (count: number) => {
-        this.setState({ resourcesLoadedCount: count })
+        this.setState({resourcesLoadedCount: count})
     }
     getResourcesLoadedCountState = (): number => {
         return this.state.resourcesLoadedCount
     }
 
     setAndLogErrorMessageState = (errorType: string, userErrorMessage: string, developerErrorMessage: string,
-        errorCaught: Error | string | unknown) => {
+                                  errorCaught: Error | string | unknown) => {
         this.logErrorMessage(errorType, userErrorMessage, developerErrorMessage, errorCaught)
         // TODO: Consider converting errorType, userErrorMessage, developerErrorMessage, and errorCaught into an array so we can store all of the errors in the chain and display them.
         // If we do this, we would remove the if check for existence on all of them, as, we would set a new index in the array vs overwrite
         // Even further, consider converting all 4 states into one state object, ErrorDetails (or ErrorMessage) and storing having an array of those objects in state
-        this.setState({ errorType: errorType })
-        this.setState({ developerErrorMessage: developerErrorMessage })
+        this.setState({errorType: errorType})
+        this.setState({developerErrorMessage: developerErrorMessage})
         let errorCaughtString: string = 'N/A'
         if (errorCaught instanceof Error) {
             errorCaughtString = errorCaught.message
         } else if (typeof errorCaught === "string") {
             errorCaughtString = errorCaught
         }
-        this.setState({ errorCaught: errorCaughtString })
-        this.setState({ userErrorMessage: this.determineUserErrorMessage(userErrorMessage, errorCaughtString) })
+        this.setState({errorCaught: errorCaughtString})
+        this.setState({userErrorMessage: this.determineUserErrorMessage(userErrorMessage, errorCaughtString)})
     }
 
     logErrorMessage = (errorType: string, userErrorMessage: string, developerErrorMessage: string, errorCaught: Error | string | unknown) => {
@@ -891,10 +972,10 @@ class App extends React.Component<AppProps, AppState> {
     }
 
     resetErrorMessageState = () => {
-        this.setState({ errorType: undefined })
-        this.setState({ developerErrorMessage: undefined })
-        this.setState({ errorCaught: undefined })
-        this.setState({ userErrorMessage: undefined })
+        this.setState({errorType: undefined})
+        this.setState({developerErrorMessage: undefined})
+        this.setState({errorCaught: undefined})
+        this.setState({userErrorMessage: undefined})
     }
 
     // storer: commenting out handleLogout and slating for deletion, as it does literally nothing
@@ -911,7 +992,7 @@ class App extends React.Component<AppProps, AppState> {
     // }
 
     updateLogMainTab = async (event: any, value: any) => {
-        this.setState({ mainTabIndex: value });
+        this.setState({mainTabIndex: value});
 
         const key: keyof typeof tabList = value;
         const tab = tabList[key]; // No error
@@ -928,7 +1009,7 @@ class App extends React.Component<AppProps, AppState> {
     }
 
     updateLogPanelTab = async (event: any, value: any) => {
-        this.setState({ planTabIndex: value });
+        this.setState({planTabIndex: value});
 
         const key: keyof typeof tabList = value;
         const tab = tabList[key]; // No error
@@ -947,7 +1028,7 @@ class App extends React.Component<AppProps, AppState> {
     }
 
     updateLogStatusTab = async (event: any, value: any) => {
-        this.setState({ statusTabIndex: value });
+        this.setState({statusTabIndex: value});
 
         const key: keyof typeof tabList = value;
         const tab = tabList[key]; // No error
@@ -997,9 +1078,10 @@ class App extends React.Component<AppProps, AppState> {
                 /> */}
 
 
-                <header className="app-header" style={{ padding: '10px 16px 0px 16px' }}>
+                <header className="app-header" style={{padding: '10px 16px 0px 16px'}}>
                     {/* <img className="mypain-header-logo" src={`${process.env.PUBLIC_URL}/assets/images/mpc-logo.png`} alt="MyPreventiveCare"/> */}
-                    <img className="mypain-header-logo" src={`${process.env.PUBLIC_URL}/assets/images/ecareplan-logo.png`} alt="My Care Planner" />
+                    <img className="mypain-header-logo"
+                         src={`${process.env.PUBLIC_URL}/assets/images/ecareplan-logo.png`} alt="My Care Planner"/>
                     {/* {patient === undefined ? '' : <p>&npsp;&npsp;{patient[0]?.fullName}</p>} */}
                     <p className='version'>{process.env.REACT_APP_VERSION}</p>
                 </header>
@@ -1018,30 +1100,29 @@ class App extends React.Component<AppProps, AppState> {
 
                     {/* <Route path="/provider-login" component={ProviderLogin} /> */}
                     <Route path="/provider-login"
-                        render={(routeProps) => (
-                            <ProviderLogin
-                                setFhirDataStates={this.setFhirDataStates}
-                                setAndLogProgressState={this.setAndLogProgressState}
-                                setResourcesLoadedCountState={this.setResourcesLoadedCountState}
-                                setAndLogErrorMessageState={this.setAndLogErrorMessageState}
-                                resetErrorMessageState={this.resetErrorMessageState}
-                                {...routeProps}
-                            />
-                        )}
+                           render={(routeProps) => (
+                               <ProviderLogin
+                                   setFhirDataStates={this.setFhirDataStates}
+                                   setAndLogProgressState={this.setAndLogProgressState}
+                                   setResourcesLoadedCountState={this.setResourcesLoadedCountState}
+                                   setAndLogErrorMessageState={this.setAndLogErrorMessageState}
+                                   resetErrorMessageState={this.resetErrorMessageState}
+                                   openAuthDialog={this.openAuthDialog}
+                                   handleAuthDialogClose={this.handleAuthDialogClose}
+                                   isAuthDialogOpen={this.state.isAuthDialogOpen}
+                                   isAuthorizeSelected={this.state.isAuthorizeSelected}
+                                   {...routeProps}
+                               />
+                           )}
                     />
-                    <Route path="/share-data">
-                        <SessionProtected isLoggedIn={!this.state.isLogout}>
-                            <ShareData fhirDataCollection={this.state.fhirDataCollection}  />
-                        </SessionProtected>
-                    </Route>
                     <Route path="/unshare-data">
                         <SessionProtected isLoggedIn={!this.state.isLogout}>
-                            <UnShareData fhirDataCollection={this.state.fhirDataCollection} setLogout={this.setLogout}    />
+                            <UnShareData fhirDataCollection={this.state.fhirDataCollection} setLogout={this.setLogout}/>
                         </SessionProtected>
                     </Route>
                     <Route path="/shared-data-summary">
                         <SessionProtected isLoggedIn={!this.state.isLogout}>
-                            <SharedDataSummary />
+                            <SharedDataSummary/>
                         </SessionProtected>
                     </Route>
 
@@ -1052,88 +1133,156 @@ class App extends React.Component<AppProps, AppState> {
                     </Route>
                     <Route path="/questionnaire">
                         <SessionProtected isLoggedIn={!this.state.isLogout}>
-                            <QuestionnaireHandler canShareData={this.state.canShareData} supplementalDataClient={this.state.supplementalDataClient} {...this.props} />
+                            <QuestionnaireHandler canShareData={this.state.canShareData}
+                                                  supplementalDataClient={this.state.supplementalDataClient} {...this.props} />
                         </SessionProtected>
                     </Route>
                     <Route path='/confirmation'>
                         <SessionProtected isLoggedIn={!this.state.isLogout}>
-                            <ConfirmationPage />
+                            <ConfirmationPage/>
                         </SessionProtected>
                     </Route>
-                    <Route path="/error" component={ErrorPage} />
+                    <Route path="/error" component={ErrorPage}/>
 
-                    <Route path="/logout" component={SessionTimeoutPage} />
+                    <Route path="/logout" component={SessionTimeoutPage}/>
 
                     <Route path="/">
                         <SessionProtected isLoggedIn={!this.state.isLogout}>
                             <TabContext value={this.state.mainTabIndex}>
-                                <Box sx={{ bgcolor: '#F7F7F7', width: '100%' }}>
-                                    <Paper variant="elevation" sx={{ width: '100%', maxWidth: '500px', position: 'fixed', borderRadius: 0, bottom: 0, left: 'auto', right: 'auto' }} elevation={3}>
-                                        <TabList onChange={(event, value) => this.updateLogMainTab(event, value)} variant="fullWidth" centered sx={{
+                                <Box sx={{bgcolor: '#F7F7F7', width: '100%'}}>
+                                    <Paper variant="elevation" sx={{
+                                        width: '100%',
+                                        maxWidth: '500px',
+                                        position: 'fixed',
+                                        borderRadius: 0,
+                                        bottom: 0,
+                                        left: 'auto',
+                                        right: 'auto'
+                                    }} elevation={3}>
+                                        <TabList onChange={(event, value) => this.updateLogMainTab(event, value)}
+                                                 variant="fullWidth" centered sx={{
                                             "& .Mui-selected, .Mui-selected > svg":
-                                                { color: "#FFFFFF !important", bgcolor: "#355CA8" }
-                                        }} TabIndicatorProps={{ style: { display: "none" } }}>
-                                            <Tab sx={{ textTransform: 'none', margin: '-5px 0px' }} icon={<HomeIcon sx={{color: 'black'}} />} label="Home" value="1" wrapped />
-                                            <Tab sx={{ textTransform: 'none', margin: '-5px 0px' }} icon={<ContentPasteIcon  sx={{color: 'black'}}/>} label="Care Plan" value="2" wrapped />
-                                            <Tab sx={{ textTransform: 'none', margin: '-5px 0px' }} icon={<LineAxisIcon  sx={{color: 'black'}}/>} label="Health Status" value="3" wrapped />
-                                            <Tab sx={{ textTransform: 'none', margin: '-5px 0px' }} icon={<PeopleIcon sx={{color: 'black'}} />} label="Team" value="4" wrapped />
+                                                {color: "#FFFFFF !important", bgcolor: "#355CA8"}
+                                        }} TabIndicatorProps={{style: {display: "none"}}}>
+                                            <Tab sx={{textTransform: 'none', margin: '-5px 0px'}}
+                                                 icon={<HomeIcon sx={{color: 'black'}}/>} label="Home" value="1"
+                                                 wrapped/>
+                                            <Tab sx={{textTransform: 'none', margin: '-5px 0px'}}
+                                                 icon={<ContentPasteIcon sx={{color: 'black'}}/>} label="Care Plan"
+                                                 value="2" wrapped/>
+                                            <Tab sx={{textTransform: 'none', margin: '-5px 0px'}}
+                                                 icon={<LineAxisIcon sx={{color: 'black'}}/>} label="Health Status"
+                                                 value="3" wrapped/>
+                                            <Tab sx={{textTransform: 'none', margin: '-5px 0px'}}
+                                                 icon={<PeopleIcon sx={{color: 'black'}}/>} label="Team" value="4"
+                                                 wrapped/>
                                         </TabList>
                                     </Paper>
 
-                                    <TabPanel value="1" sx={{ padding: '0px 15px 100px' }}>
-                                        <Home fhirDataCollection={this.state.fhirDataCollection} patientSummaries={this.state.patientSummaries} screenings={this.state.screenings}
-                                            progressMessage={this.state.progressMessage} progressValue={this.state.progressValue} resourcesLoadedCount={this.state.resourcesLoadedCount}
-                                            errorType={this.state.errorType} userErrorMessage={this.state.userErrorMessage} developerErrorMessage={this.state.developerErrorMessage} errorCaught={this.state.errorCaught}
-                                            canShareData={this.state.canShareData} isLogout={this.state.isLogout}
-                                            />
+                                    <TabPanel value="1" sx={{padding: '0px 15px 100px'}}>
+                                        <Home sharingData={this.state.sharingData}
+                                              fhirDataCollection={this.state.fhirDataCollection}
+                                              patientSummaries={this.state.patientSummaries}
+                                              screenings={this.state.screenings}
+                                              progressTitle={this.state.progressTitle}
+                                              progressMessage={this.state.progressMessage}
+                                              progressValue={this.state.progressValue}
+                                              resourcesLoadedCount={this.state.resourcesLoadedCount}
+                                              errorType={this.state.errorType}
+                                              userErrorMessage={this.state.userErrorMessage}
+                                              developerErrorMessage={this.state.developerErrorMessage}
+                                              errorCaught={this.state.errorCaught}
+                                              canShareData={this.state.canShareData} isLogout={this.state.isLogout}
+                                        />
                                     </TabPanel>
-                                    <TabPanel value="2" sx={{ padding: '0px 0px 100px' }}>
+                                    <TabPanel value="2" sx={{padding: '0px 0px 100px'}}>
                                         <TabContext value={this.state.planTabIndex}>
-                                            <TabList onChange={(event, value) => this.updateLogPanelTab(event, value)} variant="fullWidth" centered>
-                                                <Tab label="Goals" value="5" wrapped />
-                                                <Tab label="Concerns" value="6" wrapped />
-                                                <Tab label="Medications" value="7" wrapped />
-                                                <Tab label="Activities" value="8" wrapped />
+                                            <TabList onChange={(event, value) => this.updateLogPanelTab(event, value)}
+                                                     variant="fullWidth" centered>
+                                                <Tab label="Goals" value="5" wrapped/>
+                                                <Tab label="Concerns" value="6" wrapped/>
+                                                <Tab label="Medications" value="7" wrapped/>
+                                                <Tab label="Activities" value="8" wrapped/>
                                             </TabList>
-                                            <TabPanel value="5" sx={{ padding: '0px 15px' }}>
-                                                <GoalList fhirDataCollection={this.state.fhirDataCollection} goalSummaryMatrix={this.state.goalSummaries} canShareData={this.state.canShareData} />
+                                            <TabPanel value="5" sx={{padding: '0px 15px'}}>
+                                                <GoalList sharingData={this.state.sharingData}
+                                                          fhirDataCollection={this.state.fhirDataCollection}
+                                                          progressTitle={this.state.progressTitle}
+                                                          progressValue={this.state.progressValue}
+                                                          progressMessage={this.state.progressMessage}
+                                                          goalSummaryMatrix={this.state.goalSummaries}
+                                                          canShareData={this.state.canShareData}/>
                                             </TabPanel>
-                                            <TabPanel value="6" sx={{ padding: '0px 15px' }}>
-                                                <ConditionList fhirDataCollection={this.state.fhirDataCollection} conditionSummaryMatrix={this.state.conditionSummaries} canShareData={this.state.canShareData} />
+                                            <TabPanel value="6" sx={{padding: '0px 15px'}}>
+                                                <ConditionList sharingData={this.state.sharingData}
+                                                               fhirDataCollection={this.state.fhirDataCollection}
+                                                               progressTitle={this.state.progressTitle}
+                                                               progressValue={this.state.progressValue}
+                                                               progressMessage={this.state.progressMessage}
+                                                               conditionSummaryMatrix={this.state.conditionSummaries}
+                                                               canShareData={this.state.canShareData}/>
                                             </TabPanel>
-                                            <TabPanel value="7" sx={{ padding: '0px 15px' }}>
+                                            <TabPanel value="7" sx={{padding: '0px 15px'}}>
                                                 {/* <MedicationList fhirDataCollection={this.state.fhirDataCollection} medicationSummary={this.state.medicationSummary} /> */}
-                                                <MedicationList fhirDataCollection={this.state.fhirDataCollection} medicationSummaryMatrix={this.state.medicationSummaries} />
+                                                <MedicationList sharingData={this.state.sharingData}
+                                                                fhirDataCollection={this.state.fhirDataCollection}
+                                                                progressTitle={this.state.progressTitle}
+                                                                progressValue={this.state.progressValue}
+                                                                progressMessage={this.state.progressMessage}
+                                                                medicationSummaryMatrix={this.state.medicationSummaries}/>
                                             </TabPanel>
-                                            <TabPanel value="8" sx={{ padding: '0px 15px' }}>
-                                                <ServiceRequestList fhirDataCollection={this.state.fhirDataCollection} />
+                                            <TabPanel value="8" sx={{padding: '0px 15px'}}>
+                                                <ServiceRequestList sharingData={this.state.sharingData}
+                                                                    fhirDataCollection={this.state.fhirDataCollection}
+                                                                    progressTitle={this.state.progressTitle}
+                                                                    progressValue={this.state.progressValue}
+                                                                    progressMessage={this.state.progressMessage}/>
                                             </TabPanel>
                                         </TabContext>
                                     </TabPanel>
-                                    <TabPanel value="3" sx={{ padding: '0px 0px 100px' }}>
+                                    <TabPanel value="3" sx={{padding: '0px 0px 100px'}}>
                                         <TabContext value={this.state.statusTabIndex}>
-                                            <TabList onChange={(event, value) => this.updateLogStatusTab(event, value)} variant="fullWidth" centered>
-                                                <Tab label="Tests" value="9" wrapped />
-                                                <Tab label="Vitals" value="10" wrapped />
-                                                <Tab label="Immunization" value="11" wrapped />
+                                            <TabList onChange={(event, value) => this.updateLogStatusTab(event, value)}
+                                                     variant="fullWidth" centered>
+                                                <Tab label="Tests" value="9" wrapped/>
+                                                <Tab label="Vitals" value="10" wrapped/>
+                                                <Tab label="Immunization" value="11" wrapped/>
                                             </TabList>
-                                            <TabPanel value="9" sx={{ padding: '0px 15px' }}>
-                                                <LabResultList fhirDataCollection={this.state.fhirDataCollection} labResultSummaryMatrix={this.state.labResultSummaries} />
+                                            <TabPanel value="9" sx={{padding: '0px 15px'}}>
+                                                <LabResultList sharingData={this.state.sharingData}
+                                                               fhirDataCollection={this.state.fhirDataCollection}
+                                                               progressTitle={this.state.progressTitle}
+                                                               progressValue={this.state.progressValue}
+                                                               progressMessage={this.state.progressMessage}
+                                                               labResultSummaryMatrix={this.state.labResultSummaries}/>
                                             </TabPanel>
-                                            <TabPanel value="10" sx={{ padding: '0px 15px' }}>
-                                                <VitalsList fhirDataCollection={this.state.fhirDataCollection} vitalSignSummaryMatrix={this.state.vitalSignSummaries} />
+                                            <TabPanel value="10" sx={{padding: '0px 15px'}}>
+                                                <VitalsList sharingData={this.state.sharingData}
+                                                            fhirDataCollection={this.state.fhirDataCollection}
+                                                            progressTitle={this.state.progressTitle}
+                                                            progressValue={this.state.progressValue}
+                                                            progressMessage={this.state.progressMessage}
+                                                            vitalSignSummaryMatrix={this.state.vitalSignSummaries}/>
                                             </TabPanel>
                                             {/* <TabPanel>
                                             <h4 className="title">Assessment Results</h4>
                                             <p>Coming soon...</p>
                                         </TabPanel> */}
                                             <TabPanel value="11">
-                                                <ImmunizationList fhirDataCollection={this.state.fhirDataCollection} />
+                                                <ImmunizationList sharingData={this.state.sharingData}
+                                                                  fhirDataCollection={this.state.fhirDataCollection}
+                                                                  progressTitle={this.state.progressTitle}
+                                                                  progressValue={this.state.progressValue}
+                                                                  progressMessage={this.state.progressMessage}/>
                                             </TabPanel>
                                         </TabContext>
                                     </TabPanel>
-                                    <TabPanel value="4" sx={{ padding: '10px 15px 100px' }}>
-                                        <CareTeamList fhirDataCollection={this.state.fhirDataCollection} />
+                                    <TabPanel value="4" sx={{padding: '10px 15px 100px'}}>
+                                        <CareTeamList sharingData={this.state.sharingData}
+                                                      fhirDataCollection={this.state.fhirDataCollection}
+                                                      progressTitle={this.state.progressTitle}
+                                                      progressValue={this.state.progressValue}
+                                                      progressMessage={this.state.progressMessage}/>
                                     </TabPanel>
                                 </Box>
                             </TabContext>

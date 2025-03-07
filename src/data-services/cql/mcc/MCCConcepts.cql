@@ -239,6 +239,7 @@ valueset "Erythrocyte Distribution Width": 'http://cts.nlm.nih.gov/fhir/ValueSet
 valueset "Erythrocyte Sedimentation Rate (ESR), Blood": 'http://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.3616.200.110.102.5019'
 valueset "Estimated Average Glucose": 'http://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113762.1.4.1222.150'
 valueset "Estimated Glomerular Filtration Rate (eGFR)": 'http://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113762.1.4.1222.179'
+valueset "Estimated Glomerular Filtration Rate NKF": 'http://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.6929.3.1000'
 valueset "Fasting Blood Glucose": 'http://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113762.1.4.1222.808'
 valueset "Ferritin": 'http://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113762.1.4.1222.140'
 valueset "Free T4 (Thyroxine) Test": 'http://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.7643.2.1019'
