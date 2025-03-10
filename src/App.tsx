@@ -283,8 +283,7 @@ class App extends React.Component<AppProps, AppState> {
                             if (await createAndPersistClientForNewProvider(issServerUrl)) { // todo: this function never uses issServerUrl??!
                                 // Check for prior auths from another load or session just in case so we can save some time
                                 if (await isEndpointStillAuthorized(issServerUrl!)) {
-                                    console.log("This endpoint IS authorized")
-                                    console.log("curEndpoint issServerUrl " + issServerUrl + " at index " + i +
+                                    console.log("This endpoint IS authorized: " + issServerUrl + " at index " + i +
                                         " and count " + (i + 1) + "/" + launcherDataArrayLength +
                                         " is still authorized. Will not waste time reauthorizing: ", launcherData)
 
@@ -302,8 +301,7 @@ class App extends React.Component<AppProps, AppState> {
                                         await this.loadSelectedEndpoints(toAuthorizeLauncherDataArray)
                                     }
                                 } else {
-                                    console.log("This endpoint is NOT authorized (App.tsx)")
-                                    console.log("curEndpoint issServerUrl " + issServerUrl +
+                                    console.log("This endpoint is NOT authorized (App.tsx): " + issServerUrl +
                                         " at index " + i + " and count " + (i + 1) + "/" + launcherDataArrayLength +
                                         " is NOT authorized.", launcherData)
 
@@ -341,7 +339,7 @@ class App extends React.Component<AppProps, AppState> {
                                     this.openAuthDialog(launcherData)
                                     await new Promise<void>((resolve) => {
                                         const checkUserDecision = () => {
-                                            if (this.state.isAuthorizeSelected !== null) { // null is the default
+                                            if (this.isAuthorizeSelected() !== null) { // null is the default
                                                 // User has made a decision
                                                 resolve()
                                             } else {
@@ -352,7 +350,7 @@ class App extends React.Component<AppProps, AppState> {
                                         checkUserDecision()
                                     })
 
-                                    if (this.state.isAuthorizeSelected) {
+                                    if (this.isAuthorizeSelected()) {
                                         console.log("Reauthorizing curEndpoint.config!:", launcherData.config!)
                                         // The following authorization will exit the application. Therefore, if it's not the last index,
                                         // then we will have more endpoints to authorize when we return, on load
@@ -460,23 +458,40 @@ class App extends React.Component<AppProps, AppState> {
     }
 
     openAuthDialog = (curEndpoint: LauncherData) => {
-        this.setState({isAuthDialogOpen: true, currentUnauthorizedEndpoint: curEndpoint});
+        this.setState({isAuthDialogOpen: true, currentUnauthorizedEndpoint: curEndpoint}, () => {
+            console.log('openAuthDialog() - isAuthDialogOpen = ' + this.state.isAuthDialogOpen)
+        })
     }
 
     handleAuthDialogClose = () => {
-        console.log('handleAuthDialogClose()')
-        this.setState({isAuthDialogOpen: false, currentUnauthorizedEndpoint: null});
-        this.resetExternalNavigation(); // Reset navigation state if auth dialog is closed
+        this.setState({isAuthDialogOpen: false, currentUnauthorizedEndpoint: null}, () => {
+            console.log('handleAuthDialogClose() - isAuthDialogOpen = ' + this.state.isAuthDialogOpen)
+            this.resetExternalNavigation(); // Reset navigation state if auth dialog is closed
+        })
     }
 
     handleAuthorizeSelected = () => {
-        console.log('handleAuthorizeSelected()')
-        this.setState({isAuthorizeSelected: true})
+        this.setState({isAuthorizeSelected: true}, () => {
+            console.log('handleAuthorizeSelected() - isAuthorizeSelected = ' + this.isAuthorizeSelected())
+        })
     }
 
     handleSkipAuthSelected = () => {
-        console.log('handleSkipAuthSelected()')
-        this.setState({isAuthorizeSelected: false})
+        this.setState({isAuthorizeSelected: false}, () => {
+            console.log('handleSkipAuthSelected() - isAuthorizeSelected = ' + this.isAuthorizeSelected())
+        })
+    }
+
+    isAuthorizeSelected = () => {
+        return this.state.isAuthorizeSelected;
+    }
+
+    resetAuthDialog = () => {
+        this.setState({isAuthDialogOpen: false, isAuthorizeSelected: null, currentUnauthorizedEndpoint: null}, () => {
+            console.log('resetAuthDialog() - isAuthDialogOpen = ' + this.state.isAuthDialogOpen +
+                ', isAuthorizeSelected = ' + this.isAuthorizeSelected() +
+                ', currentUnauthorizedEndpoint = ' + this.state.currentUnauthorizedEndpoint)
+        })
     }
 
     setLoadAndMergeSDSIfAvailable = async (launcherPatientId: string | undefined, launcherData: FHIRData) => {
@@ -1109,8 +1124,8 @@ class App extends React.Component<AppProps, AppState> {
                                    resetErrorMessageState={this.resetErrorMessageState}
                                    openAuthDialog={this.openAuthDialog}
                                    handleAuthDialogClose={this.handleAuthDialogClose}
-                                   isAuthDialogOpen={this.state.isAuthDialogOpen}
-                                   isAuthorizeSelected={this.state.isAuthorizeSelected}
+                                   isAuthorizeSelected={this.isAuthorizeSelected}
+                                   resetAuthDialog={this.resetAuthDialog}
                                    {...routeProps}
                                />
                            )}

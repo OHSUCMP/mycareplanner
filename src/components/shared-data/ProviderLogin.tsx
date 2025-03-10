@@ -39,8 +39,8 @@ interface Props extends RouteComponentProps {
     resetErrorMessageState: () => void,
     openAuthDialog: (endpoint: LauncherData) => void,
     handleAuthDialogClose: () => void,
-    isAuthDialogOpen: boolean,
-    isAuthorizeSelected: null | boolean
+    isAuthorizeSelected: () => boolean | null,
+    resetAuthDialog: () => void
 }
 
 interface LocationState {
@@ -186,8 +186,8 @@ export default function ProviderLogin(props: Props) {
                     props.openAuthDialog(curEndpoint)
                     await new Promise<void>((resolve) => {
                         const checkUserDecision = () => {
-                            console.log('checkUserDecision() - isAuthorizeSelected: ' + props.isAuthorizeSelected)
-                            if (props.isAuthorizeSelected !== null) { // null is the default
+                            console.log('checkUserDecision() - isAuthorizeSelected: ' + props.isAuthorizeSelected())
+                            if (props.isAuthorizeSelected() !== null) { // null is the default
                                 // User has made a decision
                                 resolve()
                             } else {
@@ -198,7 +198,7 @@ export default function ProviderLogin(props: Props) {
                         checkUserDecision()
                     })
 
-                    if (props.isAuthorizeSelected) {
+                    if (props.isAuthorizeSelected()) {
                         console.log("Reauthorizing curEndpoint.config!:", curEndpoint.config!)
                         // The following authorization will exit the application. Therefore, if it's not the last index,
                         // then we will have more endpoints to authorize when we return, on load.
@@ -208,6 +208,7 @@ export default function ProviderLogin(props: Props) {
                             console.log("Not last index, Authorizing index " + i)
                         }
 
+                        props.handleAuthDialogClose()
                         console.warn("Before authorize: curEndpoint.config! " + JSON.stringify(curEndpoint.config!))
                         await FHIR.oauth2.authorize(curEndpoint.config!)
                         console.warn("After authorize: curEndpoint.config! " + JSON.stringify(curEndpoint.config!))
@@ -318,6 +319,8 @@ export default function ProviderLogin(props: Props) {
                 return // Cannot continue so returning but this should not be possible since we have disabled the login button in this case
             } else if (selectedEndpointNames.length > 0) {
                 console.log("selectedEndpoint array has data")
+
+                props.resetAuthDialog()
 
                 let matchingProviderEndpoints: LauncherData[] =
                     await getMatchingProviderEndpointsFromName(availableEndpoints, selectedEndpointNames)
