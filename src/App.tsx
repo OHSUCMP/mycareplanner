@@ -5,7 +5,7 @@ import {Switch, Route, RouteComponentProps} from 'react-router-dom';
 import {Tab, Box, Paper} from '@mui/material';
 import {TabList, TabPanel, TabContext} from '@mui/lab';
 //import { Patient} from './data-services/fhir-types/fhir-r4';
-import {Practitioner, Task} from './data-services/fhir-types/fhir-r4';
+import {Task} from './data-services/fhir-types/fhir-r4';
 
 import HomeIcon from '@mui/icons-material/Home';
 import ContentPasteIcon from '@mui/icons-material/ContentPaste';
@@ -635,7 +635,7 @@ class App extends React.Component<AppProps, AppState> {
                             c.setState({progressMessage: 'Processed resource ' + j + ' of ' + resources.length});
 
                             let percentComplete = Math.floor((j / resources.length) * 100);
-                            if (percentComplete != progressValue) {
+                            if (percentComplete !== progressValue) {
                                 progressValue = percentComplete;
                                 c.setState({progressValue: progressValue})
                             }

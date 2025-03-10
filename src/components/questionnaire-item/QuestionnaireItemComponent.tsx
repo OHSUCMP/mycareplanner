@@ -153,7 +153,7 @@ export default class QuestionnaireItemComponent extends React.Component<any, Que
     return (
       <Card ref={this.questionnaireItemRef} className={"questionnaire-item"} id={this.props.QuestionnaireItem.linkId}>
         <div className="questionnaire-section-header">
-        {(this.props.QuestionnaireItem.linkId !== ('physical-function')) && (this.props.QuestionnaireItem.linkId !== ('112346')) && (this.props.QuestionnaireItem.linkId !== ('caregiver-strain-group'))? (
+        {(this.props.QuestionnaireItem.linkId !== ('physical-function')) && (this.props.QuestionnaireItem.linkId !== ('112346')) && (this.props.QuestionnaireItem.linkId !== ('caregiver-strain-group')) && (this.props.QuestionnaireItem.linkId !== ('phq9')) ? (
               <Button className="btn-outline-secondary previous-button"
                 value={this.props.QuestionnaireItem.linkId}
                 onClick={(event: any) => this.handlePreviousQuestionScroll(event.target.value)}>
