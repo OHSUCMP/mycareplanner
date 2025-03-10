@@ -826,7 +826,7 @@ const getFHIRQueries = async (client: Client, clientScope: string | undefined,
     setAndLogProgressState('All FHIR requests finished: ' + new Date().toLocaleTimeString(), 100)
     console.timeEnd('FHIR queries')
 
-    console.log("Provenance resources: " + provenance?.length ?? 0)
+    console.log("Provenance resources: " + (provenance?.length ?? 0))
     // provenance?.forEach((resource) => {
     //   console.log(JSON.stringify(resource))
     // })
@@ -885,7 +885,7 @@ const getFHIRQueries = async (client: Client, clientScope: string | undefined,
     )
     */
 
-    console.log("Resource requesters dictionary values: " + resourceRequesters?.size ?? 0)
+    console.log("Resource requesters dictionary values: " + resourceRequesters.size)
     // resourceRequesters?.forEach((practitioner, id) =>
     //   console.log(JSON.stringify(practitioner))
     // )

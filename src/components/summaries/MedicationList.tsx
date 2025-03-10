@@ -237,7 +237,7 @@ const buildRows = (med: MedicationSummary, theSource?: string): SummaryRowItems 
         {
             isHeader: false,
             twoColumns: false,
-            data1: 'Source: ' + provenance.Transmitter ?? '',
+            data1: 'Source: ' + (provenance.Transmitter ?? ''),
             data2: provenance.Author ?? '',
         }
     ))
