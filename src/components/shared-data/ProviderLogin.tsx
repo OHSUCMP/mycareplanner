@@ -128,6 +128,8 @@ export default function ProviderLogin(props: Props) {
             // Loop endpoints to see if any exist that are not already authorized (however unlikely that may be)
             // TODO: Consider getting all endpoints first, then after fully looping, decide what to do
             for (let i = 0; i < endpointsLength; i++) {
+                props.resetAuthDialog();
+
                 const curEndpoint: LauncherData = endpointsToAuthorize[i]
                 console.log("curEndpoint", curEndpoint)
                 const issServerUrl = curEndpoint.config!.iss
@@ -320,7 +322,7 @@ export default function ProviderLogin(props: Props) {
             } else if (selectedEndpointNames.length > 0) {
                 console.log("selectedEndpoint array has data")
 
-                props.resetAuthDialog()
+                props.resetAuthDialog();
 
                 let matchingProviderEndpoints: LauncherData[] =
                     await getMatchingProviderEndpointsFromName(availableEndpoints, selectedEndpointNames)
