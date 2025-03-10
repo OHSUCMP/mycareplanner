@@ -204,6 +204,13 @@ export default class Home extends React.Component<HomeProps, HomeState> {
                             pathname: '/questionnaire',
                             state: {
                                 patientSummaries: this.props.patientSummaries,
+                                questionnaireId: 'PHQ-9'
+                            }
+                        }}><strong>Depression Assessment</strong></Link><br/>
+                        <Link to={{
+                            pathname: '/questionnaire',
+                            state: {
+                                patientSummaries: this.props.patientSummaries,
                                 questionnaireId: 'PROMIS-29-questionnaire'
                             }
                         }}><strong>General Health Assessment</strong></Link><br/>
