@@ -33,8 +33,15 @@ import {GoalSummary, ConditionSummary, MedicationSummary, ObservationSummary} fr
 
 //import {deleteSessionId} from './data-services/persistenceService'
 import {
-    isEndpointStillAuthorized, getSelectedEndpoints, deleteSelectedEndpoints,
-    getLauncherData, deleteAllDataFromLocalForage, saveSessionId, sessionIdExistsInLocalForage, getSessionId
+    isEndpointStillAuthorized,
+    getSelectedEndpoints,
+    deleteSelectedEndpoints,
+    getLauncherData,
+    deleteAllDataFromLocalForage,
+    saveSessionId,
+    sessionIdExistsInLocalForage,
+    getSessionId,
+    saveSelectedEndpoints
 } from './data-services/persistenceService'
 import {
     getGoalSummaries, getLabResultSummaries, getConditionSummaries,
@@ -209,7 +216,7 @@ class App extends React.Component<AppProps, AppState> {
                 }
 
                 console.log("Checking if this is a multi-select, single, or a loader...")
-                const selectedEndpoints: string[] | undefined = await getSelectedEndpoints()
+                let selectedEndpoints: string[] | undefined = await getSelectedEndpoints()
                 if (selectedEndpoints && selectedEndpoints.length > 0) {
                     // It's a multi select as selected endpoints exist/were not deleted
                     const isAnyEndpointNullOrUndefined: boolean = selectedEndpoints.some((endpoint) => {
@@ -266,13 +273,13 @@ class App extends React.Component<AppProps, AppState> {
                         // TODO: MULTI-PROVIDER: Externalize the logic in authorizeSelectedEndpoints in ProviderLogin
                         // so that both ProviderLogin and App.tsx (right here) can use it vs having duplicate code
                         // If all authorized, load all, else authorize the current one
-                        const launcherDataArrayLength = toAuthorizeLauncherDataArray.length
-                        for (let i = 0; i < launcherDataArrayLength; i++) {
+                        const max = toAuthorizeLauncherDataArray.length
+                        for (let i = 0; i < max; i++) {
                             const launcherData: LauncherData = toAuthorizeLauncherDataArray[i]
                             console.log("launcherData=", launcherData)
                             const issServerUrl = launcherData.config!.iss
                             console.log("issServerUrl=", issServerUrl)
-                            const isLastIndex = i === launcherDataArrayLength - 1
+                            const isLastIndex = i === max - 1
                             console.log("isLastIndex: " + isLastIndex)
 
                             // !FUNCTION DIFF! *MAJOR DIFF*: Before checking authorization we need to create and persist the fhir client
@@ -284,44 +291,13 @@ class App extends React.Component<AppProps, AppState> {
                                 // Check for prior auths from another load or session just in case so we can save some time
                                 if (await isEndpointStillAuthorized(issServerUrl!)) {
                                     console.log("This endpoint IS authorized: " + issServerUrl + " at index " + i +
-                                        " and count " + (i + 1) + "/" + launcherDataArrayLength +
+                                        " and count " + (i + 1) + "/" + max +
                                         " is still authorized. Will not waste time reauthorizing: ", launcherData)
 
-                                    if (isLastIndex) {
-                                        console.log("All endpoints are already authorized.")
-
-                                        // Do NOT need to save data for endpoints to be loaded as we don't need to reload the app
-                                        // Deleting multi-select endpoints from local storage so they don't interfere with future selections
-                                        // and so that this logic is not run if there are no multi-endpoints to auth/local
-                                        // but instead, a loader is run or a single endpoint is run in such a case
-                                        console.log("Deleting multi-select endpoints from local storage")
-                                        await deleteSelectedEndpoints()
-
-                                        console.log("Nothing left to authorize, loading all multi-selected and authorized endpoints w/o leaving app...")
-                                        await this.loadSelectedEndpoints(toAuthorizeLauncherDataArray)
-                                    }
                                 } else {
                                     console.log("This endpoint is NOT authorized (App.tsx): " + issServerUrl +
-                                        " at index " + i + " and count " + (i + 1) + "/" + launcherDataArrayLength +
+                                        " at index " + i + " and count " + (i + 1) + "/" + max +
                                         " is NOT authorized.", launcherData)
-
-                                    // !FUNCTION DIFF!: NO need to save selected endpoints as they were already saved by ProviderLogin version of the code
-                                    // Save selected endpoints so app load after exiting app for auth knows that it is a multi load of specific endpoints.
-                                    // console.log("At Least one endpoint is not authorized yet...Saving multi-select endpoints")
-                                    // const selectedEndpointsToSave: string[] =
-                                    //     endpointsToAuthorize
-                                    //         .map((curEndpoint, index) => {
-                                    //             if (curEndpoint.config && curEndpoint.config.iss) {
-                                    //                 console.log("matched endpoint: " + curEndpoint.config.iss)
-                                    //                 return curEndpoint.config.iss
-                                    //             }
-                                    //             return undefined
-                                    //         })
-                                    //         .filter((endpoint) => endpoint !== undefined)
-                                    //         .map((endpoint) => endpoint as string)
-                                    // console.log("selectedEndpointsToSave: ", JSON.stringify(selectedEndpointsToSave))
-                                    // saveSelectedEndpoints(selectedEndpointsToSave)
-
 
                                     // Before we leave the app to authorize, we require the user to agree that they want to.
                                     // There are rare cases where they cannot successfully authorize, and this allows them to skip it in such cases
@@ -335,44 +311,58 @@ class App extends React.Component<AppProps, AppState> {
                                     // Note: Did not remove selected endpoint from list (curEndpoint.config)
                                     // as it ends up being removed through normal logic anyway
 
-                                    // Open the Auth Dialog and Wait for the user's decision
                                     this.openAuthDialog(launcherData)
                                     await new Promise<void>((resolve) => {
                                         const checkUserDecision = () => {
                                             if (this.isAuthorizeSelected() !== null) { // null is the default
-                                                // User has made a decision
                                                 resolve()
                                             } else {
-                                                // Check again in 50ms
                                                 setTimeout(checkUserDecision, 250)
                                             }
                                         }
                                         checkUserDecision()
                                     })
 
+                                    this.handleAuthDialogClose()
+
                                     if (this.isAuthorizeSelected()) {
-                                        console.log("Reauthorizing curEndpoint.config!:", launcherData.config!)
+                                        // save selected endpoints just before leaving to authorize.  one may have been
+                                        // skipped, and we want to ensure we don't ask about it next time around
+                                        await saveSelectedEndpoints(selectedEndpoints)
+
                                         // The following authorization will exit the application. Therefore, if it's not the last index,
                                         // then we will have more endpoints to authorize when we return, on load
-                                        if (isLastIndex) {
-                                            console.log("Authorizing last index")
-                                        } else {
-                                            console.log("Not last index, Authorizing index " + i)
-                                        }
-                                        this.handleAuthDialogClose()
-                                        await FHIR.oauth2.authorize(launcherData.config!)
+
+                                        // we're leaving!
+
+                                        console.log("Authorizing: " + JSON.stringify(launcherData.config!))
+                                        FHIR.oauth2.authorize(launcherData.config!)
                                         break
+
                                     } else {
                                         console.log("User does not agree to authorization. Skipping authorization...")
-                                        this.handleAuthDialogClose()
-                                        continue
-                                    }
 
+                                        // remove current endpoint from endpoints to save so it's not processed again
+                                        // when control returns after any authorizations that do occur
+                                        selectedEndpoints = selectedEndpoints!.filter((endpoint) => endpoint !== launcherData.config!.iss)
+                                    }
                                 } // end not authorized case
+
                             } else {
                                 throw new Error("Cannot create client and persist fhir client states and therefore cannot check authorization")
                             } // end createAndPersistClientForNewProvider
                         } // end for loop
+
+                        // Do NOT need to save data for endpoints to be loaded as we don't need to reload the app
+                        // Deleting multi-select endpoints from local storage so they don't interfere with future selections
+                        // and so that this logic is not run if there are no multi-endpoints to auth/local
+                        // but instead, a loader is run or a single endpoint is run in such a case
+                        console.log("Deleting multi-select endpoints from local storage")
+                        await deleteSelectedEndpoints()
+
+                        console.log("Nothing left to authorize, loading all multi-selected and authorized endpoints w/o leaving app...")
+                        await this.loadSelectedEndpoints(toAuthorizeLauncherDataArray)
+
                     } // end else for isAnyEndpointNullOrUndefined
 
                 } else { // else for selectedEndpoints null or length check
@@ -568,7 +558,7 @@ class App extends React.Component<AppProps, AppState> {
             this.setFhirDataStates([launcherData])
         }
 
-        this.autoShareFHIRDataToSDS()
+        await this.autoShareFHIRDataToSDS()
     }
 
     // TODO: MULTI-PROVIDER: This code is copied into this class for now from the function in ProviderLOgin
@@ -586,6 +576,11 @@ class App extends React.Component<AppProps, AppState> {
 
             let index: number = 0
             for (const curSelectedEndpoint of endpointsToLoad) {
+                if ( ! await isEndpointStillAuthorized(curSelectedEndpoint.config!.iss!) ) {
+                    console.log('Endpoint is not authorized, so, will not load it: ', curSelectedEndpoint.config!.iss)
+                    continue;
+                }
+
                 // Set the state to indicate external navigation is happening before each authorization
                 this.markExternalNavigation();
                 console.log('curSelectedEndpoint #' + (index + 1) + ' at index: ' + index + ' with value:', curSelectedEndpoint)
@@ -1126,6 +1121,7 @@ class App extends React.Component<AppProps, AppState> {
                                    handleAuthDialogClose={this.handleAuthDialogClose}
                                    isAuthorizeSelected={this.isAuthorizeSelected}
                                    resetAuthDialog={this.resetAuthDialog}
+                                   autoShareFHIRDataToSDS={this.autoShareFHIRDataToSDS}
                                    {...routeProps}
                                />
                            )}

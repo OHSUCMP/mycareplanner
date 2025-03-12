@@ -9,7 +9,7 @@ import {
 } from '../../data-services/providerEndpointService'
 import {
     isEndpointStillAuthorized, saveSelectedEndpoints,
-    deleteSelectedEndpoints, getLauncherData
+    deleteSelectedEndpoints, getLauncherData, getSelectedEndpoints
 } from '../../data-services/persistenceService'
 
 import Box from '@mui/material/Box'
@@ -40,7 +40,9 @@ interface Props extends RouteComponentProps {
     openAuthDialog: (endpoint: LauncherData) => void,
     handleAuthDialogClose: () => void,
     isAuthorizeSelected: () => boolean | null,
-    resetAuthDialog: () => void
+    resetAuthDialog: () => void,
+    autoShareFHIRDataToSDS: () => void
+
 }
 
 interface LocationState {
@@ -125,6 +127,22 @@ export default function ProviderLogin(props: Props) {
         if (endpointsToAuthorize && endpointsToAuthorize.length > 0) {
             const endpointsLength = endpointsToAuthorize.length
 
+            // Save selected endpoints so app load after exiting app for auth knows that it is a multi load of specific endpoints
+            console.log("At Least one endpoint is not authorized yet...Saving multi-select endpoints")
+            let selectedEndpointsToSave: string[] =
+                endpointsToAuthorize
+                    .map((curEndpoint, index) => {
+                        if (curEndpoint.config && curEndpoint.config.iss) {
+                            console.log("matched endpoint: " + curEndpoint.config.iss)
+                            return curEndpoint.config.iss
+                        }
+                        return undefined
+                    })
+                    .filter((endpoint) => endpoint !== undefined)
+                    .map((endpoint) => endpoint as string)
+            console.log("selectedEndpointsToSave: ", JSON.stringify(selectedEndpointsToSave))
+            // await saveSelectedEndpoints(selectedEndpointsToSave)
+
             // Loop endpoints to see if any exist that are not already authorized (however unlikely that may be)
             // TODO: Consider getting all endpoints first, then after fully looping, decide what to do
             for (let i = 0; i < endpointsLength; i++) {
@@ -147,8 +165,7 @@ export default function ProviderLogin(props: Props) {
 
                 // Check for prior auths from another load or session just in case so we can save some time
                 if (isSDSUrl || await isEndpointStillAuthorized(issServerUrl!)) {
-                    console.log("This endpoint IS authorized")
-                    console.log("curEndpoint issServerUrl " + issServerUrl + " at index " + i + " and count "
+                    console.log("This endpoint IS authorized: issServerUrl " + issServerUrl + " at index " + i + " and count "
                         + (i + 1) + "/" + endpointsLength +
                         " is still authorized. Will not waste time reauthorizing: ", curEndpoint)
 
@@ -157,6 +174,7 @@ export default function ProviderLogin(props: Props) {
 
                         // Do NOT need to save data for endpoints to be loaded as we don't need to reload the app
                         console.log("Deleting multi-select endpoints from local storage so they don't intefere with future selections")
+                        // storer: this shouldn't be needed anymore
                         await deleteSelectedEndpoints()
 
                         console.log("Loading data from all endpoints without leaving the application")
@@ -164,31 +182,13 @@ export default function ProviderLogin(props: Props) {
                     }
 
                 } else {
-                    console.log("This endpoint is NOT authorized (ProviderLogin.tsx)")
-                    console.log("curEndpoint issServerUrl " + issServerUrl + " at index " + i +
-                        " and count " + (i + 1) + "/" + endpointsLength +
-                        " is NOT authorized.", curEndpoint)
-
-                    // Save selected endpoints so app load after exiting app for auth knows that it is a multi load of specific endpoints
-                    console.log("At Least one endpoint is not authorized yet...Saving multi-select endpoints")
-                    const selectedEndpointsToSave: string[] =
-                        endpointsToAuthorize
-                            .map((curEndpoint, index) => {
-                                if (curEndpoint.config && curEndpoint.config.iss) {
-                                    console.log("matched endpoint: " + curEndpoint.config.iss)
-                                    return curEndpoint.config.iss
-                                }
-                                return undefined
-                            })
-                            .filter((endpoint) => endpoint !== undefined)
-                            .map((endpoint) => endpoint as string)
-                    console.log("selectedEndpointsToSave: ", JSON.stringify(selectedEndpointsToSave))
-                    await saveSelectedEndpoints(selectedEndpointsToSave)
+                    console.log("This endpoint is NOT authorized: issServerUrl " + issServerUrl + " at index " + i +
+                        " and count " + (i + 1) + "/" + endpointsLength + " is NOT authorized.", curEndpoint)
 
                     props.openAuthDialog(curEndpoint)
                     await new Promise<void>((resolve) => {
                         const checkUserDecision = () => {
-                            console.log('checkUserDecision() - isAuthorizeSelected: ' + props.isAuthorizeSelected())
+                            console.debug('checkUserDecision() - isAuthorizeSelected: ' + props.isAuthorizeSelected())
                             if (props.isAuthorizeSelected() !== null) { // null is the default
                                 // User has made a decision
                                 resolve()
@@ -200,26 +200,29 @@ export default function ProviderLogin(props: Props) {
                         checkUserDecision()
                     })
 
+                    props.handleAuthDialogClose()
+
                     if (props.isAuthorizeSelected()) {
-                        console.log("Reauthorizing curEndpoint.config!:", curEndpoint.config!)
+                        // save selected endpoints just before leaving to authorize.  one may have been skipped, and
+                        // we want to ensure we don't ask about it next time around any subsequent authorizations
+                        // will occur in this logic's sister code in App.tsx when the home page loads after redirect.
+                        await saveSelectedEndpoints(selectedEndpointsToSave)
+
                         // The following authorization will exit the application. Therefore, if it's not the last index,
                         // then we will have more endpoints to authorize when we return, on load.
-                        if (isLastIndex) {
-                            console.log("Authorizing last index")
-                        } else {
-                            console.log("Not last index, Authorizing index " + i)
-                        }
 
-                        props.handleAuthDialogClose()
-                        console.warn("Before authorize: curEndpoint.config! " + JSON.stringify(curEndpoint.config!))
-                        await FHIR.oauth2.authorize(curEndpoint.config!)
-                        console.warn("After authorize: curEndpoint.config! " + JSON.stringify(curEndpoint.config!))
+                        // we're leaving!
 
+                        console.log("Authorizing: " + JSON.stringify(curEndpoint.config!))
+                        FHIR.oauth2.authorize(curEndpoint.config!)
                         break
+
                     } else {
                         console.log("User does not agree to authorization. Skipping authorization...")
-                        props.handleAuthDialogClose()
-                        continue
+
+                        // remove current endpoint from endpoints to save so it's not processed again
+                        // when control returns after any authorizations that do occur
+                        selectedEndpointsToSave = selectedEndpointsToSave!.filter((endpoint) => endpoint !== curEndpoint.config!.iss)
                     }
                 }
             }
@@ -274,6 +277,11 @@ export default function ProviderLogin(props: Props) {
 
             let index: number = 0;
             for (const curSelectedEndpoint of endpointsToLoad) {
+                if ( ! await isEndpointStillAuthorized(curSelectedEndpoint.config!.iss!) ) {
+                    console.log('Endpoint is not authorized, so, will not load it: ', curSelectedEndpoint.config!.iss)
+                    continue;
+                }
+
                 console.log('curSelectedEndpoint #' + (index + 1) + ' at index: ' + index + ' with value:', curSelectedEndpoint)
 
                 // Reset of state to undefined for loader and error message reset have to happen after each index is loaded
@@ -308,6 +316,7 @@ export default function ProviderLogin(props: Props) {
         } finally {
             props.setFhirDataStates(fhirDataCollection!)
             console.log("fhirDataCollection complete in loadSelectedEndpoints:", fhirDataCollection)
+            props.autoShareFHIRDataToSDS()
         }
 
     }
@@ -321,8 +330,6 @@ export default function ProviderLogin(props: Props) {
                 return // Cannot continue so returning but this should not be possible since we have disabled the login button in this case
             } else if (selectedEndpointNames.length > 0) {
                 console.log("selectedEndpoint array has data")
-
-                props.resetAuthDialog();
 
                 let matchingProviderEndpoints: LauncherData[] =
                     await getMatchingProviderEndpointsFromName(availableEndpoints, selectedEndpointNames)
