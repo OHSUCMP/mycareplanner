@@ -627,7 +627,7 @@ define "Sleep Apnea Disorders":
 //
 
 define ReportSocialDeterminantsOfHealthConditions: 
-  DE.ReportConditions("Social Determinants of Health", 'Life(style) Problems', null)
+  DE.ReportConditions("Social Determinants of Health", 'Other Health Risk Factors', null)
 
 define "Social Determinants of Health":
   SelectActiveConditions([Condition: Cx."Social Determinants of Health"])
