@@ -15,6 +15,7 @@ import {
     Practitioner,
     Procedure,
     Provenance,
+    QuestionnaireResponse,
     RelatedPerson,
     CodeableConcept,
     Period,
@@ -52,6 +53,7 @@ export interface FHIRData {
     // key = Resource.id, values = 0..* Provenance
     provenanceMap?: Map<string, Provenance[]>,
     provenance?: Provenance[],
+    questionnaireResponses?: QuestionnaireResponse[],
 }
 
 export function allShareableResources(fhirData: FHIRData|undefined): Resource[] {
@@ -68,6 +70,7 @@ export function allShareableResources(fhirData: FHIRData|undefined): Resource[] 
         if (fhirData.labResults)        arr.push(...fhirData.labResults);
         if (fhirData.vitalSigns)        arr.push(...fhirData.vitalSigns);
         if (fhirData.socialHistory)     arr.push(...fhirData.socialHistory);
+        // TODO: AEY Should questionnaireResponses be added here? Not getting any responses outside of SDS
     }
     return arr;
 }

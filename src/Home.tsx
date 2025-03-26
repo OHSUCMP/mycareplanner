@@ -11,6 +11,8 @@ import {DeterminateProgress} from './components/determinate-progress/Determinate
 import {ErrorMessage} from './components/error-message/ErrorMessage';
 import Modal from './components/modal/modal';
 import {deleteAllDataFromLocalForage} from './data-services/persistenceService';
+import { getAvailableQuestionnaires } from './data-services/questionnaireService';
+import { QuestionnaireResponse } from './data-services/fhir-types/fhir-r4';
 
 // import BusyGroup from './components/busy-spinner/BusyGroup';
 
@@ -78,9 +80,25 @@ export default class Home extends React.Component<HomeProps, HomeState> {
 
         let sharingData = this.props.sharingData;
         let fhirDataCollection = this.props.fhirDataCollection;
+        console.log("AEY");
+        console.log(fhirDataCollection);
         let patients = this.props.patientSummaries;
         let screenings = this.props.screenings?.filter(s => s.notifyPatient);
-        // let tasks = this.props.tasks;
+        const availableQuestionnaires = getAvailableQuestionnaires();
+        // Combine all data sources, keeping the latest response for each assessment
+        const latestResponses = fhirDataCollection?.reduce<Record<string, QuestionnaireResponse>>((acc, item) => {
+            if (!item.questionnaireResponses) return acc;
+          
+            item.questionnaireResponses.forEach(response => {
+              if (!response.questionnaire || !response.authored) return;          
+              const existing = acc[response.questionnaire];          
+              if (!existing || (existing.authored && new Date(response.authored) > new Date(existing.authored))) {
+                acc[response.questionnaire] = response;
+              }
+            });
+          
+            return acc;
+          }, {});
 
         const hhsBanner = process.env.REACT_APP_HHS_BANNER === 'true';
 
@@ -200,35 +218,29 @@ export default class Home extends React.Component<HomeProps, HomeState> {
 
                         <h5 style={{marginTop: '20px'}}>My Tasks</h5>
 
-                        <Link to={{
-                            pathname: '/questionnaire',
-                            state: {
-                                patientSummaries: this.props.patientSummaries,
-                                questionnaireId: 'PHQ-9'
-                            }
-                        }}><strong>Depression Assessment</strong></Link><br/>
-                        <Link to={{
-                            pathname: '/questionnaire',
-                            state: {
-                                patientSummaries: this.props.patientSummaries,
-                                questionnaireId: 'PROMIS-29-questionnaire'
-                            }
-                        }}><strong>General Health Assessment</strong></Link><br/>
-                        {/* <Link to={{
-              pathname: '/questionnaire',
-              state: { patientSummaries: this.props.patientSummaries, questionnaireId: 'PRAPARE-questionnaire' }
-            }} ><strong>Social Support Assessment</strong></Link><br /> */}
-                        <Link to={{
-                            pathname: '/questionnaire',
-                            state: {patientSummaries: this.props.patientSummaries, questionnaireId: 'AHC-questionnaire'}
-                        }}><strong>Health-Related Social Needs</strong></Link><br/>
-                        <Link to={{
-                            pathname: '/questionnaire',
-                            state: {
-                                patientSummaries: this.props.patientSummaries,
-                                questionnaireId: 'caregiver-strain-questionnaire'
-                            }
-                        }}><strong>Caregiver Strain Assessment</strong></Link><br/>
+                        <div>
+                        {availableQuestionnaires.map(({ id, label, url }) => {
+                            // Get the most recent authored date from the latestResponses map
+                            const latest = latestResponses && latestResponses[url];
+                            const authoredDate = (latest && latest.authored) ? new Date(latest.authored).toLocaleDateString() : null;
+                            return (
+                                <div key={id}>
+                                <Link
+                                    to={{
+                                    pathname: "/questionnaire",
+                                    state: {
+                                        patientSummaries: patients,
+                                        questionnaireId: id
+                                    }
+                                    }}
+                                >
+                                <strong>{label}{authoredDate && <span className="text-muted small"> (Last Completed: {authoredDate})</span>}</strong>
+                                </Link>
+                                <br />
+                                </div>
+                            );
+                        })}
+                        </div>
 
                         {/* {(tasks === undefined)
                 ? <p>You have no tasks today!</p>
