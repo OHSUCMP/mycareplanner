@@ -120,6 +120,7 @@ export default function ProviderLogin(props: Props) {
 
     const availableEndpoints: LauncherData[] = buildLauncherDataArray()
     const [selectedEndpointNames, setSelectedEndpointNames] = useState<string[]>([])
+    const [isLeavingToAuthorize, setIsLeavingToAuthorize] = useState<boolean>(false);
 
     const authorizeSelectedEndpoints = async (endpointsToAuthorize: LauncherData[]): Promise<void> => {
         console.log('authorizeSelectedEndpoints(): endpointsToAuthorize: ', JSON.stringify(endpointsToAuthorize))
@@ -212,6 +213,8 @@ export default function ProviderLogin(props: Props) {
                         // then we will have more endpoints to authorize when we return, on load.
 
                         // we're leaving!
+
+                        setIsLeavingToAuthorize(true);    // disables the Login button
 
                         console.log("Authorizing: " + JSON.stringify(curEndpoint.config!))
                         FHIR.oauth2.authorize(curEndpoint.config!)
@@ -606,13 +609,14 @@ export default function ProviderLogin(props: Props) {
                     </Grid>
 
                     <Grid item xs={12} sm={6}>
-                        <Button type="submit" disabled={!selectedEndpointNames || selectedEndpointNames.length < 1}
+                        <Button type="submit" disabled={!selectedEndpointNames || selectedEndpointNames.length < 1 || isLeavingToAuthorize}
                                 fullWidth variant="contained" sx={{mt: 3, mb: 2}}>
                             Login
                         </Button>
                     </Grid>
                     <Grid item xs={12} sm={6}>
-                        <Button type="reset" fullWidth variant="contained" sx={{mt: 3, mb: 2}}>
+                        <Button type="reset" disabled={isLeavingToAuthorize}
+                                fullWidth variant="contained" sx={{mt: 3, mb: 2}}>
                             Cancel
                         </Button>
                     </Grid>
