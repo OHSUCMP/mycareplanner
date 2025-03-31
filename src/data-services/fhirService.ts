@@ -147,9 +147,10 @@ export async function getConditions(client: Client): Promise<Condition[]> {
     })
     // workaround for Allscripts lack of support for both category and status args
     const url = new URL(client.state.serverUrl);
-    const allowedHosts = ['allscripts.com'];
+    console.log(url.host)
+    const allowedHosts = ['allscripts.com', 'launch.smarthealthit.org'];
     if (allowedHosts.includes(url.host)) {
-        const conditionsPath = 'Condition?category=problem-list-item,health-concern' + provenanceSearch
+        const conditionsPath = 'Condition'
         resources = resources.concat(resourcesFrom(await client.patient.request(conditionsPath, fhirOptions) as fhirclient.JsonObject))
 
     } else {
@@ -561,9 +562,10 @@ const getFHIRResources = async (client: Client, clientScope: string | undefined,
 
     setAndLogProgressState("Reading User data", 30)
     const patientPath = 'Patient/' + client.getPatientId();
-    const fhirUserPath = client.getFhirUser();
+    console.log(client);
+    //const fhirUserPath = client.getFhirUser();
+    const fhirUserPath = "Practitioner/52919099-6a7a-442c-b0d5-2b02c0dd4b74";
     const serverUrl = client.state.serverUrl;
-    console.log('getFHIRResources: client.getFhirUser(): ', client.getFhirUser())
 
     let fhirUser: Practitioner | Patient | RelatedPerson | undefined
     try {

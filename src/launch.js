@@ -20,6 +20,12 @@ const meldmatch = "https://gw.interop.community/"+process.env.REACT_APP_MELD_SAN
 
 const availableEndpoints = [
     {
+        issMatch: iss => iss.startsWith("https://launch.smarthealthit.org"),
+        redirectUri: "./index.html",
+        clientId: process.env.REACT_APP_CLIENT_ID_ohsu_fhirdev,
+        scope: meldScope
+    },
+    {
         // OHSU FHIR dev
         issMatch: /\bepicmobile.ohsu.edu\/FHIRDEV\b/i,
         redirectUri: "./index.html",
