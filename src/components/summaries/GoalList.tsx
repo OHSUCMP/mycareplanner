@@ -34,6 +34,7 @@ export const GoalList: FC<GoalListProps> = ({sharingData, fhirDataCollection,
     const [sortingOption, setSortingOption] = useState<string>('');
     const [filteringOption, setFilteringOption] = useState<string[]>([]);
     const [sortedAndFilteredGoals, setSortedAndFilteredGoals] = useState<{ goal: GoalSummary, provider: string }[]>([]);
+    const [sortedAndFilteredInpatientGoals, setSortedAndFilteredInpatientGoals] = useState<{ goal: GoalSummary, provider: string }[]>([]);
     const [filteringOptions, setFilteringOptions] = useState<{ value: string; label: string }[]>([]);
 
     useEffect(() => {
@@ -115,7 +116,18 @@ export const GoalList: FC<GoalListProps> = ({sharingData, fhirDataCollection,
                 break;
         }
 
-        setSortedAndFilteredGoals(combinedGoals);
+        const combinedGoalsNormal = combinedGoals.filter(goalSummary => {
+            const goalCategory = goalSummary.goal.Category || '';
+            return !goalCategory.toLowerCase().includes('inpatient care plan goal');
+        });
+
+        const combinedGoalsInpatient = combinedGoals.filter(goalSummary => {
+                const goalCategory = goalSummary.goal.Category || '';
+                return goalCategory.toLowerCase().includes('inpatient care plan goal');
+            });
+
+        setSortedAndFilteredGoals(combinedGoalsNormal);
+        setSortedAndFilteredInpatientGoals(combinedGoalsInpatient);
     };
 
     const handleEditClick = (goal: GoalSummary, goalSummaryMatrix: GoalSummary[][]) => {
@@ -187,10 +199,19 @@ export const GoalList: FC<GoalListProps> = ({sharingData, fhirDataCollection,
                     )
                 )}
 
+                <h5 className="title">Personal Health Goals</h5>
                 {sortedAndFilteredGoals.length === 0 ? (
                     <p>No records found.</p>
                 ) : (
                     sortedAndFilteredGoals.map(({goal, provider}, index) => (
+                        <Summary key={index} id={index} rows={buildRows(goal, provider)}/>
+                    ))
+                )}
+                <h5 className="title">Goals Affiliated with a Recent Hospitalization</h5>
+                {sortedAndFilteredInpatientGoals.length === 0 ? (
+                    <p>No records found.</p>
+                ) : (
+                    sortedAndFilteredInpatientGoals.map(({goal, provider}, index) => (
                         <Summary key={index} id={index} rows={buildRows(goal, provider)}/>
                     ))
                 )}
