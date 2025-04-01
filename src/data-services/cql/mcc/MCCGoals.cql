@@ -8,35 +8,13 @@ include MCCConcepts called Cx
 
 context Patient
 
-/*
-export interface GoalSummary {
-  Category?: string,
-  Description: string,
-  ExpressedBy?: string,
-  StartDate?: string,
-  Target?: GoalTarget[],
-  LifecycleStatus?: string,
-  AchievementStatus?: string,
-  Notes?: string[],
-  Addresses?: ConditionSummary[],
-  LearnMore?: string
-}
-
-export interface GoalTarget {
-  DueDate?: string,
-  DisplayName?: string,
-  TargetValue?: string,
-  LastResult?: ObservationSummary,
-}
-*/
-
 define GoalSummary:
   ReportGoals(
-    "Active Goals" G sort by (start as FHIR.date).value descending
+    (QualifiedGoal([Goal])) G sort by (start as FHIR.date).value descending
   )
 
-define "Active Goals":
-  [Goal] G 
+define function QualifiedGoal(goals List<Goal>):
+  goals G
     where G.lifecycleStatus in {'active', 'completed', 'cancelled', 'on-hold'}
 
 define function ReportGoals(goals List<Goal>):
@@ -81,30 +59,7 @@ define function ReportGoalTargets(goal Goal):
       LastResult: DE.ReportMostRecentResult(DE.FindObservations(target.measure))
     }
 
-define "Conditions with Goals":
-  [Condition] condition
-    where exists HasGoals(condition)
 
-define "Conditions without Goals":
-  [Condition] condition
-    where not exists HasGoals(condition)
-
-define "Conditions with Evidence":
-  [Condition] condition
-    where exists HasEvidence(condition)
-
-define "Display Conditions without Goals":
-  DE.DisplayNames("Conditions without Goals")
-
-define "Display Conditions with Goals":
-  [Condition] condition
-    let goals: HasGoals(condition),
-        evidence: HasEvidence(condition)
-    where exists(goals) return {
-        Condition: DE.DisplayName(condition),
-        HasEvidence: DE.DisplayNames(evidence),
-        HasGoals: DE.DisplayNames(goals)
-    }
 
 // Returns a list of Resources that this Goal addresses
 define function AddressesResources(goal Goal):
@@ -120,23 +75,6 @@ define function CastToResources(items List<Resource>):
  items r
   return r as Resource
 
-// Returns a list of Goals that address this Condition
-define function HasGoals(condition Condition):
-  [Goal] goal
-    where exists(goal.addresses GA
-      where condition.id = DE.GetId(GA.reference))
-
-// Returns a list of resources that provide evidence for this Condition.
-// TODO: expand to support CodeableConcept as evidence.
-define function HasEvidence(condition Condition):
-  flatten( condition.evidence.detail E
-    return 
-        [Observation]res where res.id = DE.GetId(E.reference)
-        // TODO: can't pass this result to DE.DisplayNames()
-        // ([FamilyMemberHistory] res where res.id = DE.GetId(E.reference))
-        // union ([Observation]res where res.id = DE.GetId(E.reference))
-        // union ([Procedure]res where res.id = DE.GetId(E.reference))
-  )
 
 // Returns Date from the first Goal target that has a due date.
 define function DueDate(goal Goal):
