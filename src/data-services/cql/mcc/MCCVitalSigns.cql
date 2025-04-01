@@ -11,42 +11,16 @@ context Patient
 // View summary tuple for each vital sign data element
 define VitalSignsSummary: 
   (List {
-    DE.ReportHistory("Blood pressure", 'Blood Pressure'),
+    DE.ReportHistory(DE.SelectByStatus([Observation: Cx."Blood pressure"]), 'Blood Pressure'),
     ReportHomeBP,
-    DE.ReportHistory("Body Height Observations", 'Height'),
-    DE.ReportHistory("Body Weight Observations", 'Weight'),
-    DE.ReportHistory("Body Mass Index Observations", 'BMI'),
-    DE.ReportHistory("Body Temperature Observations", 'Temperature'),
-    DE.ReportHistory("Heart Rate Observations", 'Heart Rate'),
-    DE.ReportHistory("Oxygen Saturation Observations", 'Oxygen Saturation'),
-    DE.ReportHistory("Respiratory Rate Observations", 'Respiratory Rate')
+    DE.ReportHistory(DE.SelectByStatus([Observation: Cx."Body height"]), 'Height'),
+    DE.ReportHistory(DE.SelectByStatus([Observation: Cx."Body weight"]), 'Weight'),
+    DE.ReportHistory(DE.SelectByStatus([Observation: Cx."Body mass index"]), 'BMI'),
+    DE.ReportHistory(DE.SelectByStatus([Observation: Cx."Body temperature"]), 'Temperature'),
+    DE.ReportHistory(DE.SelectByStatus([Observation: Cx."Heart rate"]), 'Heart Rate'),
+    DE.ReportHistory(DE.SelectByStatus([Observation: Cx."Oxygen saturation"]), 'Oxygen Saturation'),
+    DE.ReportHistory(DE.SelectByStatus([Observation: Cx."Respiratory rate"]), 'Respiratory Rate')
   }) Result where Result is not null
-
-// Vital Sign FHIR Observations sorted in descending order by issue date.
-
-define "Blood pressure":
-  DE.SelectByStatus([Observation: Cx."Blood pressure"])
-
-define "Body Temperature Observations":
-  DE.SelectByStatus([Observation: Cx."Body temperature"])
-
-define "Body Height Observations":
-  DE.SelectByStatus([Observation: Cx."Body height"])
-
-define "Body Weight Observations":
-  DE.SelectByStatus([Observation: Cx."Body weight"])
-
-define "Body Mass Index Observations":
-  DE.SelectByStatus([Observation: Cx."Body mass index"])
-
-define "Heart Rate Observations":
-  DE.SelectByStatus([Observation: Cx."Heart rate"])
-
-define "Oxygen Saturation Observations":
-  DE.SelectByStatus([Observation: Cx."Oxygen saturation"])
-
-define "Respiratory Rate Observations":
-  DE.SelectByStatus([Observation: Cx."Respiratory rate"])
 
 /*
 The following functions were added to support OHSU Epic data for Home Blood Pressure
