@@ -74,41 +74,6 @@
                }
             }
          }, {
-            "name" : "Blood pressure",
-            "context" : "Patient",
-            "accessLevel" : "Public",
-            "annotation" : [ ],
-            "expression" : {
-               "name" : "SelectByStatus",
-               "libraryName" : "DE",
-               "type" : "FunctionRef",
-               "annotation" : [ ],
-               "signature" : [ ],
-               "operand" : [ {
-                  "dataType" : "{http://hl7.org/fhir}Observation",
-                  "templateId" : "http://hl7.org/fhir/StructureDefinition/Observation",
-                  "codeProperty" : "code",
-                  "codeComparator" : "~",
-                  "type" : "Retrieve",
-                  "annotation" : [ ],
-                  "codes" : {
-                     "type" : "ToList",
-                     "annotation" : [ ],
-                     "signature" : [ ],
-                     "operand" : {
-                        "name" : "Blood pressure",
-                        "libraryName" : "Cx",
-                        "type" : "CodeRef",
-                        "annotation" : [ ]
-                     }
-                  },
-                  "include" : [ ],
-                  "codeFilter" : [ ],
-                  "dateFilter" : [ ],
-                  "otherFilter" : [ ]
-               } ]
-            }
-         }, {
             "name" : "Systolic Blood Pressure",
             "context" : "Patient",
             "accessLevel" : "Public",
@@ -1140,251 +1105,6 @@
                }
             }
          }, {
-            "name" : "Body Height Observations",
-            "context" : "Patient",
-            "accessLevel" : "Public",
-            "annotation" : [ ],
-            "expression" : {
-               "name" : "SelectByStatus",
-               "libraryName" : "DE",
-               "type" : "FunctionRef",
-               "annotation" : [ ],
-               "signature" : [ ],
-               "operand" : [ {
-                  "dataType" : "{http://hl7.org/fhir}Observation",
-                  "templateId" : "http://hl7.org/fhir/StructureDefinition/Observation",
-                  "codeProperty" : "code",
-                  "codeComparator" : "~",
-                  "type" : "Retrieve",
-                  "annotation" : [ ],
-                  "codes" : {
-                     "type" : "ToList",
-                     "annotation" : [ ],
-                     "signature" : [ ],
-                     "operand" : {
-                        "name" : "Body height",
-                        "libraryName" : "Cx",
-                        "type" : "CodeRef",
-                        "annotation" : [ ]
-                     }
-                  },
-                  "include" : [ ],
-                  "codeFilter" : [ ],
-                  "dateFilter" : [ ],
-                  "otherFilter" : [ ]
-               } ]
-            }
-         }, {
-            "name" : "Body Weight Observations",
-            "context" : "Patient",
-            "accessLevel" : "Public",
-            "annotation" : [ ],
-            "expression" : {
-               "name" : "SelectByStatus",
-               "libraryName" : "DE",
-               "type" : "FunctionRef",
-               "annotation" : [ ],
-               "signature" : [ ],
-               "operand" : [ {
-                  "dataType" : "{http://hl7.org/fhir}Observation",
-                  "templateId" : "http://hl7.org/fhir/StructureDefinition/Observation",
-                  "codeProperty" : "code",
-                  "codeComparator" : "~",
-                  "type" : "Retrieve",
-                  "annotation" : [ ],
-                  "codes" : {
-                     "type" : "ToList",
-                     "annotation" : [ ],
-                     "signature" : [ ],
-                     "operand" : {
-                        "name" : "Body weight",
-                        "libraryName" : "Cx",
-                        "type" : "CodeRef",
-                        "annotation" : [ ]
-                     }
-                  },
-                  "include" : [ ],
-                  "codeFilter" : [ ],
-                  "dateFilter" : [ ],
-                  "otherFilter" : [ ]
-               } ]
-            }
-         }, {
-            "name" : "Body Mass Index Observations",
-            "context" : "Patient",
-            "accessLevel" : "Public",
-            "annotation" : [ ],
-            "expression" : {
-               "name" : "SelectByStatus",
-               "libraryName" : "DE",
-               "type" : "FunctionRef",
-               "annotation" : [ ],
-               "signature" : [ ],
-               "operand" : [ {
-                  "dataType" : "{http://hl7.org/fhir}Observation",
-                  "templateId" : "http://hl7.org/fhir/StructureDefinition/Observation",
-                  "codeProperty" : "code",
-                  "codeComparator" : "~",
-                  "type" : "Retrieve",
-                  "annotation" : [ ],
-                  "codes" : {
-                     "type" : "ToList",
-                     "annotation" : [ ],
-                     "signature" : [ ],
-                     "operand" : {
-                        "name" : "Body mass index",
-                        "libraryName" : "Cx",
-                        "type" : "CodeRef",
-                        "annotation" : [ ]
-                     }
-                  },
-                  "include" : [ ],
-                  "codeFilter" : [ ],
-                  "dateFilter" : [ ],
-                  "otherFilter" : [ ]
-               } ]
-            }
-         }, {
-            "name" : "Body Temperature Observations",
-            "context" : "Patient",
-            "accessLevel" : "Public",
-            "annotation" : [ ],
-            "expression" : {
-               "name" : "SelectByStatus",
-               "libraryName" : "DE",
-               "type" : "FunctionRef",
-               "annotation" : [ ],
-               "signature" : [ ],
-               "operand" : [ {
-                  "dataType" : "{http://hl7.org/fhir}Observation",
-                  "templateId" : "http://hl7.org/fhir/StructureDefinition/Observation",
-                  "codeProperty" : "code",
-                  "codeComparator" : "~",
-                  "type" : "Retrieve",
-                  "annotation" : [ ],
-                  "codes" : {
-                     "type" : "ToList",
-                     "annotation" : [ ],
-                     "signature" : [ ],
-                     "operand" : {
-                        "name" : "Body temperature",
-                        "libraryName" : "Cx",
-                        "type" : "CodeRef",
-                        "annotation" : [ ]
-                     }
-                  },
-                  "include" : [ ],
-                  "codeFilter" : [ ],
-                  "dateFilter" : [ ],
-                  "otherFilter" : [ ]
-               } ]
-            }
-         }, {
-            "name" : "Heart Rate Observations",
-            "context" : "Patient",
-            "accessLevel" : "Public",
-            "annotation" : [ ],
-            "expression" : {
-               "name" : "SelectByStatus",
-               "libraryName" : "DE",
-               "type" : "FunctionRef",
-               "annotation" : [ ],
-               "signature" : [ ],
-               "operand" : [ {
-                  "dataType" : "{http://hl7.org/fhir}Observation",
-                  "templateId" : "http://hl7.org/fhir/StructureDefinition/Observation",
-                  "codeProperty" : "code",
-                  "codeComparator" : "~",
-                  "type" : "Retrieve",
-                  "annotation" : [ ],
-                  "codes" : {
-                     "type" : "ToList",
-                     "annotation" : [ ],
-                     "signature" : [ ],
-                     "operand" : {
-                        "name" : "Heart rate",
-                        "libraryName" : "Cx",
-                        "type" : "CodeRef",
-                        "annotation" : [ ]
-                     }
-                  },
-                  "include" : [ ],
-                  "codeFilter" : [ ],
-                  "dateFilter" : [ ],
-                  "otherFilter" : [ ]
-               } ]
-            }
-         }, {
-            "name" : "Oxygen Saturation Observations",
-            "context" : "Patient",
-            "accessLevel" : "Public",
-            "annotation" : [ ],
-            "expression" : {
-               "name" : "SelectByStatus",
-               "libraryName" : "DE",
-               "type" : "FunctionRef",
-               "annotation" : [ ],
-               "signature" : [ ],
-               "operand" : [ {
-                  "dataType" : "{http://hl7.org/fhir}Observation",
-                  "templateId" : "http://hl7.org/fhir/StructureDefinition/Observation",
-                  "codeProperty" : "code",
-                  "codeComparator" : "~",
-                  "type" : "Retrieve",
-                  "annotation" : [ ],
-                  "codes" : {
-                     "type" : "ToList",
-                     "annotation" : [ ],
-                     "signature" : [ ],
-                     "operand" : {
-                        "name" : "Oxygen saturation",
-                        "libraryName" : "Cx",
-                        "type" : "CodeRef",
-                        "annotation" : [ ]
-                     }
-                  },
-                  "include" : [ ],
-                  "codeFilter" : [ ],
-                  "dateFilter" : [ ],
-                  "otherFilter" : [ ]
-               } ]
-            }
-         }, {
-            "name" : "Respiratory Rate Observations",
-            "context" : "Patient",
-            "accessLevel" : "Public",
-            "annotation" : [ ],
-            "expression" : {
-               "name" : "SelectByStatus",
-               "libraryName" : "DE",
-               "type" : "FunctionRef",
-               "annotation" : [ ],
-               "signature" : [ ],
-               "operand" : [ {
-                  "dataType" : "{http://hl7.org/fhir}Observation",
-                  "templateId" : "http://hl7.org/fhir/StructureDefinition/Observation",
-                  "codeProperty" : "code",
-                  "codeComparator" : "~",
-                  "type" : "Retrieve",
-                  "annotation" : [ ],
-                  "codes" : {
-                     "type" : "ToList",
-                     "annotation" : [ ],
-                     "signature" : [ ],
-                     "operand" : {
-                        "name" : "Respiratory rate",
-                        "libraryName" : "Cx",
-                        "type" : "CodeRef",
-                        "annotation" : [ ]
-                     }
-                  },
-                  "include" : [ ],
-                  "codeFilter" : [ ],
-                  "dateFilter" : [ ],
-                  "otherFilter" : [ ]
-               } ]
-            }
-         }, {
             "name" : "VitalSignsSummary",
             "context" : "Patient",
             "accessLevel" : "Public",
@@ -1405,9 +1125,34 @@
                         "annotation" : [ ],
                         "signature" : [ ],
                         "operand" : [ {
-                           "name" : "Blood pressure",
-                           "type" : "ExpressionRef",
-                           "annotation" : [ ]
+                           "name" : "SelectByStatus",
+                           "libraryName" : "DE",
+                           "type" : "FunctionRef",
+                           "annotation" : [ ],
+                           "signature" : [ ],
+                           "operand" : [ {
+                              "dataType" : "{http://hl7.org/fhir}Observation",
+                              "templateId" : "http://hl7.org/fhir/StructureDefinition/Observation",
+                              "codeProperty" : "code",
+                              "codeComparator" : "~",
+                              "type" : "Retrieve",
+                              "annotation" : [ ],
+                              "codes" : {
+                                 "type" : "ToList",
+                                 "annotation" : [ ],
+                                 "signature" : [ ],
+                                 "operand" : {
+                                    "name" : "Blood pressure",
+                                    "libraryName" : "Cx",
+                                    "type" : "CodeRef",
+                                    "annotation" : [ ]
+                                 }
+                              },
+                              "include" : [ ],
+                              "codeFilter" : [ ],
+                              "dateFilter" : [ ],
+                              "otherFilter" : [ ]
+                           } ]
                         }, {
                            "valueType" : "{urn:hl7-org:elm-types:r1}String",
                            "value" : "Blood Pressure",
@@ -1425,9 +1170,34 @@
                         "annotation" : [ ],
                         "signature" : [ ],
                         "operand" : [ {
-                           "name" : "Body Height Observations",
-                           "type" : "ExpressionRef",
-                           "annotation" : [ ]
+                           "name" : "SelectByStatus",
+                           "libraryName" : "DE",
+                           "type" : "FunctionRef",
+                           "annotation" : [ ],
+                           "signature" : [ ],
+                           "operand" : [ {
+                              "dataType" : "{http://hl7.org/fhir}Observation",
+                              "templateId" : "http://hl7.org/fhir/StructureDefinition/Observation",
+                              "codeProperty" : "code",
+                              "codeComparator" : "~",
+                              "type" : "Retrieve",
+                              "annotation" : [ ],
+                              "codes" : {
+                                 "type" : "ToList",
+                                 "annotation" : [ ],
+                                 "signature" : [ ],
+                                 "operand" : {
+                                    "name" : "Body height",
+                                    "libraryName" : "Cx",
+                                    "type" : "CodeRef",
+                                    "annotation" : [ ]
+                                 }
+                              },
+                              "include" : [ ],
+                              "codeFilter" : [ ],
+                              "dateFilter" : [ ],
+                              "otherFilter" : [ ]
+                           } ]
                         }, {
                            "valueType" : "{urn:hl7-org:elm-types:r1}String",
                            "value" : "Height",
@@ -1441,9 +1211,34 @@
                         "annotation" : [ ],
                         "signature" : [ ],
                         "operand" : [ {
-                           "name" : "Body Weight Observations",
-                           "type" : "ExpressionRef",
-                           "annotation" : [ ]
+                           "name" : "SelectByStatus",
+                           "libraryName" : "DE",
+                           "type" : "FunctionRef",
+                           "annotation" : [ ],
+                           "signature" : [ ],
+                           "operand" : [ {
+                              "dataType" : "{http://hl7.org/fhir}Observation",
+                              "templateId" : "http://hl7.org/fhir/StructureDefinition/Observation",
+                              "codeProperty" : "code",
+                              "codeComparator" : "~",
+                              "type" : "Retrieve",
+                              "annotation" : [ ],
+                              "codes" : {
+                                 "type" : "ToList",
+                                 "annotation" : [ ],
+                                 "signature" : [ ],
+                                 "operand" : {
+                                    "name" : "Body weight",
+                                    "libraryName" : "Cx",
+                                    "type" : "CodeRef",
+                                    "annotation" : [ ]
+                                 }
+                              },
+                              "include" : [ ],
+                              "codeFilter" : [ ],
+                              "dateFilter" : [ ],
+                              "otherFilter" : [ ]
+                           } ]
                         }, {
                            "valueType" : "{urn:hl7-org:elm-types:r1}String",
                            "value" : "Weight",
@@ -1457,9 +1252,34 @@
                         "annotation" : [ ],
                         "signature" : [ ],
                         "operand" : [ {
-                           "name" : "Body Mass Index Observations",
-                           "type" : "ExpressionRef",
-                           "annotation" : [ ]
+                           "name" : "SelectByStatus",
+                           "libraryName" : "DE",
+                           "type" : "FunctionRef",
+                           "annotation" : [ ],
+                           "signature" : [ ],
+                           "operand" : [ {
+                              "dataType" : "{http://hl7.org/fhir}Observation",
+                              "templateId" : "http://hl7.org/fhir/StructureDefinition/Observation",
+                              "codeProperty" : "code",
+                              "codeComparator" : "~",
+                              "type" : "Retrieve",
+                              "annotation" : [ ],
+                              "codes" : {
+                                 "type" : "ToList",
+                                 "annotation" : [ ],
+                                 "signature" : [ ],
+                                 "operand" : {
+                                    "name" : "Body mass index",
+                                    "libraryName" : "Cx",
+                                    "type" : "CodeRef",
+                                    "annotation" : [ ]
+                                 }
+                              },
+                              "include" : [ ],
+                              "codeFilter" : [ ],
+                              "dateFilter" : [ ],
+                              "otherFilter" : [ ]
+                           } ]
                         }, {
                            "valueType" : "{urn:hl7-org:elm-types:r1}String",
                            "value" : "BMI",
@@ -1473,9 +1293,34 @@
                         "annotation" : [ ],
                         "signature" : [ ],
                         "operand" : [ {
-                           "name" : "Body Temperature Observations",
-                           "type" : "ExpressionRef",
-                           "annotation" : [ ]
+                           "name" : "SelectByStatus",
+                           "libraryName" : "DE",
+                           "type" : "FunctionRef",
+                           "annotation" : [ ],
+                           "signature" : [ ],
+                           "operand" : [ {
+                              "dataType" : "{http://hl7.org/fhir}Observation",
+                              "templateId" : "http://hl7.org/fhir/StructureDefinition/Observation",
+                              "codeProperty" : "code",
+                              "codeComparator" : "~",
+                              "type" : "Retrieve",
+                              "annotation" : [ ],
+                              "codes" : {
+                                 "type" : "ToList",
+                                 "annotation" : [ ],
+                                 "signature" : [ ],
+                                 "operand" : {
+                                    "name" : "Body temperature",
+                                    "libraryName" : "Cx",
+                                    "type" : "CodeRef",
+                                    "annotation" : [ ]
+                                 }
+                              },
+                              "include" : [ ],
+                              "codeFilter" : [ ],
+                              "dateFilter" : [ ],
+                              "otherFilter" : [ ]
+                           } ]
                         }, {
                            "valueType" : "{urn:hl7-org:elm-types:r1}String",
                            "value" : "Temperature",
@@ -1489,9 +1334,34 @@
                         "annotation" : [ ],
                         "signature" : [ ],
                         "operand" : [ {
-                           "name" : "Heart Rate Observations",
-                           "type" : "ExpressionRef",
-                           "annotation" : [ ]
+                           "name" : "SelectByStatus",
+                           "libraryName" : "DE",
+                           "type" : "FunctionRef",
+                           "annotation" : [ ],
+                           "signature" : [ ],
+                           "operand" : [ {
+                              "dataType" : "{http://hl7.org/fhir}Observation",
+                              "templateId" : "http://hl7.org/fhir/StructureDefinition/Observation",
+                              "codeProperty" : "code",
+                              "codeComparator" : "~",
+                              "type" : "Retrieve",
+                              "annotation" : [ ],
+                              "codes" : {
+                                 "type" : "ToList",
+                                 "annotation" : [ ],
+                                 "signature" : [ ],
+                                 "operand" : {
+                                    "name" : "Heart rate",
+                                    "libraryName" : "Cx",
+                                    "type" : "CodeRef",
+                                    "annotation" : [ ]
+                                 }
+                              },
+                              "include" : [ ],
+                              "codeFilter" : [ ],
+                              "dateFilter" : [ ],
+                              "otherFilter" : [ ]
+                           } ]
                         }, {
                            "valueType" : "{urn:hl7-org:elm-types:r1}String",
                            "value" : "Heart Rate",
@@ -1505,9 +1375,34 @@
                         "annotation" : [ ],
                         "signature" : [ ],
                         "operand" : [ {
-                           "name" : "Oxygen Saturation Observations",
-                           "type" : "ExpressionRef",
-                           "annotation" : [ ]
+                           "name" : "SelectByStatus",
+                           "libraryName" : "DE",
+                           "type" : "FunctionRef",
+                           "annotation" : [ ],
+                           "signature" : [ ],
+                           "operand" : [ {
+                              "dataType" : "{http://hl7.org/fhir}Observation",
+                              "templateId" : "http://hl7.org/fhir/StructureDefinition/Observation",
+                              "codeProperty" : "code",
+                              "codeComparator" : "~",
+                              "type" : "Retrieve",
+                              "annotation" : [ ],
+                              "codes" : {
+                                 "type" : "ToList",
+                                 "annotation" : [ ],
+                                 "signature" : [ ],
+                                 "operand" : {
+                                    "name" : "Oxygen saturation",
+                                    "libraryName" : "Cx",
+                                    "type" : "CodeRef",
+                                    "annotation" : [ ]
+                                 }
+                              },
+                              "include" : [ ],
+                              "codeFilter" : [ ],
+                              "dateFilter" : [ ],
+                              "otherFilter" : [ ]
+                           } ]
                         }, {
                            "valueType" : "{urn:hl7-org:elm-types:r1}String",
                            "value" : "Oxygen Saturation",
@@ -1521,9 +1416,34 @@
                         "annotation" : [ ],
                         "signature" : [ ],
                         "operand" : [ {
-                           "name" : "Respiratory Rate Observations",
-                           "type" : "ExpressionRef",
-                           "annotation" : [ ]
+                           "name" : "SelectByStatus",
+                           "libraryName" : "DE",
+                           "type" : "FunctionRef",
+                           "annotation" : [ ],
+                           "signature" : [ ],
+                           "operand" : [ {
+                              "dataType" : "{http://hl7.org/fhir}Observation",
+                              "templateId" : "http://hl7.org/fhir/StructureDefinition/Observation",
+                              "codeProperty" : "code",
+                              "codeComparator" : "~",
+                              "type" : "Retrieve",
+                              "annotation" : [ ],
+                              "codes" : {
+                                 "type" : "ToList",
+                                 "annotation" : [ ],
+                                 "signature" : [ ],
+                                 "operand" : {
+                                    "name" : "Respiratory rate",
+                                    "libraryName" : "Cx",
+                                    "type" : "CodeRef",
+                                    "annotation" : [ ]
+                                 }
+                              },
+                              "include" : [ ],
+                              "codeFilter" : [ ],
+                              "dateFilter" : [ ],
+                              "otherFilter" : [ ]
+                           } ]
                         }, {
                            "valueType" : "{urn:hl7-org:elm-types:r1}String",
                            "value" : "Respiratory Rate",
