@@ -1,15 +1,15 @@
 import React from 'react'
-import { useState, useEffect } from 'react'
-import { RouteComponentProps, useHistory } from 'react-router-dom'
+import {useState, useEffect} from 'react'
+import {RouteComponentProps, useHistory} from 'react-router-dom'
 import FHIR from 'fhirclient'
-import { getFHIRData } from '../../data-services/fhirService'
+import {getFHIRData} from '../../data-services/fhirService'
 import {
-  LauncherData, buildLauncherDataArray, getMatchingProviderEndpointsFromName,
-  providerEndpointExistsWithName
+    LauncherData, buildLauncherDataArray, getMatchingProviderEndpointsFromName,
+    providerEndpointExistsWithName
 } from '../../data-services/providerEndpointService'
 import {
-  isEndpointStillAuthorized, saveSelectedEndpoints,
-  deleteSelectedEndpoints, getLauncherData
+    isEndpointStillAuthorized, saveSelectedEndpoints,
+    deleteSelectedEndpoints, getLauncherData, getSelectedEndpoints
 } from '../../data-services/persistenceService'
 
 import Box from '@mui/material/Box'
@@ -18,595 +18,612 @@ import Grid from '@mui/material/Grid'
 import Typography from '@mui/material/Typography'
 import FormControl from '@mui/material/FormControl'
 import InputLabel from '@mui/material/InputLabel'
-import Select, { SelectChangeEvent } from '@mui/material/Select'
-import { FHIRData } from '../../data-services/models/fhirResources'
+import Select, {SelectChangeEvent} from '@mui/material/Select'
+import {FHIRData} from '../../data-services/models/fhirResources'
 
-import { Theme, useTheme } from '@mui/material/styles'
+import {Theme, useTheme} from '@mui/material/styles'
 import OutlinedInput from '@mui/material/OutlinedInput'
 import MenuItem from '@mui/material/MenuItem'
 import Chip from '@mui/material/Chip'
 
-import { getSupplementalDataClient } from '../../data-services/fhirService'
+import {getSupplementalDataClient} from '../../data-services/fhirService'
 import Client from 'fhirclient/lib/Client'
-import { Patient } from '../../data-services/fhir-types/fhir-r4'
+import {Patient} from '../../data-services/fhir-types/fhir-r4'
 
 interface Props extends RouteComponentProps {
-  setFhirDataStates: (data: FHIRData[] | undefined) => void,
-  setAndLogProgressState: (message: string, value: number) => void,
-  setResourcesLoadedCountState: (count: number) => void,
-  setAndLogErrorMessageState: (errorType: string, userErrorMessage: string,
-    developerErrorMessage: string, errorCaught: Error | string | unknown) => void,
-  resetErrorMessageState: () => void,
-  openAuthDialog: (endpoint: LauncherData) => void,
-  handleAuthDialogClose: () => void,
-  isAuthDialogOpen: boolean,
-  isAuthorizeSelected: null | boolean
+    setFhirDataStates: (data: FHIRData[] | undefined) => void,
+    setAndLogProgressState: (message: string, value: number) => void,
+    setResourcesLoadedCountState: (count: number) => void,
+    setAndLogErrorMessageState: (errorType: string, userErrorMessage: string,
+                                 developerErrorMessage: string, errorCaught: Error | string | unknown) => void,
+    resetErrorMessageState: () => void,
+    openAuthDialog: (endpoint: LauncherData) => void,
+    handleAuthDialogClose: () => void,
+    isAuthorizeSelected: () => boolean | null,
+    resetAuthDialog: () => void,
+    autoShareFHIRDataToSDS: () => void
+
 }
 
 interface LocationState {
-  fhirDataCollection?: FHIRData[],
+    fhirDataCollection?: FHIRData[],
 }
 
 export default function ProviderLogin(props: Props) {
-  const { fhirDataCollection } = props.location.state as LocationState
+    const {fhirDataCollection} = props.location.state as LocationState
 
-  let history = useHistory()
+    let history = useHistory()
 
-  const [launcherEndpointFromForage, setLauncherEndpointFromForage] =
-    useState<LauncherData | null | undefined>()
-  const [sdsClient, setSdsClient] = useState<Client | null | undefined>(null)
+    const [launcherEndpointFromForage, setLauncherEndpointFromForage] =
+        useState<LauncherData | null | undefined>()
+    const [sdsClient, setSdsClient] = useState<Client | null | undefined>(null)
 
-  useEffect(() => {
-    const fetchLauncherData = async () => {
-      try {
-        setLauncherEndpointFromForage(await getLauncherData())
-      } catch (e) {
-        console.error(`Error fetching launcher data within ProviderLogin useEffect: ${e}`)
-      }
-    }
-    fetchLauncherData()
-  }, []) // Empty for now as should only need to set on component mount because a new launcher is a re-mount
-
-  // TODO: There is a MUCH better way to do this, such as use the version in App.tsx
-  // WITH setSupplementalDataClient logic and not repeat code, or use a service,
-  // or put code at a lower level in getSupplementalDataClient), etc.
-  useEffect(() => {
-    const fetchSdsClient = async () => {
-      try {
-        let sdsClient: Client | undefined = await getSupplementalDataClient()
-        if (sdsClient) {
-          const sdsMessageSuffix = "The SDS client will not be used."
-          let isSDSReadError = false
-          let sdsPatient: Patient | undefined
-          if (sdsClient.patient.id !== null) {
-            console.log("client.patient.id !== null, using client.patient.read()")
+    useEffect(() => {
+        const fetchLauncherData = async () => {
             try {
-              sdsPatient = await sdsClient.patient.read() as Patient
-              console.log("Valid ")
-            } catch (err) {
-              console.warn("Warning: SDS Patient cannot be read via client.patient.read(): " + sdsMessageSuffix)
-              isSDSReadError = true
+                setLauncherEndpointFromForage(await getLauncherData())
+            } catch (e) {
+                console.error(`Error fetching launcher data within ProviderLogin useEffect: ${e}`)
             }
-          } else {
-            console.log("client.patient.id === null, using client.user.read() isntead of client.patient.read()")
-            try {
-              sdsPatient = await sdsClient.user.read() as Patient
-            } catch (err) {
-              console.warn("Warning: SDS Patient cannot be read via client.user.read(): " + sdsMessageSuffix)
-              isSDSReadError = true
-            }
-          }
+        }
+        fetchLauncherData()
+    }, []) // Empty for now as should only need to set on component mount because a new launcher is a re-mount
 
-          if (!isSDSReadError) {
-            console.log("Valid SDS patient read: Using SDS client", sdsPatient ? sdsPatient : "unknown")
-          } else {
-            console.warn(`Warning: Invalid SDS patient read: Overriding valid client to undefined
+    // TODO: There is a MUCH better way to do this, such as use the version in App.tsx
+    // WITH setSupplementalDataClient logic and not repeat code, or use a service,
+    // or put code at a lower level in getSupplementalDataClient), etc.
+    useEffect(() => {
+        const fetchSdsClient = async () => {
+            try {
+                let sdsClient: Client | undefined = await getSupplementalDataClient()
+                if (sdsClient) {
+                    const sdsMessageSuffix = "The SDS client will not be used."
+                    let isSDSReadError = false
+                    let sdsPatient: Patient | undefined
+                    if (sdsClient.patient.id !== null) {
+                        console.log("client.patient.id !== null, using client.patient.read()")
+                        try {
+                            sdsPatient = await sdsClient.patient.read() as Patient
+                            console.log("Valid ")
+                        } catch (err) {
+                            console.warn("Warning: SDS Patient cannot be read via client.patient.read(): " + sdsMessageSuffix)
+                            isSDSReadError = true
+                        }
+                    } else {
+                        console.log("client.patient.id === null, using client.user.read() isntead of client.patient.read()")
+                        try {
+                            sdsPatient = await sdsClient.user.read() as Patient
+                        } catch (err) {
+                            console.warn("Warning: SDS Patient cannot be read via client.user.read(): " + sdsMessageSuffix)
+                            isSDSReadError = true
+                        }
+                    }
+
+                    if (!isSDSReadError) {
+                        console.log("Valid SDS patient read: Using SDS client", sdsPatient ? sdsPatient : "unknown")
+                    } else {
+                        console.warn(`Warning: Invalid SDS patient read: Overriding valid client to undefined
                 and not setting state for supplementalDataClient or canShareData`)
-            sdsClient = undefined
-          }
-          setSdsClient(sdsClient)
-        } else {
-          console.error("SDS client is not defined")
-        }
-      } catch (error) {
-        console.error("Error fetching SDS Client:", error)
-      }
-    }
-    fetchSdsClient();
-  }, []) // Empty dependency array to run only on component mount.
-  // If we want this everytime, just call getSupplementalDataClient where needed instead
-
-  const availableEndpoints: LauncherData[] = buildLauncherDataArray()
-  const [selectedEndpointNames, setSelectedEndpointNames] = useState<string[]>([])
-
-  const authorizeSelectedEndpoints = async (endpointsToAuthorize: LauncherData[]): Promise<void> => {
-    console.log('authorizeSelectedEndpoints(): endpointsToAuthorize: ', JSON.stringify(endpointsToAuthorize))
-
-    if (endpointsToAuthorize && endpointsToAuthorize.length > 0) {
-      const endpointsLength = endpointsToAuthorize.length
-
-      // Loop endpoints to see if any exist that are not already authorized (however unlikely that may be)
-      // TODO: Consider getting all endpoints first, then after fully looping, decide what to do
-      for (let i = 0; i < endpointsLength; i++) {
-        const curEndpoint: LauncherData = endpointsToAuthorize[i]
-        console.log("curEndpoint", curEndpoint)
-        const issServerUrl = curEndpoint.config!.iss
-        console.log("issServerUrl", issServerUrl)
-        console.log("SDS URL (process.env.REACT_APP_SHARED_DATA_ENDPOINT)", process.env.REACT_APP_SHARED_DATA_ENDPOINT)
-        const isLastIndex = i === endpointsLength - 1
-        console.log("isLastIndex: " + isLastIndex)
-
-        // Note: If it's the SDS we don't check for authorization of that endpoint, as it's shared,
-        // and because we can't authorize w/o a client id, which the SDS itself might not have
-        // We shouldn't need this logic as there is a gatekeeper on bad SDSs (we don't add them in the first place)
-        // to be checked against authorizeSelectedEndpoints, but, just in case it slips through...
-        const isSDSUrl: boolean = issServerUrl === process.env.REACT_APP_SHARED_DATA_ENDPOINT
-        console.log('isSDSUrl: ', isSDSUrl)
-
-        // Check for prior auths from another load or session just in case so we can save some time
-        if (isSDSUrl || await isEndpointStillAuthorized(issServerUrl!)) {
-          console.log("This endpoint IS authorized")
-          console.log("curEndpoint issServerUrl " + issServerUrl + " at index " + i + " and count "
-            + (i + 1) + "/" + endpointsLength +
-            " is still authorized. Will not waste time reauthorizing: ", curEndpoint)
-
-          if (isLastIndex) {
-            console.log("All endpoints are already authorized.")
-
-            // Do NOT need to save data for endpoints to be loaded as we don't need to reload the app
-            console.log("Deleting multi-select endpoints from local storage so they don't intefere with future selections")
-            await deleteSelectedEndpoints()
-
-            console.log("Loading data from all endpoints without leaving the application")
-            await loadSelectedEndpoints(endpointsToAuthorize) // TODO: Consider returning true and having handleSubmit call this instead based on true
-          }
-
-        } else {
-          console.log("This endpoint is NOT authorized (ProviderLogin.tsx)")
-          console.log("curEndpoint issServerUrl " + issServerUrl + " at index " + i +
-            " and count " + (i + 1) + "/" + endpointsLength +
-            " is NOT authorized.", curEndpoint)
-
-          // Save selected endpoints so app load after exiting app for auth knows that it is a multi load of specific endpoints
-          console.log("At Least one endpoint is not authorized yet...Saving multi-select endpoints")
-          const selectedEndpointsToSave: string[] =
-            endpointsToAuthorize
-              .map((curEndpoint, index) => {
-                if (curEndpoint.config && curEndpoint.config.iss) {
-                  console.log("matched endpoint: " + curEndpoint.config.iss)
-                  return curEndpoint.config.iss
+                        sdsClient = undefined
+                    }
+                    setSdsClient(sdsClient)
+                } else {
+                    console.error("SDS client is not defined")
                 }
-                return undefined
-              })
-              .filter((endpoint) => endpoint !== undefined)
-              .map((endpoint) => endpoint as string)
-          console.log("selectedEndpointsToSave: ", JSON.stringify(selectedEndpointsToSave))
-          await saveSelectedEndpoints(selectedEndpointsToSave)
-
-          props.openAuthDialog(curEndpoint)
-          await new Promise<void>((resolve) => {
-            const checkUserDecision = () => {
-              console.log('checkUserDecision() - isAuthorizeSelected: ' + props.isAuthorizeSelected)
-              if (props.isAuthorizeSelected !== null) { // null is the default
-                // User has made a decision
-                resolve()
-              } else {
-                // Check again in 50ms
-                setTimeout(checkUserDecision, 250)
-              }
+            } catch (error) {
+                console.error("Error fetching SDS Client:", error)
             }
-            checkUserDecision()
-          })
-
-          if (props.isAuthorizeSelected) {
-            console.log("Reauthorizing curEndpoint.config!:", curEndpoint.config!)
-            // The following authorization will exit the application. Therefore, if it's not the last index,
-            // then we will have more endpoints to authorize when we return, on load.
-            if (isLastIndex) {
-              console.log("Authorizing last index")
-            } else {
-              console.log("Not last index, Authorizing index " + i)
-            }
-
-            console.warn("Before authorize: curEndpoint.config! " + JSON.stringify(curEndpoint.config!))
-            await FHIR.oauth2.authorize(curEndpoint.config!)
-            console.warn("After authorize: curEndpoint.config! " + JSON.stringify(curEndpoint.config!))
-
-            break
-          } else {
-            console.log("User does not agree to authorization. Skipping authorization...")
-            props.handleAuthDialogClose()
-            continue
-          }
         }
-      }
+        fetchSdsClient();
+    }, []) // Empty dependency array to run only on component mount.
+    // If we want this everytime, just call getSupplementalDataClient where needed instead
 
-    } else {
-      console.log("endpointsToAuthorize is not defined or contains no data")
-    }
-  }
+    const availableEndpoints: LauncherData[] = buildLauncherDataArray()
+    const [selectedEndpointNames, setSelectedEndpointNames] = useState<string[]>([])
+    const [isLeavingToAuthorize, setIsLeavingToAuthorize] = useState<boolean>(false);
 
-  const loadAuthorizedSelectedEndpointMulti = async (selectedEndpoint: LauncherData,
-    isMultipleProviders: boolean, fhirDataCollectionIndex: number): Promise<FHIRData | undefined> => {
-    console.log('loadAuthorizedSelectedEndpointMulti(): selectedEndpoint: ' + JSON.stringify(selectedEndpoint))
-    console.log('loadAuthorizedSelectedEndpointMulti(): isMultipleProviders: ' + isMultipleProviders)
-    console.log('loadAuthorizedSelectedEndpointMulti(): fhirDataCollectionIndex: ' + fhirDataCollectionIndex)
+    const authorizeSelectedEndpoints = async (endpointsToAuthorize: LauncherData[]): Promise<void> => {
+        console.log('authorizeSelectedEndpoints(): endpointsToAuthorize: ', JSON.stringify(endpointsToAuthorize))
 
-    if (selectedEndpoint !== null) {
-      const issServerUrl = selectedEndpoint.config!.iss
-      console.log('issServerUrl:', issServerUrl)
+        if (endpointsToAuthorize && endpointsToAuthorize.length > 0) {
+            const endpointsLength = endpointsToAuthorize.length
 
-      let fhirDataFromStoredEndpoint: FHIRData | undefined = undefined
+            // Save selected endpoints so app load after exiting app for auth knows that it is a multi load of specific endpoints
+            console.log("At Least one endpoint is not authorized yet...Saving multi-select endpoints")
+            let selectedEndpointsToSave: string[] =
+                endpointsToAuthorize
+                    .map((curEndpoint, index) => {
+                        if (curEndpoint.config && curEndpoint.config.iss) {
+                            console.log("matched endpoint: " + curEndpoint.config.iss)
+                            return curEndpoint.config.iss
+                        }
+                        return undefined
+                    })
+                    .filter((endpoint) => endpoint !== undefined)
+                    .map((endpoint) => endpoint as string)
+            console.log("selectedEndpointsToSave: ", JSON.stringify(selectedEndpointsToSave))
+            // await saveSelectedEndpoints(selectedEndpointsToSave)
 
-      console.log("fhirDataFromStoredEndpoint = await getFHIRData(true, issServerUrl!)")
-      if (selectedEndpoint.name.includes('SDS') && sdsClient) {
-        console.log('loading sds data in ProviderLogin.tsx as part of a multi login')
-        fhirDataFromStoredEndpoint = await getFHIRData(true, issServerUrl!, sdsClient,
-          props.setAndLogProgressState, props.setResourcesLoadedCountState, props.setAndLogErrorMessageState)
-        console.log('sdsData', fhirDataFromStoredEndpoint)
-        fhirDataFromStoredEndpoint.serverName = selectedEndpoint.name
-      } else {
-        fhirDataFromStoredEndpoint = await getFHIRData(true, issServerUrl!, null,
-          props.setAndLogProgressState, props.setResourcesLoadedCountState, props.setAndLogErrorMessageState)
-          fhirDataFromStoredEndpoint.serverName = selectedEndpoint.name
-      }
-      console.log("fhirDataFromStoredEndpoint", JSON.stringify(fhirDataFromStoredEndpoint))
+            // Loop endpoints to see if any exist that are not already authorized (however unlikely that may be)
+            // TODO: Consider getting all endpoints first, then after fully looping, decide what to do
+            for (let i = 0; i < endpointsLength; i++) {
+                props.resetAuthDialog();
 
-      return fhirDataFromStoredEndpoint
-    } else {
-      console.error("endpoint === null")
-    }
-  }
+                const curEndpoint: LauncherData = endpointsToAuthorize[i]
+                console.log("curEndpoint", curEndpoint)
+                const issServerUrl = curEndpoint.config!.iss
+                console.log("issServerUrl", issServerUrl)
+                console.log("SDS URL (process.env.REACT_APP_SHARED_DATA_ENDPOINT)", process.env.REACT_APP_SHARED_DATA_ENDPOINT)
+                const isLastIndex = i === endpointsLength - 1
+                console.log("isLastIndex: " + isLastIndex)
 
-  // Note: We can't load here most of the time (unless all are already authorized, then we load here)
-  // as this multiselect can only really kick off the auth logic (vs the data). After application (re)load,
-  // after all authorized, we call similar logic again
-  const loadSelectedEndpoints = async (endpointsToLoad: LauncherData[]): Promise<void> => {
-    console.log('loadSelectedEndpoints()')
-    const fhirDataCollection: FHIRData[] = []
+                // Note: If it's the SDS we don't check for authorization of that endpoint, as it's shared,
+                // and because we can't authorize w/o a client id, which the SDS itself might not have
+                // We shouldn't need this logic as there is a gatekeeper on bad SDSs (we don't add them in the first place)
+                // to be checked against authorizeSelectedEndpoints, but, just in case it slips through...
+                const isSDSUrl: boolean = issServerUrl === process.env.REACT_APP_SHARED_DATA_ENDPOINT
+                console.log('isSDSUrl: ', isSDSUrl)
 
-    try {
-      console.log("redirecting to '/' right away as loading multiple endpoints")
-      history.push('/')
+                // Check for prior auths from another load or session just in case so we can save some time
+                if (isSDSUrl || await isEndpointStillAuthorized(issServerUrl!)) {
+                    console.log("This endpoint IS authorized: issServerUrl " + issServerUrl + " at index " + i + " and count "
+                        + (i + 1) + "/" + endpointsLength +
+                        " is still authorized. Will not waste time reauthorizing: ", curEndpoint)
 
-      let index: number = 0;
-      for (const curSelectedEndpoint of endpointsToLoad) {
-        console.log('curSelectedEndpoint #' + (index + 1) + ' at index: ' + index + ' with value:', curSelectedEndpoint)
+                    if (isLastIndex) {
+                        console.log("All endpoints are already authorized.")
 
-        // Reset of state to undefined for loader and error message reset have to happen after each index is loaded
-        // in this multi version vs all at end like in singular version
-        console.log('setting fhirData to undefined so progess indicator is triggered while new data is loaded subsequently')
-        props.setFhirDataStates(undefined)
-        props.resetErrorMessageState()
+                        // Do NOT need to save data for endpoints to be loaded as we don't need to reload the app
+                        console.log("Deleting multi-select endpoints from local storage so they don't intefere with future selections")
+                        // storer: this shouldn't be needed anymore
+                        await deleteSelectedEndpoints()
 
-        const curFhirDataLoaded: FHIRData | undefined =
-          await loadAuthorizedSelectedEndpointMulti(curSelectedEndpoint, true, index)
-        if (curFhirDataLoaded) {
-          curFhirDataLoaded.serverName = curSelectedEndpoint.name
+                        console.log("Loading data from all endpoints without leaving the application")
+                        await loadSelectedEndpoints(endpointsToAuthorize) // TODO: Consider returning true and having handleSubmit call this instead based on true
+                    }
 
-          console.log("curFhirDataLoaded.serverName:", curFhirDataLoaded.serverName)
-          console.log("curFhirDataLoaded:", curFhirDataLoaded)
-          console.log("fhirDataCollection:", fhirDataCollection)
-          console.log("Adding curFhirDataLoaded to fhirDataCollection")
-          fhirDataCollection.push(curFhirDataLoaded)
-          console.log("fhirDataCollection:", fhirDataCollection)
+                } else {
+                    console.log("This endpoint is NOT authorized: issServerUrl " + issServerUrl + " at index " + i +
+                        " and count " + (i + 1) + "/" + endpointsLength + " is NOT authorized.", curEndpoint)
+
+                    props.openAuthDialog(curEndpoint)
+                    await new Promise<void>((resolve) => {
+                        const checkUserDecision = () => {
+                            console.debug('checkUserDecision() - isAuthorizeSelected: ' + props.isAuthorizeSelected())
+                            if (props.isAuthorizeSelected() !== null) { // null is the default
+                                // User has made a decision
+                                resolve()
+                            } else {
+                                // Check again in 50ms
+                                setTimeout(checkUserDecision, 250)
+                            }
+                        }
+                        checkUserDecision()
+                    })
+
+                    props.handleAuthDialogClose()
+
+                    if (props.isAuthorizeSelected()) {
+                        // save selected endpoints just before leaving to authorize.  one may have been skipped, and
+                        // we want to ensure we don't ask about it next time around any subsequent authorizations
+                        // will occur in this logic's sister code in App.tsx when the home page loads after redirect.
+                        await saveSelectedEndpoints(selectedEndpointsToSave)
+
+                        // The following authorization will exit the application. Therefore, if it's not the last index,
+                        // then we will have more endpoints to authorize when we return, on load.
+
+                        // we're leaving!
+
+                        setIsLeavingToAuthorize(true);    // disables the Login button
+
+                        console.log("Authorizing: " + JSON.stringify(curEndpoint.config!))
+                        FHIR.oauth2.authorize(curEndpoint.config!)
+                        break
+
+                    } else {
+                        console.log("User does not agree to authorization. Skipping authorization...")
+
+                        // remove current endpoint from endpoints to save so it's not processed again
+                        // when control returns after any authorizations that do occur
+                        selectedEndpointsToSave = selectedEndpointsToSave!.filter((endpoint) => endpoint !== curEndpoint.config!.iss)
+                    }
+                }
+            }
+
         } else {
-          console.error("Error: No FHIR Data loaded for the current index (" + index + "). " +
-            curSelectedEndpoint?.name + " was not pushed to fhirDataCollection!")
+            console.log("endpointsToAuthorize is not defined or contains no data")
         }
-        index++;
-      }
-    } catch (err) {
-      // NOTE: If we reach here and we aren't on the last index of the endpoints
-      // then we won't be able to load all of them and see them all.
-      // It would be better to find a way to handle the error and skip the specific issue
-      // so we only miss loading the resources with issues.
-      console.log(`Failure in loadSelectedEndpoints: ${err}`)
-    } finally {
-      props.setFhirDataStates(fhirDataCollection!)
-      console.log("fhirDataCollection complete in loadSelectedEndpoints:", fhirDataCollection)
     }
 
-  }
+    const loadAuthorizedSelectedEndpointMulti = async (selectedEndpoint: LauncherData,
+                                                       isMultipleProviders: boolean, fhirDataCollectionIndex: number): Promise<FHIRData | undefined> => {
+        console.log('loadAuthorizedSelectedEndpointMulti(): selectedEndpoint: ' + JSON.stringify(selectedEndpoint))
+        console.log('loadAuthorizedSelectedEndpointMulti(): isMultipleProviders: ' + isMultipleProviders)
+        console.log('loadAuthorizedSelectedEndpointMulti(): fhirDataCollectionIndex: ' + fhirDataCollectionIndex)
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
+        if (selectedEndpoint !== null) {
+            const issServerUrl = selectedEndpoint.config!.iss
+            console.log('issServerUrl:', issServerUrl)
 
-    if (selectedEndpointNames) {
-      if (selectedEndpointNames.length === 0) {
-        console.log("selectedEndpoint array is empty")
-        return // Cannot continue so returning but this should not be possible since we have disabled the login button in this case
-      } else if (selectedEndpointNames.length > 0) {
-        console.log("selectedEndpoint array has data")
+            let fhirDataFromStoredEndpoint: FHIRData | undefined = undefined
 
-        let matchingProviderEndpoints: LauncherData[] =
-          await getMatchingProviderEndpointsFromName(availableEndpoints, selectedEndpointNames)
-        console.log('matchingProviderEndpoints: ', matchingProviderEndpoints);
+            console.log("fhirDataFromStoredEndpoint = await getFHIRData(true, issServerUrl!)")
+            if (selectedEndpoint.name.includes('SDS') && sdsClient) {
+                console.log('loading sds data in ProviderLogin.tsx as part of a multi login')
+                fhirDataFromStoredEndpoint = await getFHIRData(true, issServerUrl!, sdsClient,
+                    props.setAndLogProgressState, props.setResourcesLoadedCountState, props.setAndLogErrorMessageState)
+                console.log('sdsData', fhirDataFromStoredEndpoint)
+                fhirDataFromStoredEndpoint.serverName = selectedEndpoint.name
+            } else {
+                fhirDataFromStoredEndpoint = await getFHIRData(true, issServerUrl!, null,
+                    props.setAndLogProgressState, props.setResourcesLoadedCountState, props.setAndLogErrorMessageState)
+                fhirDataFromStoredEndpoint.serverName = selectedEndpoint.name
+            }
+            console.log("fhirDataFromStoredEndpoint", JSON.stringify(fhirDataFromStoredEndpoint))
 
-        if (matchingProviderEndpoints && matchingProviderEndpoints.length > 0) {
-          console.log(`${matchingProviderEndpoints.length} additional providers selected.`)
+            return fhirDataFromStoredEndpoint
+        } else {
+            console.error("endpoint === null")
+        }
+    }
 
-          try {
-            // Always include the launcher endpoint in addition to other providers selected:
-            if (launcherEndpointFromForage) {
-              console.log("launcherEndpointFromForage: ", launcherEndpointFromForage)
-              // Only add if NOT already selected/existing somehow in matchingProviderEndpoints
-              if ( ! providerEndpointExistsWithName(launcherEndpointFromForage, matchingProviderEndpoints) ) {
-                console.log(`Adding launcher ${JSON.stringify(launcherEndpointFromForage)}
+    // Note: We can't load here most of the time (unless all are already authorized, then we load here)
+    // as this multiselect can only really kick off the auth logic (vs the data). After application (re)load,
+    // after all authorized, we call similar logic again
+    const loadSelectedEndpoints = async (endpointsToLoad: LauncherData[]): Promise<void> => {
+        console.log('loadSelectedEndpoints()')
+        const fhirDataCollection: FHIRData[] = []
+
+        try {
+            console.log("redirecting to '/' right away as loading multiple endpoints")
+            history.push('/')
+
+            let index: number = 0;
+            for (const curSelectedEndpoint of endpointsToLoad) {
+                if ( ! await isEndpointStillAuthorized(curSelectedEndpoint.config!.iss!) ) {
+                    console.log('Endpoint is not authorized, so, will not load it: ', curSelectedEndpoint.config!.iss)
+                    continue;
+                }
+
+                console.log('curSelectedEndpoint #' + (index + 1) + ' at index: ' + index + ' with value:', curSelectedEndpoint)
+
+                // Reset of state to undefined for loader and error message reset have to happen after each index is loaded
+                // in this multi version vs all at end like in singular version
+                console.log('setting fhirData to undefined so progess indicator is triggered while new data is loaded subsequently')
+                props.setFhirDataStates(undefined)
+                props.resetErrorMessageState()
+
+                const curFhirDataLoaded: FHIRData | undefined =
+                    await loadAuthorizedSelectedEndpointMulti(curSelectedEndpoint, true, index)
+                if (curFhirDataLoaded) {
+                    curFhirDataLoaded.serverName = curSelectedEndpoint.name
+
+                    console.log("curFhirDataLoaded.serverName:", curFhirDataLoaded.serverName)
+                    console.log("curFhirDataLoaded:", curFhirDataLoaded)
+                    console.log("fhirDataCollection:", fhirDataCollection)
+                    console.log("Adding curFhirDataLoaded to fhirDataCollection")
+                    fhirDataCollection.push(curFhirDataLoaded)
+                    console.log("fhirDataCollection:", fhirDataCollection)
+                } else {
+                    console.error("Error: No FHIR Data loaded for the current index (" + index + "). " +
+                        curSelectedEndpoint?.name + " was not pushed to fhirDataCollection!")
+                }
+                index++;
+            }
+        } catch (err) {
+            // NOTE: If we reach here and we aren't on the last index of the endpoints
+            // then we won't be able to load all of them and see them all.
+            // It would be better to find a way to handle the error and skip the specific issue
+            // so we only miss loading the resources with issues.
+            console.log(`Failure in loadSelectedEndpoints: ${err}`)
+        } finally {
+            props.setFhirDataStates(fhirDataCollection!)
+            console.log("fhirDataCollection complete in loadSelectedEndpoints:", fhirDataCollection)
+            props.autoShareFHIRDataToSDS()
+        }
+
+    }
+
+    const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+        event.preventDefault()
+
+        if (selectedEndpointNames) {
+            if (selectedEndpointNames.length === 0) {
+                console.log("selectedEndpoint array is empty")
+                return // Cannot continue so returning but this should not be possible since we have disabled the login button in this case
+            } else if (selectedEndpointNames.length > 0) {
+                console.log("selectedEndpoint array has data")
+
+                let matchingProviderEndpoints: LauncherData[] =
+                    await getMatchingProviderEndpointsFromName(availableEndpoints, selectedEndpointNames)
+                console.log('matchingProviderEndpoints: ', matchingProviderEndpoints);
+
+                if (matchingProviderEndpoints && matchingProviderEndpoints.length > 0) {
+                    console.log(`${matchingProviderEndpoints.length} additional providers selected.`)
+
+                    try {
+                        // Always include the launcher endpoint in addition to other providers selected:
+                        if (launcherEndpointFromForage) {
+                            console.log("launcherEndpointFromForage: ", launcherEndpointFromForage)
+                            // Only add if NOT already selected/existing somehow in matchingProviderEndpoints
+                            if (!providerEndpointExistsWithName(launcherEndpointFromForage, matchingProviderEndpoints)) {
+                                console.log(`Adding launcher ${JSON.stringify(launcherEndpointFromForage)}
                 to the beginning of the matchingProviderEndpoints ProviderEndpoint[]`)
-                matchingProviderEndpoints.unshift(launcherEndpointFromForage)
-              } else {
-                console.log("Won't add launcher as it is already selected")
-              }
-            } else {
-              console.error(`LauncherEndpointFromLocalStorage is
+                                matchingProviderEndpoints.unshift(launcherEndpointFromForage)
+                            } else {
+                                console.log("Won't add launcher as it is already selected")
+                            }
+                        } else {
+                            console.error(`LauncherEndpointFromLocalStorage is
               ${launcherEndpointFromForage === null ? null : undefined}! Cannot add it to other providers...`)
-            }
+                        }
 
-            // Add SDS, if not null, and is valid (not missing patient, etc. which would make it undefined as per logic)
-            // Add it as the 2nd item in the array so that the order is:
-            // 1: Launcher, 2: SDS 1..*, 3: Additional Providers
-            if (sdsClient) { // TODO: Either here or in getSupplementalDataClient or in the useEffect, check URL is valid
-              console.log("SDS is defined, adding to selected endpoints")
-              const sdsEndpoint: LauncherData =
-              {
-                // The name could be an env variable too, everything could be... 'SDS' could be there by default to enforce logic
-                // If there's only ever one SDS, name could just be, SDS, and not ever be an env var
-                // For now, some of this is hardcoded
-                // But, if not using env vars, we could make a function that creates a name based on the client id
-                // or other identifying information within the sdsClient
-                name: 'SDS',
-                config: {
-                  iss: process.env.REACT_APP_SHARED_DATA_ENDPOINT,
-                  redirectUri: "./index.html",
-                  clientId: process.env.REACT_APP_SHARED_DATA_CLIENT_ID, // only used when Shared Data is a separate FHIR server with its own SMART launch flow (which it isn't now)
-                  scope: process.env.REACT_APP_SHARED_DATA_SCOPE
+                        // Add SDS, if not null, and is valid (not missing patient, etc. which would make it undefined as per logic)
+                        // Add it as the 2nd item in the array so that the order is:
+                        // 1: Launcher, 2: SDS 1..*, 3: Additional Providers
+                        if (sdsClient) { // TODO: Either here or in getSupplementalDataClient or in the useEffect, check URL is valid
+                            console.log("SDS is defined, adding to selected endpoints")
+                            const sdsEndpoint: LauncherData =
+                                {
+                                    // The name could be an env variable too, everything could be... 'SDS' could be there by default to enforce logic
+                                    // If there's only ever one SDS, name could just be, SDS, and not ever be an env var
+                                    // For now, some of this is hardcoded
+                                    // But, if not using env vars, we could make a function that creates a name based on the client id
+                                    // or other identifying information within the sdsClient
+                                    name: 'SDS',
+                                    config: {
+                                        iss: process.env.REACT_APP_SHARED_DATA_ENDPOINT,
+                                        redirectUri: "./index.html",
+                                        clientId: process.env.REACT_APP_SHARED_DATA_CLIENT_ID, // only used when Shared Data is a separate FHIR server with its own SMART launch flow (which it isn't now)
+                                        scope: process.env.REACT_APP_SHARED_DATA_SCOPE
+                                    }
+                                }
+                            matchingProviderEndpoints.splice(1, 0, sdsEndpoint) // inject at index 1 (2nd position)
+                        } else {
+                            console.log("SDS is not defined, not adding to selected endpoints")
+                        }
+
+
+                        // Loop selectedEndpoint logic for all available providers
+                        await authorizeSelectedEndpoints(matchingProviderEndpoints)
+                        // TODO: MULTI-PROVIDER: Consider calling loadSelectedEndpoints if we have authorizeSelectedEndpoints return
+                        // a boolean and base the call on that being true in the limited cases
+                        console.log('Finished loading multiple matching provider endpoints...');
+
+                    } catch (error) {
+                        console.error('Error loading multiple matching provider Endpoints:', error);
+                    }
+
+                } else {
+                    console.error('matchingProviderEndpoints is not defined or is empty')
                 }
-              }
-              matchingProviderEndpoints.splice(1, 0, sdsEndpoint) // inject at index 1 (2nd position)
-            } else {
-              console.log("SDS is not defined, not adding to selected endpoints")
             }
-
-
-            // Loop selectedEndpoint logic for all available providers
-            await authorizeSelectedEndpoints(matchingProviderEndpoints)
-            // TODO: MULTI-PROVIDER: Consider calling loadSelectedEndpoints if we have authorizeSelectedEndpoints return
-            // a boolean and base the call on that being true in the limited cases
-            console.log('Finished loading multiple matching provider endpoints...');
-
-          } catch (error) {
-            console.error('Error loading multiple matching provider Endpoints:', error);
-          }
 
         } else {
-          console.error('matchingProviderEndpoints is not defined or is empty')
+            console.error('selectedEndpointNames is not defined', selectedEndpointNames)
         }
-      }
-
-    } else {
-      console.error('selectedEndpointNames is not defined', selectedEndpointNames)
     }
-  }
 
-  // storer: commenting out as this function is never referenced
-  // // TODO: Consider this as a feature for TEST/DEBUG purposes, only visible in debug mode, to call this function, which will only load a single endpoint
-  // // The ProviderLogin component is for loading additional EHRs which are in addition to the launcher EHR. Therefore, the only single login in the future
-  // // Would be the launcher. In the future it will always be a multi-login (unless there's an error and the launcher is unknown, but multi can handle that),
-  // // the launcher EHR, plus 1..* additional EHRs, giving us a 2..* total logins from ProviderLogin at (almost) all times.
-  // // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  // const loadSelectedEndpointSingle = async (selectedEndpoint: ProviderEndpoint,
-  //   isMultipleProviders: boolean, fhirDataCollectionIndex: number): Promise<void> => {
-  //   console.log('loadSelectedEndpointSingle(): selectedEndpoint: ' + selectedEndpoint)
-  //   console.log('loadSelectedEndpointSingle(): isMultipleProviders: ' + isMultipleProviders)
-  //   console.log('loadSelectedEndpointSingle(): fhirDataCollectionIndex: ' + fhirDataCollectionIndex)
-  //
-  //   if (selectedEndpoint !== null) {
-  //     const issServerUrl = selectedEndpoint.config!.iss
-  //     console.log('issServerUrl:', issServerUrl)
-  //
-  //     //!FUNCTION DIFF! isLastLoadMultiSelect related code including check in main if case.
-  //     // Otherwise, we'd have a bug where we'd load multi - data when choosing single in some cases
-  //     // Single to multi should be fine, as it will automatically expand, and call a separate function anyway
-  //     const isLastLoadMultiSelect = fhirDataCollection && fhirDataCollection.length > 1
-  //     if (isLastLoadMultiSelect) {
-  //       // TODO: MULTI-PROVIDER: Add logic to allow single load after multi which retains relevant data, if any (may be a new endpoint, so may be none)
-  //       console.log("Last load was multi-select, can't reload single select data without further logic (match url and reduce fhirDataColleciton array")
-  //     } else {
-  //       console.log("Last load was single-select")
-  //     }
-  //     if (await matchesCurrentEndpoint(issServerUrl!) && !isLastLoadMultiSelect) {
-  //       console.log("is last endpoint")
-  //       if (await isEndpointStillAuthorized(issServerUrl!, true)) { // Only checks last endpoint
-  //         console.log("is last endpoint and IS authorized")
-  //         console.log("Redirect w/o a refresh as the data should be in our React state already")
-  //         // It may seem silly that a user would do this (select the same thing they are already viewing)
-  //         // but it will happen at least by accident at some point, and thus we won't reload the data, but will just go home since the data is already there
-  //         // TODO: Consider more error checking of fhirData, check important properties?
-  //         // TODO: Make sure we are fully handling back button during authorization situations
-  //         // (Should be handled with empty fhir data case, and should be handled by local storage, but need to ensure user experience makes sense in such situations.
-  //         // If local storage becomes corrupt in production, it's external so difficult to manage - so want to ensure that is tested for all edge cases prior to prod deployment)
-  //         if (fhirDataCollection && fhirDataCollection[fhirDataCollectionIndex]) {
-  //           process.env.REACT_APP_TEST_PERSISTENCE === 'true' &&
-  //             console.log("fhirDataCollection is defined, navigating home w/o reload or passing data:",
-  //               JSON.stringify(fhirDataCollection[fhirDataCollectionIndex]))
-  //           if (!isMultipleProviders) {
-  //             // If there is only one provider, and we already have the data, we can just navigate back
-  //             history.push('/')
-  //           } else {
-  //             // Otherwise, if multiple providers, we need to reload the data, if it's not the first item in the colleciton
-  //             // TODO: Add logic to check for and handle above for performance.
-  //             // TODO: Authorization logic has to be rewritten. Need to compare fhirDataCollection to localStorage
-  //             // For now, we need to test reauthorizing everything I think with data aggregation
-  //             // Then support dropping reaut later. So, need to bypass a lot of this logic to test...
-  //             console.log("is last loaded endpoint but we are loading multiple providers, reauthorizing for now",
-  //               fhirDataCollection && fhirDataCollection[fhirDataCollectionIndex])
-  //             FHIR.oauth2.authorize(selectedEndpoint.config!)
-  //           }
-  //           // TODO: Do we need to handle a case where the endpoint is the same, but the user wants to select a different patient?
-  //           // If so, they don't need a reauth, but they do need to be redirected to choose a new patient...
-  //         } else {
-  //           process.env.REACT_APP_TEST_PERSISTENCE === 'true' &&
-  //             console.log("fhirData is falsey, reauthorizing as data cannot be trusted/does not exist:",
-  //               fhirDataCollection && fhirDataCollection[fhirDataCollectionIndex])
-  //           // TODO: Consider externalizing logic in "NOT last endpoint but IS already/still authorized" and use that in this case
-  //           // It should work fine as the local storage fhirAccessState should be in tact and we can fetch the data from the server w/o a reauth
-  //           FHIR.oauth2.authorize(selectedEndpoint.config!)
-  //         }
-  //       } else {
-  //         console.log("is last endpoint but is NOT authorized - reauthorizing")
-  //         // Techincally, if needed, we could redirect w/o refresh as in the "is last endpoint and IS authorized" path,
-  //         // but for now we are going to assume the data may have changed enough at this point to require a reauthorization
-  //         FHIR.oauth2.authorize(selectedEndpoint.config!)
-  //       }
-  //     } else {
-  //       console.log("NOT last endpoint")
-  //       if (await isEndpointStillAuthorized(issServerUrl!, false)) { // This checks all endpoints in array, not just last endpoint accessed
-  //         console.log("NOT last endpoint but IS already/still authorized")
-  //         try {
-  //           console.log('Reload data (which is NOT local at this point, other than the fhirAccessData state object) without requiring reauthorization/redirect')
-  //           let fhirDataFromStoredEndpoint: FHIRData | undefined = undefined
-  //           try {
-  //             console.log('setting fhirData to undefined so progess indicator is triggered while new data is loaded subsequently')
-  //             props.setFhirDataStates(undefined)
-  //             props.resetErrorMessageState()
-  //             console.log("redirecting to '/'")
-  //             history.push('/')
-  //             console.log("fhirDataFromStoredEndpoint = await getFHIRData(true, issServerUrl!)")
-  //             fhirDataFromStoredEndpoint = await getFHIRData(true, issServerUrl!, null,
-  //               props.setAndLogProgressState, props.setResourcesLoadedCountState, props.setAndLogErrorMessageState)
-  //               fhirDataFromStoredEndpoint.serverName = selectedEndpoint.name
-  //           } catch (err) {
-  //             console.log(`Failure calling getFHIRData(true, issServerUrl!) from ProviderLogin.tsx handleSubmit: ${err}`)
-  //             console.log('fallback to authorization due to above failure')
-  //             // TODO: Add logic to ensure that fhirAccess obj and array are not updated (or are reverted) from a faulty no-auth load attempt
-  //             // Note: We don't need to setAndLogErrorMessageState/can catch the error because we have provided an alternative application path
-  //             // Once the application redirects, when it reloads, any error will be handled by the getFhirData call in componentDidMount
-  //             FHIR.oauth2.authorize(selectedEndpoint.config!)
-  //           } finally {
-  //             console.log('Set fhir data states with Route prop directly using App callback function')
-  //             props.setFhirDataStates([fhirDataFromStoredEndpoint!])
-  //           }
-  //         } catch (err) {
-  //           // Catches if setFhirDataStates in finally fails
-  //           console.log(`Failure setting fhir data states after getFHIRData call in ProviderLogin.tsx handleSubmit: ${err}`)
-  //           console.log('fallback to authorization due to above failure')
-  //           // TODO: Add logic to ensure that fhirAccess obj and array are not updated (or are reverted) from a faulty no-auth load attempt
-  //           FHIR.oauth2.authorize(selectedEndpoint.config!)
-  //         }
-  //       } else {
-  //         console.log("NOT last endpoint and NOT still authorized - reauthorizing")
-  //         FHIR.oauth2.authorize(selectedEndpoint.config!).catch(err => {
-  //           // Todo: Handle this (and all other redirects) properly in the UI (notify the user) and in the logic if needed
-  //           // Also, may need a time out if the server is not returning an error and it just infinitely loads otherwise
-  //           console.log("Failed to redirect and authorize: " + err)
-  //         })
-  //       }
-  //     }
-  //   } else {
-  //     console.error("endpoint === null")
-  //   }
-  // }
+    // storer: commenting out as this function is never referenced
+    // // TODO: Consider this as a feature for TEST/DEBUG purposes, only visible in debug mode, to call this function, which will only load a single endpoint
+    // // The ProviderLogin component is for loading additional EHRs which are in addition to the launcher EHR. Therefore, the only single login in the future
+    // // Would be the launcher. In the future it will always be a multi-login (unless there's an error and the launcher is unknown, but multi can handle that),
+    // // the launcher EHR, plus 1..* additional EHRs, giving us a 2..* total logins from ProviderLogin at (almost) all times.
+    // // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    // const loadSelectedEndpointSingle = async (selectedEndpoint: ProviderEndpoint,
+    //   isMultipleProviders: boolean, fhirDataCollectionIndex: number): Promise<void> => {
+    //   console.log('loadSelectedEndpointSingle(): selectedEndpoint: ' + selectedEndpoint)
+    //   console.log('loadSelectedEndpointSingle(): isMultipleProviders: ' + isMultipleProviders)
+    //   console.log('loadSelectedEndpointSingle(): fhirDataCollectionIndex: ' + fhirDataCollectionIndex)
+    //
+    //   if (selectedEndpoint !== null) {
+    //     const issServerUrl = selectedEndpoint.config!.iss
+    //     console.log('issServerUrl:', issServerUrl)
+    //
+    //     //!FUNCTION DIFF! isLastLoadMultiSelect related code including check in main if case.
+    //     // Otherwise, we'd have a bug where we'd load multi - data when choosing single in some cases
+    //     // Single to multi should be fine, as it will automatically expand, and call a separate function anyway
+    //     const isLastLoadMultiSelect = fhirDataCollection && fhirDataCollection.length > 1
+    //     if (isLastLoadMultiSelect) {
+    //       // TODO: MULTI-PROVIDER: Add logic to allow single load after multi which retains relevant data, if any (may be a new endpoint, so may be none)
+    //       console.log("Last load was multi-select, can't reload single select data without further logic (match url and reduce fhirDataColleciton array")
+    //     } else {
+    //       console.log("Last load was single-select")
+    //     }
+    //     if (await matchesCurrentEndpoint(issServerUrl!) && !isLastLoadMultiSelect) {
+    //       console.log("is last endpoint")
+    //       if (await isEndpointStillAuthorized(issServerUrl!, true)) { // Only checks last endpoint
+    //         console.log("is last endpoint and IS authorized")
+    //         console.log("Redirect w/o a refresh as the data should be in our React state already")
+    //         // It may seem silly that a user would do this (select the same thing they are already viewing)
+    //         // but it will happen at least by accident at some point, and thus we won't reload the data, but will just go home since the data is already there
+    //         // TODO: Consider more error checking of fhirData, check important properties?
+    //         // TODO: Make sure we are fully handling back button during authorization situations
+    //         // (Should be handled with empty fhir data case, and should be handled by local storage, but need to ensure user experience makes sense in such situations.
+    //         // If local storage becomes corrupt in production, it's external so difficult to manage - so want to ensure that is tested for all edge cases prior to prod deployment)
+    //         if (fhirDataCollection && fhirDataCollection[fhirDataCollectionIndex]) {
+    //           process.env.REACT_APP_TEST_PERSISTENCE === 'true' &&
+    //             console.log("fhirDataCollection is defined, navigating home w/o reload or passing data:",
+    //               JSON.stringify(fhirDataCollection[fhirDataCollectionIndex]))
+    //           if (!isMultipleProviders) {
+    //             // If there is only one provider, and we already have the data, we can just navigate back
+    //             history.push('/')
+    //           } else {
+    //             // Otherwise, if multiple providers, we need to reload the data, if it's not the first item in the colleciton
+    //             // TODO: Add logic to check for and handle above for performance.
+    //             // TODO: Authorization logic has to be rewritten. Need to compare fhirDataCollection to localStorage
+    //             // For now, we need to test reauthorizing everything I think with data aggregation
+    //             // Then support dropping reaut later. So, need to bypass a lot of this logic to test...
+    //             console.log("is last loaded endpoint but we are loading multiple providers, reauthorizing for now",
+    //               fhirDataCollection && fhirDataCollection[fhirDataCollectionIndex])
+    //             FHIR.oauth2.authorize(selectedEndpoint.config!)
+    //           }
+    //           // TODO: Do we need to handle a case where the endpoint is the same, but the user wants to select a different patient?
+    //           // If so, they don't need a reauth, but they do need to be redirected to choose a new patient...
+    //         } else {
+    //           process.env.REACT_APP_TEST_PERSISTENCE === 'true' &&
+    //             console.log("fhirData is falsey, reauthorizing as data cannot be trusted/does not exist:",
+    //               fhirDataCollection && fhirDataCollection[fhirDataCollectionIndex])
+    //           // TODO: Consider externalizing logic in "NOT last endpoint but IS already/still authorized" and use that in this case
+    //           // It should work fine as the local storage fhirAccessState should be in tact and we can fetch the data from the server w/o a reauth
+    //           FHIR.oauth2.authorize(selectedEndpoint.config!)
+    //         }
+    //       } else {
+    //         console.log("is last endpoint but is NOT authorized - reauthorizing")
+    //         // Techincally, if needed, we could redirect w/o refresh as in the "is last endpoint and IS authorized" path,
+    //         // but for now we are going to assume the data may have changed enough at this point to require a reauthorization
+    //         FHIR.oauth2.authorize(selectedEndpoint.config!)
+    //       }
+    //     } else {
+    //       console.log("NOT last endpoint")
+    //       if (await isEndpointStillAuthorized(issServerUrl!, false)) { // This checks all endpoints in array, not just last endpoint accessed
+    //         console.log("NOT last endpoint but IS already/still authorized")
+    //         try {
+    //           console.log('Reload data (which is NOT local at this point, other than the fhirAccessData state object) without requiring reauthorization/redirect')
+    //           let fhirDataFromStoredEndpoint: FHIRData | undefined = undefined
+    //           try {
+    //             console.log('setting fhirData to undefined so progess indicator is triggered while new data is loaded subsequently')
+    //             props.setFhirDataStates(undefined)
+    //             props.resetErrorMessageState()
+    //             console.log("redirecting to '/'")
+    //             history.push('/')
+    //             console.log("fhirDataFromStoredEndpoint = await getFHIRData(true, issServerUrl!)")
+    //             fhirDataFromStoredEndpoint = await getFHIRData(true, issServerUrl!, null,
+    //               props.setAndLogProgressState, props.setResourcesLoadedCountState, props.setAndLogErrorMessageState)
+    //               fhirDataFromStoredEndpoint.serverName = selectedEndpoint.name
+    //           } catch (err) {
+    //             console.log(`Failure calling getFHIRData(true, issServerUrl!) from ProviderLogin.tsx handleSubmit: ${err}`)
+    //             console.log('fallback to authorization due to above failure')
+    //             // TODO: Add logic to ensure that fhirAccess obj and array are not updated (or are reverted) from a faulty no-auth load attempt
+    //             // Note: We don't need to setAndLogErrorMessageState/can catch the error because we have provided an alternative application path
+    //             // Once the application redirects, when it reloads, any error will be handled by the getFhirData call in componentDidMount
+    //             FHIR.oauth2.authorize(selectedEndpoint.config!)
+    //           } finally {
+    //             console.log('Set fhir data states with Route prop directly using App callback function')
+    //             props.setFhirDataStates([fhirDataFromStoredEndpoint!])
+    //           }
+    //         } catch (err) {
+    //           // Catches if setFhirDataStates in finally fails
+    //           console.log(`Failure setting fhir data states after getFHIRData call in ProviderLogin.tsx handleSubmit: ${err}`)
+    //           console.log('fallback to authorization due to above failure')
+    //           // TODO: Add logic to ensure that fhirAccess obj and array are not updated (or are reverted) from a faulty no-auth load attempt
+    //           FHIR.oauth2.authorize(selectedEndpoint.config!)
+    //         }
+    //       } else {
+    //         console.log("NOT last endpoint and NOT still authorized - reauthorizing")
+    //         FHIR.oauth2.authorize(selectedEndpoint.config!).catch(err => {
+    //           // Todo: Handle this (and all other redirects) properly in the UI (notify the user) and in the logic if needed
+    //           // Also, may need a time out if the server is not returning an error and it just infinitely loads otherwise
+    //           console.log("Failed to redirect and authorize: " + err)
+    //         })
+    //       }
+    //     }
+    //   } else {
+    //     console.error("endpoint === null")
+    //   }
+    // }
 
-  const handleReset = (event: React.FormEvent<HTMLFormElement>) => {
-    history.goBack()
-  }
-
-  const handleChange = (event: SelectChangeEvent<typeof selectedEndpointNames>) => {
-    const targetVal = event.target.value
-    console.log('targetVal:', targetVal)
-
-    if (!targetVal) {
-      console.error("selectedEndpointNames is somehow not defined, setting to empty")
-      setSelectedEndpointNames([])
-    } else {
-      const parsedProviderEndpoints: string[] =
-        typeof targetVal === 'string' ? targetVal.split(',') : targetVal
-      setSelectedEndpointNames(parsedProviderEndpoints)
-      console.log('selectedEndpointNames (parsedProviderEndpoints)', selectedEndpointNames)
+    const handleReset = (event: React.FormEvent<HTMLFormElement>) => {
+        history.goBack()
     }
-  }
 
-  const theme = useTheme();
-  const getStyles = (availableEndpointName: string, selectedEndpointNames: string[] | null,
-    theme: Theme): any => {
-    return {
-      fontWeight:
-        selectedEndpointNames?.indexOf(availableEndpointName) === -1
-          ? theme.typography.fontWeightRegular
-          : theme.typography.fontWeightBold
+    const handleChange = (event: SelectChangeEvent<typeof selectedEndpointNames>) => {
+        const targetVal = event.target.value
+        console.log('targetVal:', targetVal)
+
+        if (!targetVal) {
+            console.error("selectedEndpointNames is somehow not defined, setting to empty")
+            setSelectedEndpointNames([])
+        } else {
+            const parsedProviderEndpoints: string[] =
+                typeof targetVal === 'string' ? targetVal.split(',') : targetVal
+            setSelectedEndpointNames(parsedProviderEndpoints)
+            console.log('selectedEndpointNames (parsedProviderEndpoints)', selectedEndpointNames)
+        }
     }
-  }
 
-  return (
-    <>
-      <Box component="form" noValidate onSubmit={handleSubmit} onReset={handleReset} sx={{ mt: 3 }}>
+    const theme = useTheme();
+    const getStyles = (availableEndpointName: string, selectedEndpointNames: string[] | null,
+                       theme: Theme): any => {
+        return {
+            fontWeight:
+                selectedEndpointNames?.indexOf(availableEndpointName) === -1
+                    ? theme.typography.fontWeightRegular
+                    : theme.typography.fontWeightBold
+        }
+    }
 
-        {/* <h4>selectedEndpointNames: {selectedEndpointNames}</h4> */}
+    return (
+        <>
+            <Box component="form" noValidate onSubmit={handleSubmit} onReset={handleReset} sx={{mt: 3}}>
 
-        <Typography variant="h5" style={{ marginBottom: '30px' }}>
-          Health Provider Login
-        </Typography>
-        <Typography variant="subtitle1" align="left" gutterBottom>
-          <span style={{ fontStyle: 'italic' }}>Currently includes:</span> {launcherEndpointFromForage ?
-            launcherEndpointFromForage?.name :
-            'Unknown: Please select the original provider manually from the list in addtion to other providers.'}
-        </Typography>
+                {/* <h4>selectedEndpointNames: {selectedEndpointNames}</h4> */}
 
-        <Grid container spacing={3}>
+                <Typography variant="h5" style={{marginBottom: '30px'}}>
+                    Health Provider Login
+                </Typography>
+                <Typography variant="subtitle1" align="left" gutterBottom>
+                    <span style={{fontStyle: 'italic'}}>Currently includes:</span> {launcherEndpointFromForage ?
+                    launcherEndpointFromForage?.name :
+                    'Unknown: Please select the original provider manually from the list in addtion to other providers.'}
+                </Typography>
 
-          <Grid item xs={12}>
-            <FormControl fullWidth>
+                <Grid container spacing={3}>
 
-              <InputLabel variant="standard" htmlFor="uncontrolled-native">
-                Select one or more additional healthcare providers
-              </InputLabel>
+                    <Grid item xs={12}>
+                        <FormControl fullWidth>
 
-              <Select
-                labelId="multiple-provider-selection-label"
-                id="multiple-provider-selection"
-                multiple
-                value={selectedEndpointNames}
-                onChange={handleChange}
-                input={<OutlinedInput id="select-multiple-provider-chip" label="multiple-provider-chip" />}
-                renderValue={(selected) => (
-                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                    {selected?.map((value) => (
-                      <Chip key={value} label={value} />
-                    ))}
-                  </Box>
-                )}
-              >
-                {availableEndpoints.map((availableEndpoint: LauncherData) => (
-                  <MenuItem
-                    key={availableEndpoint.name}
-                    value={availableEndpoint.name}
-                    style={getStyles(availableEndpoint.name ? availableEndpoint.name : '',
-                      selectedEndpointNames, theme)}
-                  >
-                    {availableEndpoint.name}
-                  </MenuItem>
-                ))}
-              </Select>
+                            <InputLabel variant="standard" htmlFor="uncontrolled-native">
+                                Select one or more additional healthcare providers
+                            </InputLabel>
 
-            </FormControl>
-          </Grid>
+                            <Select
+                                labelId="multiple-provider-selection-label"
+                                id="multiple-provider-selection"
+                                multiple
+                                value={selectedEndpointNames}
+                                onChange={handleChange}
+                                input={<OutlinedInput id="select-multiple-provider-chip"
+                                                      label="multiple-provider-chip"/>}
+                                renderValue={(selected) => (
+                                    <Box sx={{display: 'flex', flexWrap: 'wrap', gap: 0.5}}>
+                                        {selected?.map((value) => (
+                                            <Chip key={value} label={value}/>
+                                        ))}
+                                    </Box>
+                                )}
+                            >
+                                {availableEndpoints.map((availableEndpoint: LauncherData) => (
+                                    <MenuItem
+                                        key={availableEndpoint.name}
+                                        value={availableEndpoint.name}
+                                        style={getStyles(availableEndpoint.name ? availableEndpoint.name : '',
+                                            selectedEndpointNames, theme)}
+                                    >
+                                        {availableEndpoint.name}
+                                    </MenuItem>
+                                ))}
+                            </Select>
 
-          <Grid item xs={12} sm={6}>
-            <Button type="submit" disabled={!selectedEndpointNames || selectedEndpointNames.length < 1}
-              fullWidth variant="contained" sx={{ mt: 3, mb: 2 }}>
-              Login
-            </Button>
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <Button type="reset" fullWidth variant="contained" sx={{ mt: 3, mb: 2 }}>
-              Cancel
-            </Button>
-          </Grid>
+                        </FormControl>
+                    </Grid>
 
-        </Grid>
-      </Box>
-    </>
-  )
+                    <Grid item xs={12} sm={6}>
+                        <Button type="submit" disabled={!selectedEndpointNames || selectedEndpointNames.length < 1 || isLeavingToAuthorize}
+                                fullWidth variant="contained" sx={{mt: 3, mb: 2}}>
+                            Login
+                        </Button>
+                    </Grid>
+                    <Grid item xs={12} sm={6}>
+                        <Button type="reset" disabled={isLeavingToAuthorize}
+                                fullWidth variant="contained" sx={{mt: 3, mb: 2}}>
+                            Cancel
+                        </Button>
+                    </Grid>
+
+                </Grid>
+            </Box>
+        </>
+    )
 
 }

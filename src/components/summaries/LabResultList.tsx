@@ -17,11 +17,12 @@ interface LabResultListProps {
     progressTitle: string;
     progressValue: number;
     progressMessage: string;
+    labResultsLoaded: boolean;
     labResultSummaryMatrix?: ObservationSummary[][];
 }
 
 export const LabResultList: FC<LabResultListProps> = ({sharingData, fhirDataCollection,
-                                                          progressTitle, progressValue, progressMessage,
+                                                          progressTitle, progressValue, progressMessage, labResultsLoaded,
                                                           labResultSummaryMatrix}) => {
     process.env.REACT_APP_DEBUG_LOG === "true" && console.log("LabResultList component RENDERED!")
     const [showModal, setShowModal] = useState(false);
@@ -115,60 +116,82 @@ export const LabResultList: FC<LabResultListProps> = ({sharingData, fhirDataColl
         setSortedAndFilteredLabResults(combinedLabResults);
     };
 
-    return (
-        <div className="home-view">
-            <div className="welcome">
+    if (labResultsLoaded) {
+        return (
+            <div className="home-view">
+                <div className="welcome">
 
-                {(fhirDataCollection === undefined || sharingData) && (
-                    <div>
-                        <h6>{progressTitle}</h6>
-                        <DeterminateProgress progressValue={progressValue}/>
-                        <p>{progressMessage}...<span style={{paddingLeft: '10px'}}><CircularProgress
-                            size="1rem"/></span></p>
-                    </div>
-                )}
+                    {(fhirDataCollection === undefined || sharingData) && (
+                        <div>
+                            <h6>{progressTitle}</h6>
+                            <DeterminateProgress progressValue={progressValue}/>
+                            <p>{progressMessage}...<span style={{paddingLeft: '10px'}}><CircularProgress
+                                size="1rem"/></span></p>
+                        </div>
+                    )}
 
-                <h4 className="title">Lab Results</h4>
+                    <h4 className="title">Lab Results</h4>
 
-                {fhirDataCollection && fhirDataCollection.length === 1 ? (
-                    <a className="text-right" onClick={() => setShowModal(true)}>
-                        SORT
-                    </a>
-                ) : (
-                    <a className="text-right" onClick={() => setShowModal(true)}>
-                        SORT/FILTER
-                    </a>
-                )}
-
-                {showModal && (
-                    fhirDataCollection && fhirDataCollection.length === 1 ? (
-                        <SortOnlyModal
-                            showModal={showModal}
-                            closeModal={closeModal}
-                            onSubmit={handleSortFilterSubmit}
-                            sortingOptions={sortingOptions}
-                        />
+                    {fhirDataCollection && fhirDataCollection.length === 1 ? (
+                        <a className="text-right" onClick={() => setShowModal(true)}>
+                            SORT
+                        </a>
                     ) : (
-                        <SortModal
-                            showModal={showModal}
-                            closeModal={closeModal}
-                            onSubmit={handleSortFilterSubmit}
-                            sortingOptions={sortingOptions}
-                            filteringOptions={filteringOptions}
-                        />
-                    )
-                )}
+                        <a className="text-right" onClick={() => setShowModal(true)}>
+                            SORT/FILTER
+                        </a>
+                    )}
 
-                {sortedAndFilteredLabResults.length === 0 ? (
-                    <p>No records found.</p>
-                ) : (
-                    sortedAndFilteredLabResults.map(({labResult, provider}, index) => (
-                        <Summary key={index} id={index} rows={buildRows(labResult, provider)}/>
-                    ))
-                )}
+                    {showModal && (
+                        fhirDataCollection && fhirDataCollection.length === 1 ? (
+                            <SortOnlyModal
+                                showModal={showModal}
+                                closeModal={closeModal}
+                                onSubmit={handleSortFilterSubmit}
+                                sortingOptions={sortingOptions}
+                            />
+                        ) : (
+                            <SortModal
+                                showModal={showModal}
+                                closeModal={closeModal}
+                                onSubmit={handleSortFilterSubmit}
+                                sortingOptions={sortingOptions}
+                                filteringOptions={filteringOptions}
+                            />
+                        )
+                    )}
+
+                    {sortedAndFilteredLabResults.length === 0 ? (
+                        <p>No records found.</p>
+                    ) : (
+                        sortedAndFilteredLabResults.map(({labResult, provider}, index) => (
+                            <Summary key={index} id={index} rows={buildRows(labResult, provider)}/>
+                        ))
+                    )}
+                </div>
             </div>
-        </div>
-    );
+        );
+
+    } else {
+        return (
+            <div className="home-view">
+                <div className="welcome">
+
+                    {(fhirDataCollection === undefined || sharingData) && (
+                        <div>
+                            <h6>{progressTitle}</h6>
+                            <DeterminateProgress progressValue={progressValue}/>
+                            <p>{progressMessage}...<span style={{paddingLeft: '10px'}}><CircularProgress
+                                size="1rem"/></span></p>
+                        </div>
+                    )}
+
+                    <h4 className="title">Lab Results</h4>
+                    <p className="loading-message">Lab Result Summaries are still loading.  Please wait.</p>
+                </div>
+            </div>
+        );
+    }
 }
 
 const buildRows = (obs: ObservationSummary, theSource?: string): SummaryRowItems => {
@@ -221,7 +244,7 @@ const buildRows = (obs: ObservationSummary, theSource?: string): SummaryRowItems
         {
             isHeader: false,
             twoColumns: false,
-            data1: 'Source: ' + provenance.Transmitter ?? '',
+            data1: 'Source: ' + (provenance.Transmitter ?? ''),
             data2: provenance.Author ?? '',
         }
     ))

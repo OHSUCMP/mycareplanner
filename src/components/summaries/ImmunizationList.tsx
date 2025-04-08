@@ -79,7 +79,7 @@ export const ImmunizationList: FC<ImmunizationListProps> = ({sharingData, fhirDa
         fhirDataCollection.forEach((data, providerIndex) => {
             const providerName = data.serverName || 'Unknown';
             (data.immunizations || []).forEach(immunization => {
-                let provenance = data.provenanceMap?.get("Immunization/" + immunization.id ?? 'missingId')?.[0]
+                let provenance = data.provenanceMap?.get("Immunization/" + (immunization.id ?? 'missingId'))?.[0]
                 combinedImmunizations.push({
                     immunization,
                     provider: providerName,

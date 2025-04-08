@@ -5,7 +5,7 @@ import {Switch, Route, RouteComponentProps} from 'react-router-dom';
 import {Tab, Box, Paper} from '@mui/material';
 import {TabList, TabPanel, TabContext} from '@mui/lab';
 //import { Patient} from './data-services/fhir-types/fhir-r4';
-import {Practitioner, Task} from './data-services/fhir-types/fhir-r4';
+import {Task} from './data-services/fhir-types/fhir-r4';
 
 import HomeIcon from '@mui/icons-material/Home';
 import ContentPasteIcon from '@mui/icons-material/ContentPaste';
@@ -33,8 +33,15 @@ import {GoalSummary, ConditionSummary, MedicationSummary, ObservationSummary} fr
 
 //import {deleteSessionId} from './data-services/persistenceService'
 import {
-    isEndpointStillAuthorized, getSelectedEndpoints, deleteSelectedEndpoints,
-    getLauncherData, deleteAllDataFromLocalForage, saveSessionId, sessionIdExistsInLocalForage, getSessionId
+    isEndpointStillAuthorized,
+    getSelectedEndpoints,
+    deleteSelectedEndpoints,
+    getLauncherData,
+    deleteAllDataFromLocalForage,
+    saveSessionId,
+    sessionIdExistsInLocalForage,
+    getSessionId,
+    saveSelectedEndpoints
 } from './data-services/persistenceService'
 import {
     getGoalSummaries, getLabResultSummaries, getConditionSummaries,
@@ -98,6 +105,12 @@ interface AppState {
     developerErrorMessage: string | undefined,
     errorCaught: Error | string | unknown,
 
+    goalsLoaded: boolean,
+    conditionsLoaded: boolean,
+    medicationsLoaded: boolean,
+    labResultsLoaded: boolean,
+    vitalSignsLoaded: boolean,
+
     goalSummaries?: GoalSummary[][],
     conditionSummaries?: ConditionSummary[][],
     medicationSummaries?: MedicationSummary[][],
@@ -154,6 +167,12 @@ class App extends React.Component<AppProps, AppState> {
             developerErrorMessage: undefined,
             errorCaught: undefined,
 
+            goalsLoaded: false,
+            conditionsLoaded: false,
+            medicationsLoaded: false,
+            labResultsLoaded: false,
+            vitalSignsLoaded: false,
+
             goalSummaries: undefined,
             conditionSummaries: undefined,
             medicationSummaries: undefined,
@@ -209,7 +228,7 @@ class App extends React.Component<AppProps, AppState> {
                 }
 
                 console.log("Checking if this is a multi-select, single, or a loader...")
-                const selectedEndpoints: string[] | undefined = await getSelectedEndpoints()
+                let selectedEndpoints: string[] | undefined = await getSelectedEndpoints()
                 if (selectedEndpoints && selectedEndpoints.length > 0) {
                     // It's a multi select as selected endpoints exist/were not deleted
                     const isAnyEndpointNullOrUndefined: boolean = selectedEndpoints.some((endpoint) => {
@@ -266,14 +285,16 @@ class App extends React.Component<AppProps, AppState> {
                         // TODO: MULTI-PROVIDER: Externalize the logic in authorizeSelectedEndpoints in ProviderLogin
                         // so that both ProviderLogin and App.tsx (right here) can use it vs having duplicate code
                         // If all authorized, load all, else authorize the current one
-                        const launcherDataArrayLength = toAuthorizeLauncherDataArray.length
-                        for (let i = 0; i < launcherDataArrayLength; i++) {
+                        const max = toAuthorizeLauncherDataArray.length
+                        for (let i = 0; i < max; i++) {
                             const launcherData: LauncherData = toAuthorizeLauncherDataArray[i]
                             console.log("launcherData=", launcherData)
                             const issServerUrl = launcherData.config!.iss
                             console.log("issServerUrl=", issServerUrl)
-                            const isLastIndex = i === launcherDataArrayLength - 1
+                            const isLastIndex = i === max - 1
                             console.log("isLastIndex: " + isLastIndex)
+
+                            this.resetAuthDialog()
 
                             // !FUNCTION DIFF! *MAJOR DIFF*: Before checking authorization we need to create and persist the fhir client
                             // for this current provider. If we don't, we won't have the latest authorization data to check and it
@@ -283,9 +304,8 @@ class App extends React.Component<AppProps, AppState> {
                             if (await createAndPersistClientForNewProvider(issServerUrl)) { // todo: this function never uses issServerUrl??!
                                 // Check for prior auths from another load or session just in case so we can save some time
                                 if (await isEndpointStillAuthorized(issServerUrl!)) {
-                                    console.log("This endpoint IS authorized")
-                                    console.log("curEndpoint issServerUrl " + issServerUrl + " at index " + i +
-                                        " and count " + (i + 1) + "/" + launcherDataArrayLength +
+                                    console.log("This endpoint IS authorized: " + issServerUrl + " at index " + i +
+                                        " and count " + (i + 1) + "/" + max +
                                         " is still authorized. Will not waste time reauthorizing: ", launcherData)
 
                                     if (isLastIndex) {
@@ -301,29 +321,11 @@ class App extends React.Component<AppProps, AppState> {
                                         console.log("Nothing left to authorize, loading all multi-selected and authorized endpoints w/o leaving app...")
                                         await this.loadSelectedEndpoints(toAuthorizeLauncherDataArray)
                                     }
+
                                 } else {
-                                    console.log("This endpoint is NOT authorized (App.tsx)")
-                                    console.log("curEndpoint issServerUrl " + issServerUrl +
-                                        " at index " + i + " and count " + (i + 1) + "/" + launcherDataArrayLength +
+                                    console.log("This endpoint is NOT authorized (App.tsx): " + issServerUrl +
+                                        " at index " + i + " and count " + (i + 1) + "/" + max +
                                         " is NOT authorized.", launcherData)
-
-                                    // !FUNCTION DIFF!: NO need to save selected endpoints as they were already saved by ProviderLogin version of the code
-                                    // Save selected endpoints so app load after exiting app for auth knows that it is a multi load of specific endpoints.
-                                    // console.log("At Least one endpoint is not authorized yet...Saving multi-select endpoints")
-                                    // const selectedEndpointsToSave: string[] =
-                                    //     endpointsToAuthorize
-                                    //         .map((curEndpoint, index) => {
-                                    //             if (curEndpoint.config && curEndpoint.config.iss) {
-                                    //                 console.log("matched endpoint: " + curEndpoint.config.iss)
-                                    //                 return curEndpoint.config.iss
-                                    //             }
-                                    //             return undefined
-                                    //         })
-                                    //         .filter((endpoint) => endpoint !== undefined)
-                                    //         .map((endpoint) => endpoint as string)
-                                    // console.log("selectedEndpointsToSave: ", JSON.stringify(selectedEndpointsToSave))
-                                    // saveSelectedEndpoints(selectedEndpointsToSave)
-
 
                                     // Before we leave the app to authorize, we require the user to agree that they want to.
                                     // There are rare cases where they cannot successfully authorize, and this allows them to skip it in such cases
@@ -337,40 +339,58 @@ class App extends React.Component<AppProps, AppState> {
                                     // Note: Did not remove selected endpoint from list (curEndpoint.config)
                                     // as it ends up being removed through normal logic anyway
 
-                                    // Open the Auth Dialog and Wait for the user's decision
                                     this.openAuthDialog(launcherData)
                                     await new Promise<void>((resolve) => {
                                         const checkUserDecision = () => {
-                                            if (this.state.isAuthorizeSelected !== null) { // null is the default
-                                                // User has made a decision
+                                            if (this.isAuthorizeSelected() !== null) { // null is the default
                                                 resolve()
                                             } else {
-                                                // Check again in 50ms
                                                 setTimeout(checkUserDecision, 250)
                                             }
                                         }
                                         checkUserDecision()
                                     })
 
-                                    if (this.state.isAuthorizeSelected) {
-                                        console.log("Reauthorizing curEndpoint.config!:", launcherData.config!)
+                                    this.handleAuthDialogClose()
+
+                                    if (this.isAuthorizeSelected()) {
+                                        // save selected endpoints just before leaving to authorize.  one may have been
+                                        // skipped, and we want to ensure we don't ask about it next time around
+                                        await saveSelectedEndpoints(selectedEndpoints)
+
                                         // The following authorization will exit the application. Therefore, if it's not the last index,
                                         // then we will have more endpoints to authorize when we return, on load
-                                        if (isLastIndex) {
-                                            console.log("Authorizing last index")
-                                        } else {
-                                            console.log("Not last index, Authorizing index " + i)
-                                        }
-                                        this.handleAuthDialogClose()
-                                        await FHIR.oauth2.authorize(launcherData.config!)
-                                        break
-                                    } else {
-                                        console.log("User does not agree to authorization. Skipping authorization...")
-                                        this.handleAuthDialogClose()
-                                        continue
-                                    }
 
+                                        // we're leaving!
+
+                                        console.log("Authorizing: " + JSON.stringify(launcherData.config!))
+                                        FHIR.oauth2.authorize(launcherData.config!)
+                                        break
+
+                                    } else {
+                                        // skipping
+
+                                        if (isLastIndex) {
+                                            // Do NOT need to save data for endpoints to be loaded as we don't need to reload the app
+                                            // Deleting multi-select endpoints from local storage so they don't interfere with future selections
+                                            // and so that this logic is not run if there are no multi-endpoints to auth/local
+                                            // but instead, a loader is run or a single endpoint is run in such a case
+
+                                            console.log("Deleting multi-select endpoints from local storage")
+                                            await deleteSelectedEndpoints()
+
+                                            console.log("Nothing left to authorize, loading all multi-selected and authorized endpoints w/o leaving app...")
+                                            await this.loadSelectedEndpoints(toAuthorizeLauncherDataArray)
+
+                                        } else {
+                                            console.log("User does not agree to authorization. Skipping authorization...")
+                                            // remove current endpoint from endpoints to save so it's not processed again
+                                            // when control returns after any authorizations that do occur
+                                            selectedEndpoints = selectedEndpoints!.filter((endpoint) => endpoint !== launcherData.config!.iss)
+                                        }
+                                    }
                                 } // end not authorized case
+
                             } else {
                                 throw new Error("Cannot create client and persist fhir client states and therefore cannot check authorization")
                             } // end createAndPersistClientForNewProvider
@@ -460,23 +480,40 @@ class App extends React.Component<AppProps, AppState> {
     }
 
     openAuthDialog = (curEndpoint: LauncherData) => {
-        this.setState({isAuthDialogOpen: true, currentUnauthorizedEndpoint: curEndpoint});
+        this.setState({isAuthDialogOpen: true, currentUnauthorizedEndpoint: curEndpoint}, () => {
+            console.log('openAuthDialog() - isAuthDialogOpen = ' + this.state.isAuthDialogOpen)
+        })
     }
 
     handleAuthDialogClose = () => {
-        console.log('handleAuthDialogClose()')
-        this.setState({isAuthDialogOpen: false, currentUnauthorizedEndpoint: null});
-        this.resetExternalNavigation(); // Reset navigation state if auth dialog is closed
+        this.setState({isAuthDialogOpen: false, currentUnauthorizedEndpoint: null}, () => {
+            console.log('handleAuthDialogClose() - isAuthDialogOpen = ' + this.state.isAuthDialogOpen)
+            this.resetExternalNavigation(); // Reset navigation state if auth dialog is closed
+        })
     }
 
     handleAuthorizeSelected = () => {
-        console.log('handleAuthorizeSelected()')
-        this.setState({isAuthorizeSelected: true})
+        this.setState({isAuthorizeSelected: true}, () => {
+            console.log('handleAuthorizeSelected() - isAuthorizeSelected = ' + this.isAuthorizeSelected())
+        })
     }
 
     handleSkipAuthSelected = () => {
-        console.log('handleSkipAuthSelected()')
-        this.setState({isAuthorizeSelected: false})
+        this.setState({isAuthorizeSelected: false}, () => {
+            console.log('handleSkipAuthSelected() - isAuthorizeSelected = ' + this.isAuthorizeSelected())
+        })
+    }
+
+    isAuthorizeSelected = () => {
+        return this.state.isAuthorizeSelected;
+    }
+
+    resetAuthDialog = () => {
+        this.setState({isAuthDialogOpen: false, isAuthorizeSelected: null, currentUnauthorizedEndpoint: null}, () => {
+            console.log('resetAuthDialog() - isAuthDialogOpen = ' + this.state.isAuthDialogOpen +
+                ', isAuthorizeSelected = ' + this.isAuthorizeSelected() +
+                ', currentUnauthorizedEndpoint = ' + this.state.currentUnauthorizedEndpoint)
+        })
     }
 
     setLoadAndMergeSDSIfAvailable = async (launcherPatientId: string | undefined, launcherData: FHIRData) => {
@@ -553,7 +590,7 @@ class App extends React.Component<AppProps, AppState> {
             this.setFhirDataStates([launcherData])
         }
 
-        this.autoShareFHIRDataToSDS()
+        await this.autoShareFHIRDataToSDS()
     }
 
     // TODO: MULTI-PROVIDER: This code is copied into this class for now from the function in ProviderLOgin
@@ -571,6 +608,11 @@ class App extends React.Component<AppProps, AppState> {
 
             let index: number = 0
             for (const curSelectedEndpoint of endpointsToLoad) {
+                if ( ! await isEndpointStillAuthorized(curSelectedEndpoint.config!.iss!) ) {
+                    console.log('Endpoint is not authorized, so, will not load it: ', curSelectedEndpoint.config!.iss)
+                    continue;
+                }
+
                 // Set the state to indicate external navigation is happening before each authorization
                 this.markExternalNavigation();
                 console.log('curSelectedEndpoint #' + (index + 1) + ' at index: ' + index + ' with value:', curSelectedEndpoint)
@@ -636,7 +678,7 @@ class App extends React.Component<AppProps, AppState> {
                             c.setState({progressMessage: 'Processed resource ' + j + ' of ' + resources.length});
 
                             let percentComplete = Math.floor((j / resources.length) * 100);
-                            if (percentComplete != progressValue) {
+                            if (percentComplete !== progressValue) {
                                 progressValue = percentComplete;
                                 c.setState({progressValue: progressValue})
                             }
@@ -722,15 +764,25 @@ class App extends React.Component<AppProps, AppState> {
             process.env.REACT_APP_DEBUG_LOG === "true" && console.log("this.state.fhirData !== prevState.fhirData")
 
             // Dyanmic version:
-            await this.setSummaries('getGoalSummaries()', 'goalSummaries', getGoalSummaries);
-            await this.setSummaries('getConditionSummaries()', 'conditionSummaries', getConditionSummaries)
-            await this.setSummaries('getMedicationSummaries()', 'medicationSummaries', getMedicationSummaries)
-            await this.setSummaries('getLabResultSummaries()', 'labResultSummaries', getLabResultSummaries)
-            await this.setSummaries('getVitalSignSummaries()', 'vitalSignSummaries', getVitalSignSummaries)
+            this.setSummaries('getGoalSummaries()', 'goalSummaries', getGoalSummaries, () => {
+                this.setState({goalsLoaded: true});
+            });
+            this.setSummaries('getConditionSummaries()', 'conditionSummaries', getConditionSummaries, () => {
+                this.setState({conditionsLoaded: true});
+            });
+            this.setSummaries('getMedicationSummaries()', 'medicationSummaries', getMedicationSummaries, () => {
+                this.setState({medicationsLoaded: true});
+            });
+            this.setSummaries('getLabResultSummaries()', 'labResultSummaries', getLabResultSummaries, () => {
+                this.setState({labResultsLoaded: true});
+            });
+            this.setSummaries('getVitalSignSummaries()', 'vitalSignSummaries', getVitalSignSummaries, () => {
+                this.setState({vitalSignsLoaded: true});
+            });
         }
     }
 
-    setSummaries = async (message: string, propertyName: keyof AppState, summariesProcessor: SummaryFunctionType): Promise<void> => {
+    setSummaries = async (message: string, propertyName: keyof AppState, summariesProcessor: SummaryFunctionType, callback?: any): Promise<void> => {
         console.time(message);
         const Summaries = summariesProcessor(this.state.fhirDataCollection)
 
@@ -746,6 +798,11 @@ class App extends React.Component<AppProps, AppState> {
         this.setState(prevState => {
             return {...prevState, [propertyName]: Summaries}
         })
+
+        if (callback) {
+            callback();
+        }
+
         // }, 0)
         console.timeEnd(message)
     }
@@ -802,18 +859,23 @@ class App extends React.Component<AppProps, AppState> {
     // Note: Low priority because the issue can only be reproduced on a non-redirect provider selection (so not a launcher or redirect provider selection)
     initializeSummaries = () => {
         this.setState({
+            goalsLoaded: false,
             goalSummaries: this.getGoalSummariesInit()
         })
         this.setState({
+            conditionsLoaded: false,
             conditionSummaries: this.getConditionAndMedicationSummariesInit()
         })
         this.setState({
+            medicationsLoaded: false,
             medicationSummaries: this.getConditionAndMedicationSummariesInit()
         })
         this.setState({
+            labResultsLoaded: false,
             labResultSummaries: this.getLabResultAndVitalSignSummariesInit()
         })
         this.setState({
+            vitalSignsLoaded: false,
             vitalSignSummaries: this.getLabResultAndVitalSignSummariesInit()
         })
     }
@@ -1109,8 +1171,9 @@ class App extends React.Component<AppProps, AppState> {
                                    resetErrorMessageState={this.resetErrorMessageState}
                                    openAuthDialog={this.openAuthDialog}
                                    handleAuthDialogClose={this.handleAuthDialogClose}
-                                   isAuthDialogOpen={this.state.isAuthDialogOpen}
-                                   isAuthorizeSelected={this.state.isAuthorizeSelected}
+                                   isAuthorizeSelected={this.isAuthorizeSelected}
+                                   resetAuthDialog={this.resetAuthDialog}
+                                   autoShareFHIRDataToSDS={this.autoShareFHIRDataToSDS}
                                    {...routeProps}
                                />
                            )}
@@ -1210,6 +1273,7 @@ class App extends React.Component<AppProps, AppState> {
                                                           progressTitle={this.state.progressTitle}
                                                           progressValue={this.state.progressValue}
                                                           progressMessage={this.state.progressMessage}
+                                                          goalsLoaded={this.state.goalsLoaded}
                                                           goalSummaryMatrix={this.state.goalSummaries}
                                                           canShareData={this.state.canShareData}/>
                                             </TabPanel>
@@ -1219,6 +1283,7 @@ class App extends React.Component<AppProps, AppState> {
                                                                progressTitle={this.state.progressTitle}
                                                                progressValue={this.state.progressValue}
                                                                progressMessage={this.state.progressMessage}
+                                                               conditionsLoaded={this.state.conditionsLoaded}
                                                                conditionSummaryMatrix={this.state.conditionSummaries}
                                                                canShareData={this.state.canShareData}/>
                                             </TabPanel>
@@ -1229,6 +1294,7 @@ class App extends React.Component<AppProps, AppState> {
                                                                 progressTitle={this.state.progressTitle}
                                                                 progressValue={this.state.progressValue}
                                                                 progressMessage={this.state.progressMessage}
+                                                                medicationsLoaded={this.state.medicationsLoaded}
                                                                 medicationSummaryMatrix={this.state.medicationSummaries}/>
                                             </TabPanel>
                                             <TabPanel value="8" sx={{padding: '0px 15px'}}>
@@ -1254,6 +1320,7 @@ class App extends React.Component<AppProps, AppState> {
                                                                progressTitle={this.state.progressTitle}
                                                                progressValue={this.state.progressValue}
                                                                progressMessage={this.state.progressMessage}
+                                                               labResultsLoaded={this.state.labResultsLoaded}
                                                                labResultSummaryMatrix={this.state.labResultSummaries}/>
                                             </TabPanel>
                                             <TabPanel value="10" sx={{padding: '0px 15px'}}>
@@ -1262,13 +1329,14 @@ class App extends React.Component<AppProps, AppState> {
                                                             progressTitle={this.state.progressTitle}
                                                             progressValue={this.state.progressValue}
                                                             progressMessage={this.state.progressMessage}
+                                                            vitalSignsLoaded={this.state.vitalSignsLoaded}
                                                             vitalSignSummaryMatrix={this.state.vitalSignSummaries}/>
                                             </TabPanel>
                                             {/* <TabPanel>
                                             <h4 className="title">Assessment Results</h4>
                                             <p>Coming soon...</p>
                                         </TabPanel> */}
-                                            <TabPanel value="11">
+                                            <TabPanel value="11" sx={{padding: '0px 15px'}}>
                                                 <ImmunizationList sharingData={this.state.sharingData}
                                                                   fhirDataCollection={this.state.fhirDataCollection}
                                                                   progressTitle={this.state.progressTitle}

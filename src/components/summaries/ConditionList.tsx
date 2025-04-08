@@ -17,12 +17,13 @@ interface ConditionListProps {
     progressTitle: string;
     progressValue: number;
     progressMessage: string;
+    conditionsLoaded: boolean;
     conditionSummaryMatrix?: ConditionSummary[][];
     canShareData?: boolean;
 }
 
 export const ConditionList: FC<ConditionListProps> = ({sharingData, fhirDataCollection,
-                                                          progressTitle, progressValue, progressMessage,
+                                                          progressTitle, progressValue, progressMessage, conditionsLoaded,
                                                           conditionSummaryMatrix, canShareData
                                                       }) => {
     const history = useHistory();
@@ -128,69 +129,91 @@ export const ConditionList: FC<ConditionListProps> = ({sharingData, fhirDataColl
         });
     }
 
-    return (
-        <div className="home-view">
-            <div className="welcome">
+    if (conditionsLoaded) {
+        return (
+            <div className="home-view">
+                <div className="welcome">
 
-                {(fhirDataCollection === undefined || sharingData) && (
-                    <div>
-                        <h6>{progressTitle}</h6>
-                        <DeterminateProgress progressValue={progressValue}/>
-                        <p>{progressMessage}...<span style={{paddingLeft: '10px'}}><CircularProgress
-                            size="1rem"/></span></p>
-                    </div>
-                )}
+                    {(fhirDataCollection === undefined || sharingData) && (
+                        <div>
+                            <h6>{progressTitle}</h6>
+                            <DeterminateProgress progressValue={progressValue}/>
+                            <p>{progressMessage}...<span style={{paddingLeft: '10px'}}><CircularProgress
+                                size="1rem"/></span></p>
+                        </div>
+                    )}
 
-                <h4 className="title">Current Health Issues</h4>
+                    <h4 className="title">Current Health Issues</h4>
 
-                {canShareData && (
-                    <p>
-                        <Button variant="contained" color="primary"
-                                onClick={() => handleEditClick({} as ConditionSummary)}>
-                            Add a Health Concern
-                        </Button>
-                    </p>
-                )}
+                    {canShareData && (
+                        <p>
+                            <Button variant="contained" color="primary"
+                                    onClick={() => handleEditClick({} as ConditionSummary)}>
+                                Add a Health Concern
+                            </Button>
+                        </p>
+                    )}
 
-                {fhirDataCollection && fhirDataCollection.length === 1 ? (
-                    <a className="text-right" onClick={() => setShowModal(true)}>
-                        SORT
-                    </a>
-                ) : (
-                    <a className="text-right" onClick={() => setShowModal(true)}>
-                        SORT/FILTER
-                    </a>
-                )}
-
-                {showModal && (
-                    fhirDataCollection && fhirDataCollection.length === 1 ? (
-                        <SortOnlyModal
-                            showModal={showModal}
-                            closeModal={closeModal}
-                            onSubmit={handleSortFilterSubmit}
-                            sortingOptions={sortingOptions}
-                        />
+                    {fhirDataCollection && fhirDataCollection.length === 1 ? (
+                        <a className="text-right" onClick={() => setShowModal(true)}>
+                            SORT
+                        </a>
                     ) : (
-                        <SortModal
-                            showModal={showModal}
-                            closeModal={closeModal}
-                            onSubmit={handleSortFilterSubmit}
-                            sortingOptions={sortingOptions}
-                            filteringOptions={filteringOptions}
-                        />
-                    )
-                )}
+                        <a className="text-right" onClick={() => setShowModal(true)}>
+                            SORT/FILTER
+                        </a>
+                    )}
 
-                {sortedAndFilteredConditions.length === 0 ? (
-                    <p>No records found.</p>
-                ) : (
-                    sortedAndFilteredConditions.map(({condition, provider}, index) => (
-                        <Summary key={index} id={index} rows={buildRows(condition, provider)}/>
-                    ))
-                )}
+                    {showModal && (
+                        fhirDataCollection && fhirDataCollection.length === 1 ? (
+                            <SortOnlyModal
+                                showModal={showModal}
+                                closeModal={closeModal}
+                                onSubmit={handleSortFilterSubmit}
+                                sortingOptions={sortingOptions}
+                            />
+                        ) : (
+                            <SortModal
+                                showModal={showModal}
+                                closeModal={closeModal}
+                                onSubmit={handleSortFilterSubmit}
+                                sortingOptions={sortingOptions}
+                                filteringOptions={filteringOptions}
+                            />
+                        )
+                    )}
+
+                    {sortedAndFilteredConditions.length === 0 ? (
+                        <p>No records found.</p>
+                    ) : (
+                        sortedAndFilteredConditions.map(({condition, provider}, index) => (
+                            <Summary key={index} id={index} rows={buildRows(condition, provider)}/>
+                        ))
+                    )}
+                </div>
             </div>
-        </div>
-    );
+        );
+
+    } else {
+        return (
+            <div className="home-view">
+                <div className="welcome">
+
+                    {(fhirDataCollection === undefined || sharingData) && (
+                        <div>
+                            <h6>{progressTitle}</h6>
+                            <DeterminateProgress progressValue={progressValue}/>
+                            <p>{progressMessage}...<span style={{paddingLeft: '10px'}}><CircularProgress
+                                size="1rem"/></span></p>
+                        </div>
+                    )}
+
+                    <h4 className="title">Current Health Issues</h4>
+                    <p className="loading-message">Condition Summaries are still loading.  Please wait.</p>
+                </div>
+            </div>
+        );
+    }
 };
 
 const buildRows = (cond: ConditionSummary, theSource?: string): SummaryRowItems => {
@@ -264,7 +287,7 @@ const buildRows = (cond: ConditionSummary, theSource?: string): SummaryRowItems 
         {
             isHeader: false,
             twoColumns: false,
-            data1: 'Source: ' + provenance.Transmitter ?? '',
+            data1: 'Source: ' + (provenance.Transmitter ?? ''),
             data2: provenance.Author ?? '',
         }
     ))
