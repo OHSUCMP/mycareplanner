@@ -105,6 +105,12 @@ interface AppState {
     developerErrorMessage: string | undefined,
     errorCaught: Error | string | unknown,
 
+    goalsLoaded: boolean,
+    conditionsLoaded: boolean,
+    medicationsLoaded: boolean,
+    labResultsLoaded: boolean,
+    vitalSignsLoaded: boolean,
+
     goalSummaries?: GoalSummary[][],
     conditionSummaries?: ConditionSummary[][],
     medicationSummaries?: MedicationSummary[][],
@@ -160,6 +166,12 @@ class App extends React.Component<AppProps, AppState> {
             userErrorMessage: undefined,
             developerErrorMessage: undefined,
             errorCaught: undefined,
+
+            goalsLoaded: false,
+            conditionsLoaded: false,
+            medicationsLoaded: false,
+            labResultsLoaded: false,
+            vitalSignsLoaded: false,
 
             goalSummaries: undefined,
             conditionSummaries: undefined,
@@ -752,15 +764,25 @@ class App extends React.Component<AppProps, AppState> {
             process.env.REACT_APP_DEBUG_LOG === "true" && console.log("this.state.fhirData !== prevState.fhirData")
 
             // Dyanmic version:
-            await this.setSummaries('getGoalSummaries()', 'goalSummaries', getGoalSummaries);
-            await this.setSummaries('getConditionSummaries()', 'conditionSummaries', getConditionSummaries)
-            await this.setSummaries('getMedicationSummaries()', 'medicationSummaries', getMedicationSummaries)
-            await this.setSummaries('getLabResultSummaries()', 'labResultSummaries', getLabResultSummaries)
-            await this.setSummaries('getVitalSignSummaries()', 'vitalSignSummaries', getVitalSignSummaries)
+            this.setSummaries('getGoalSummaries()', 'goalSummaries', getGoalSummaries, () => {
+                this.setState({goalsLoaded: true});
+            });
+            this.setSummaries('getConditionSummaries()', 'conditionSummaries', getConditionSummaries, () => {
+                this.setState({conditionsLoaded: true});
+            });
+            this.setSummaries('getMedicationSummaries()', 'medicationSummaries', getMedicationSummaries, () => {
+                this.setState({medicationsLoaded: true});
+            });
+            this.setSummaries('getLabResultSummaries()', 'labResultSummaries', getLabResultSummaries, () => {
+                this.setState({labResultsLoaded: true});
+            });
+            this.setSummaries('getVitalSignSummaries()', 'vitalSignSummaries', getVitalSignSummaries, () => {
+                this.setState({vitalSignsLoaded: true});
+            });
         }
     }
 
-    setSummaries = async (message: string, propertyName: keyof AppState, summariesProcessor: SummaryFunctionType): Promise<void> => {
+    setSummaries = async (message: string, propertyName: keyof AppState, summariesProcessor: SummaryFunctionType, callback?: any): Promise<void> => {
         console.time(message);
         const Summaries = summariesProcessor(this.state.fhirDataCollection)
 
@@ -776,6 +798,11 @@ class App extends React.Component<AppProps, AppState> {
         this.setState(prevState => {
             return {...prevState, [propertyName]: Summaries}
         })
+
+        if (callback) {
+            callback();
+        }
+
         // }, 0)
         console.timeEnd(message)
     }
@@ -832,18 +859,23 @@ class App extends React.Component<AppProps, AppState> {
     // Note: Low priority because the issue can only be reproduced on a non-redirect provider selection (so not a launcher or redirect provider selection)
     initializeSummaries = () => {
         this.setState({
+            goalsLoaded: false,
             goalSummaries: this.getGoalSummariesInit()
         })
         this.setState({
+            conditionsLoaded: false,
             conditionSummaries: this.getConditionAndMedicationSummariesInit()
         })
         this.setState({
+            medicationsLoaded: false,
             medicationSummaries: this.getConditionAndMedicationSummariesInit()
         })
         this.setState({
+            labResultsLoaded: false,
             labResultSummaries: this.getLabResultAndVitalSignSummariesInit()
         })
         this.setState({
+            vitalSignsLoaded: false,
             vitalSignSummaries: this.getLabResultAndVitalSignSummariesInit()
         })
     }
@@ -1241,6 +1273,7 @@ class App extends React.Component<AppProps, AppState> {
                                                           progressTitle={this.state.progressTitle}
                                                           progressValue={this.state.progressValue}
                                                           progressMessage={this.state.progressMessage}
+                                                          goalsLoaded={this.state.goalsLoaded}
                                                           goalSummaryMatrix={this.state.goalSummaries}
                                                           canShareData={this.state.canShareData}/>
                                             </TabPanel>
@@ -1250,6 +1283,7 @@ class App extends React.Component<AppProps, AppState> {
                                                                progressTitle={this.state.progressTitle}
                                                                progressValue={this.state.progressValue}
                                                                progressMessage={this.state.progressMessage}
+                                                               conditionsLoaded={this.state.conditionsLoaded}
                                                                conditionSummaryMatrix={this.state.conditionSummaries}
                                                                canShareData={this.state.canShareData}/>
                                             </TabPanel>
@@ -1260,6 +1294,7 @@ class App extends React.Component<AppProps, AppState> {
                                                                 progressTitle={this.state.progressTitle}
                                                                 progressValue={this.state.progressValue}
                                                                 progressMessage={this.state.progressMessage}
+                                                                medicationsLoaded={this.state.medicationsLoaded}
                                                                 medicationSummaryMatrix={this.state.medicationSummaries}/>
                                             </TabPanel>
                                             <TabPanel value="8" sx={{padding: '0px 15px'}}>
@@ -1285,6 +1320,7 @@ class App extends React.Component<AppProps, AppState> {
                                                                progressTitle={this.state.progressTitle}
                                                                progressValue={this.state.progressValue}
                                                                progressMessage={this.state.progressMessage}
+                                                               labResultsLoaded={this.state.labResultsLoaded}
                                                                labResultSummaryMatrix={this.state.labResultSummaries}/>
                                             </TabPanel>
                                             <TabPanel value="10" sx={{padding: '0px 15px'}}>
@@ -1293,13 +1329,14 @@ class App extends React.Component<AppProps, AppState> {
                                                             progressTitle={this.state.progressTitle}
                                                             progressValue={this.state.progressValue}
                                                             progressMessage={this.state.progressMessage}
+                                                            vitalSignsLoaded={this.state.vitalSignsLoaded}
                                                             vitalSignSummaryMatrix={this.state.vitalSignSummaries}/>
                                             </TabPanel>
                                             {/* <TabPanel>
                                             <h4 className="title">Assessment Results</h4>
                                             <p>Coming soon...</p>
                                         </TabPanel> */}
-                                            <TabPanel value="11">
+                                            <TabPanel value="11" sx={{padding: '0px 15px'}}>
                                                 <ImmunizationList sharingData={this.state.sharingData}
                                                                   fhirDataCollection={this.state.fhirDataCollection}
                                                                   progressTitle={this.state.progressTitle}

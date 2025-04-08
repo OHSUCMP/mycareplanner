@@ -16,11 +16,12 @@ interface VitalsListProps {
     progressTitle: string;
     progressValue: number;
     progressMessage: string;
+    vitalSignsLoaded: boolean;
     vitalSignSummaryMatrix?: ObservationSummary[][];
 }
 
 export const VitalsList: FC<VitalsListProps> = ({sharingData, fhirDataCollection,
-                                                    progressTitle, progressValue, progressMessage,
+                                                    progressTitle, progressValue, progressMessage, vitalSignsLoaded,
                                                     vitalSignSummaryMatrix}) => {
     process.env.REACT_APP_DEBUG_LOG === "true" && console.log("VitalsList component RENDERED!")
     const [showModal, setShowModal] = useState(false);
@@ -114,61 +115,82 @@ export const VitalsList: FC<VitalsListProps> = ({sharingData, fhirDataCollection
         setSortedAndFilteredVitals(combinedVitals);
     };
 
-    return (
-        <div className="home-view">
-            <div className="welcome">
+    if (vitalSignsLoaded) {
+        return (
+            <div className="home-view">
+                <div className="welcome">
 
-                {(fhirDataCollection === undefined || sharingData) && (
-                    <div>
-                        <h6>{progressTitle}</h6>
-                        <DeterminateProgress progressValue={progressValue}/>
-                        <p>{progressMessage}...<span style={{paddingLeft: '10px'}}><CircularProgress
-                            size="1rem"/></span></p>
-                    </div>
-                )}
+                    {(fhirDataCollection === undefined || sharingData) && (
+                        <div>
+                            <h6>{progressTitle}</h6>
+                            <DeterminateProgress progressValue={progressValue}/>
+                            <p>{progressMessage}...<span style={{paddingLeft: '10px'}}><CircularProgress
+                                size="1rem"/></span></p>
+                        </div>
+                    )}
 
-                <h4 className="title">Vitals</h4>
+                    <h4 className="title">Vitals</h4>
 
-                {fhirDataCollection && fhirDataCollection.length === 1 ? (
-                    <a className="text-right" onClick={() => setShowModal(true)}>
-                        SORT
-                    </a>
-                ) : (
-                    <a className="text-right" onClick={() => setShowModal(true)}>
-                        SORT/FILTER
-                    </a>
-                )}
-
-                {showModal && (
-                    fhirDataCollection && fhirDataCollection.length === 1 ? (
-                        <SortOnlyModal
-                            showModal={showModal}
-                            closeModal={closeModal}
-                            onSubmit={handleSortFilterSubmit}
-                            sortingOptions={sortingOptions}
-                        />
+                    {fhirDataCollection && fhirDataCollection.length === 1 ? (
+                        <a className="text-right" onClick={() => setShowModal(true)}>
+                            SORT
+                        </a>
                     ) : (
-                        <SortModal
-                            showModal={showModal}
-                            closeModal={closeModal}
-                            onSubmit={handleSortFilterSubmit}
-                            sortingOptions={sortingOptions}
-                            filteringOptions={filteringOptions}
-                        />
-                    )
-                )}
+                        <a className="text-right" onClick={() => setShowModal(true)}>
+                            SORT/FILTER
+                        </a>
+                    )}
 
-                {sortedAndFilteredVitals.length === 0 ? (
-                    <p>No records found.</p>
-                ) : (
-                    sortedAndFilteredVitals.map(({vital, provider}, index) => (
-                        <Summary key={index} id={index} rows={buildRows(vital, provider)}/>
-                    ))
-                )}
+                    {showModal && (
+                        fhirDataCollection && fhirDataCollection.length === 1 ? (
+                            <SortOnlyModal
+                                showModal={showModal}
+                                closeModal={closeModal}
+                                onSubmit={handleSortFilterSubmit}
+                                sortingOptions={sortingOptions}
+                            />
+                        ) : (
+                            <SortModal
+                                showModal={showModal}
+                                closeModal={closeModal}
+                                onSubmit={handleSortFilterSubmit}
+                                sortingOptions={sortingOptions}
+                                filteringOptions={filteringOptions}
+                            />
+                        )
+                    )}
+
+                    {sortedAndFilteredVitals.length === 0 ? (
+                        <p>No records found.</p>
+                    ) : (
+                        sortedAndFilteredVitals.map(({vital, provider}, index) => (
+                            <Summary key={index} id={index} rows={buildRows(vital, provider)}/>
+                        ))
+                    )}
+                </div>
             </div>
-        </div>
-    );
+        );
 
+    } else {
+        return (
+            <div className="home-view">
+                <div className="welcome">
+
+                    {(fhirDataCollection === undefined || sharingData) && (
+                        <div>
+                            <h6>{progressTitle}</h6>
+                            <DeterminateProgress progressValue={progressValue}/>
+                            <p>{progressMessage}...<span style={{paddingLeft: '10px'}}><CircularProgress
+                                size="1rem"/></span></p>
+                        </div>
+                    )}
+
+                    <h4 className="title">Vitals</h4>
+                    <p className="loading-message">Vitals Summaries are still loading.  Please wait.</p>
+                </div>
+            </div>
+        );
+    }
 }
 
 const buildRows = (obs: ObservationSummary, theSource?: string): SummaryRowItems => {

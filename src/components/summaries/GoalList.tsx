@@ -21,12 +21,13 @@ interface GoalListProps {
     progressTitle: string;
     progressValue: number;
     progressMessage: string;
+    goalsLoaded: boolean;
     goalSummaryMatrix?: GoalSummary[][];
     canShareData?: boolean;
 }
 
 export const GoalList: FC<GoalListProps> = ({sharingData, fhirDataCollection,
-                                                progressTitle, progressValue, progressMessage,
+                                                progressTitle, progressValue, progressMessage, goalsLoaded,
                                                 goalSummaryMatrix, canShareData}) => {
     const history = useHistory();
     process.env.REACT_APP_DEBUG_LOG === "true" && console.log("GoalList component RENDERED!")
@@ -143,81 +144,91 @@ export const GoalList: FC<GoalListProps> = ({sharingData, fhirDataCollection,
         });
     };
 
-    return (
+    if (goalsLoaded) {
+        return (
+            <div className="home-view">
+                <div className="welcome">
+                    {(fhirDataCollection === undefined || sharingData) && (
+                        <div>
+                            <h6>{progressTitle}</h6>
+                            <DeterminateProgress progressValue={progressValue}/>
+                            <p>{progressMessage}...<span style={{paddingLeft: '10px'}}><CircularProgress
+                                size="1rem"/></span></p>
+                        </div>
+                    )}
 
+                    <h4 className="title">Health Goals</h4>
 
-        <div className="home-view">
+                    {canShareData && (
+                        <p>
+                            <Button variant="contained" color="primary"
+                                    onClick={() => handleEditClick({} as GoalSummary, goalSummaryMatrix as GoalSummary[][])}>
+                                Add a New Goal
+                            </Button>
+                        </p>
+                    )}
 
-            <div className="welcome">
-
-                {(fhirDataCollection === undefined || sharingData) && (
-                    <div>
-                        <h6>{progressTitle}</h6>
-                        <DeterminateProgress progressValue={progressValue}/>
-                        <p>{progressMessage}...<span style={{paddingLeft: '10px'}}><CircularProgress
-                            size="1rem"/></span></p>
-                    </div>
-                )}
-
-                <h4 className="title">Health Goals</h4>
-
-                {canShareData && (
-                    <p>
-                        <Button variant="contained" color="primary"
-                                onClick={() => handleEditClick({} as GoalSummary, goalSummaryMatrix as GoalSummary[][])}>
-                            Add a New Goal
-                        </Button>
-                    </p>
-                )}
-
-                {fhirDataCollection && fhirDataCollection.length === 1 ? (
-                    <a className="text-right" onClick={() => setShowModal(true)}>
-                        SORT
-                    </a>
-                ) : (
-                    <a className="text-right" onClick={() => setShowModal(true)}>
-                        SORT/FILTER
-                    </a>
-                )}
-
-                {showModal && (
-                    fhirDataCollection && fhirDataCollection.length === 1 ? (
-                        <SortOnlyModal
-                            showModal={showModal}
-                            closeModal={closeModal}
-                            onSubmit={handleSortFilterSubmit}
-                            sortingOptions={sortingOptions}
-                        />
+                    {fhirDataCollection && fhirDataCollection.length === 1 ? (
+                        <a className="text-right" onClick={() => setShowModal(true)}>
+                            SORT
+                        </a>
                     ) : (
-                        <SortModal
-                            showModal={showModal}
-                            closeModal={closeModal}
-                            onSubmit={handleSortFilterSubmit}
-                            sortingOptions={sortingOptions}
-                            filteringOptions={filteringOptions}
-                        />
-                    )
-                )}
+                        <a className="text-right" onClick={() => setShowModal(true)}>
+                            SORT/FILTER
+                        </a>
+                    )}
 
-                <h5 className="title">Personal Health Goals</h5>
-                {sortedAndFilteredGoals.length === 0 ? (
-                    <p>No records found.</p>
-                ) : (
-                    sortedAndFilteredGoals.map(({goal, provider}, index) => (
-                        <Summary key={index} id={index} rows={buildRows(goal, provider)}/>
-                    ))
-                )}
-                <h5 className="title">Goals Affiliated with a Recent Hospitalization</h5>
-                {sortedAndFilteredInpatientGoals.length === 0 ? (
-                    <p>No records found.</p>
-                ) : (
-                    sortedAndFilteredInpatientGoals.map(({goal, provider}, index) => (
-                        <Summary key={index} id={index} rows={buildRows(goal, provider)}/>
-                    ))
-                )}
+                    {showModal && (
+                        fhirDataCollection && fhirDataCollection.length === 1 ? (
+                            <SortOnlyModal
+                                showModal={showModal}
+                                closeModal={closeModal}
+                                onSubmit={handleSortFilterSubmit}
+                                sortingOptions={sortingOptions}
+                            />
+                        ) : (
+                            <SortModal
+                                showModal={showModal}
+                                closeModal={closeModal}
+                                onSubmit={handleSortFilterSubmit}
+                                sortingOptions={sortingOptions}
+                                filteringOptions={filteringOptions}
+                            />
+                        )
+                    )}
+
+                    <h5 className="title">Personal Health Goals</h5>
+                    <h5 className="title">Goals Affiliated with a Recent Hospitalization</h5>
+                    {sortedAndFilteredInpatientGoals.length === 0 ? (
+                        <p>No records found.</p>
+                    ) : (
+                        sortedAndFilteredInpatientGoals.map(({goal, provider}, index) => (
+                            <Summary key={index} id={index} rows={buildRows(goal, provider)}/>
+                        ))
+                    )}
+                </div>
             </div>
-        </div>
-    );
+        );
+
+    } else {
+        return (
+            <div className="home-view">
+                <div className="welcome">
+                    {(fhirDataCollection === undefined || sharingData) && (
+                        <div>
+                            <h6>{progressTitle}</h6>
+                            <DeterminateProgress progressValue={progressValue}/>
+                            <p>{progressMessage}...<span style={{paddingLeft: '10px'}}><CircularProgress
+                                size="1rem"/></span></p>
+                        </div>
+                    )}
+
+                    <h4 className="title">Health Goals</h4>
+                    <p className="loading-message">Goal Summaries are still loading.  Please wait.</p>
+                </div>
+            </div>
+        );
+    }
 };
 
 const buildRows = (goal: GoalSummary, theSource?: string): SummaryRowItems => {
