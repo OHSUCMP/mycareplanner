@@ -12,6 +12,7 @@ import YouTube from 'react-youtube';
 import 'react-circular-progressbar/dist/styles.css'
 // import { isNullOrUndefined } from 'util';
 import Grid from '@mui/material/Grid';
+import { isScoreQuestion } from '../../data-services/questionnaireService';
 
 interface QuestionnaireItemState {
   showReview: boolean,
@@ -100,21 +101,6 @@ export default class QuestionnaireItemComponent extends React.Component<any, Que
     } else {
       text = this.props.QuestionnaireItem.text
     }
-    // const percentage = (item: number, length: number): number => {
-    //   item = Number(item)
-    //   if (!isNaN(item) && item !== null) {
-    //     let percent = (item - 1) / length;
-    //     if (!isNaN(percent)) {
-    //       return Math.round(percent * 100);
-    //     } else {
-    //       return 0;
-    //     }
-
-    //   } else {
-    //     return 0;
-    //   }
-    // }
-
 
     let recordWebsiteVisit = (event: any) => {
       let timeStamp: any = new Date().toISOString();
@@ -165,9 +151,6 @@ export default class QuestionnaireItemComponent extends React.Component<any, Que
           {this.props.QuestionnaireItem.prefix !== undefined ? <div className="prefix-text">
             <h3>{this.props.QuestionnaireItem.prefix}</h3>
           </div> : <div />}
-          {/* <div className="progress-circle">
-            <CircularProgressbar value={percentage(this.props.QuestionnaireItem.linkId, this.props.length)} text={percentage(this.props.QuestionnaireItem.linkId, this.props.length) + '%'} />
-          </div> */}
         </div>
 
         {/* For groups, show item text as H4 header */}
@@ -222,13 +205,6 @@ export default class QuestionnaireItemComponent extends React.Component<any, Que
                       : <div></div>
           }
         </div>
-        <div>
-          {
-            this.props.QuestionnaireItem.item ? this.props.QuestionnaireItem.item.map((item: any, key: any) =>
-              <QuestionnaireItemComponent QuestionnaireItem={item} key={key} onChange={this.props.onChange} />
-            ) : null
-          }
-        </div>
         <Button className="btn btn-primary next-button" value={this.props.QuestionnaireItem.linkId} onClick={(event: any) => this.handleNextQuestionScroll(event.target.value)}>Next</Button>
      
         <Modal show={this.state.showCancelPopup} onHide={this.handleCancelDeny} className="custom-modal">
@@ -261,7 +237,6 @@ export default class QuestionnaireItemComponent extends React.Component<any, Que
   }
 
   private populateChoice(item: QuestionnaireItem) {
-
     let receiveData = (childData: QuestionnaireItem, answer: string) => {
       let responseAnswer: QuestionnaireResponseItemAnswer = JSON.parse(answer)
       let childResponse: QuestionnaireResponseItem = {
@@ -298,51 +273,13 @@ export default class QuestionnaireItemComponent extends React.Component<any, Que
   private populateGroupType(props: any) {
     let groupItem = props.QuestionnaireItem
 
-    // let receiveData = (childData: QuestionnaireResponseItem, answer: any) => {
-    //   let childResponse: QuestionnaireResponseItem = {
-    //     linkId: childData.linkId,
-    //     text: childData.text,
-    //     answer: [JSON.parse(answer)]
-    //   };
-
-    //   const checkResponseArray = (obj: QuestionnaireResponseItem) => obj.linkId === childResponse.linkId;
-    //   const stateQuestionnaireResponse = this.state.questionnaireResponse;
-
-    //   if (!stateQuestionnaireResponse.item!.some(checkResponseArray)) {
-    //     this.setState(state => {
-    //       const questionnaireResponse = {
-    //         linkId: state.questionnaireResponse.linkId,
-    //         text: state.questionnaireResponse.text,
-    //         item: state.questionnaireResponse.item!.concat([childResponse])
-    //       };
-    //       return {
-    //         showReview: this.state.showReview,
-    //         questionnaireResponse
-    //       }
-
-    //     }, () => {
-    //       this.props.onChange(this.state.questionnaireResponse);
-    //     })
-    //   } else if (stateQuestionnaireResponse.item!.some(checkResponseArray)) {
-
-    //     this.setState(state => {
-    //       for (let i in stateQuestionnaireResponse.item!) {
-    //         if (stateQuestionnaireResponse.item[i].linkId === childResponse.linkId) {
-    //           stateQuestionnaireResponse.item[i].answer = childResponse.answer
-    //         }
-    //       }
-
-    //     }, () => {
-    //       this.props.onChange(this.state.questionnaireResponse);
-    //     })
-    //   }
-
-    // }
-
     return (
       <div>
         {
-          groupItem.item?.map((nestedItem: QuestionnaireItem) => {
+          groupItem.item?.filter((item: QuestionnaireItem, key: any) => {
+            // Remove score questions from the display
+            return isScoreQuestion(item)
+          }).map((nestedItem: QuestionnaireItem) => {
             return (
               <div key={JSON.stringify(nestedItem)}>
                 {

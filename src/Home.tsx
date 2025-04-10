@@ -80,8 +80,6 @@ export default class Home extends React.Component<HomeProps, HomeState> {
 
         let sharingData = this.props.sharingData;
         let fhirDataCollection = this.props.fhirDataCollection;
-        console.log("AEY");
-        console.log(fhirDataCollection);
         let patients = this.props.patientSummaries;
         let screenings = this.props.screenings?.filter(s => s.notifyPatient);
         const availableQuestionnaires = getAvailableQuestionnaires();

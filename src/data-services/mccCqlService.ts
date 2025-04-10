@@ -63,9 +63,9 @@ export const getConditionSummaries = (fhirDataCollection?: FHIRData[]): Conditio
 const extractGoalSummary = (fhirData?: FHIRData): GoalSummary[] | undefined => {
   doLog({
     level: 'debug',
-    event: 'getConditions',
-    page: 'get Conditions',
-    message: `getConditions: success`
+    event: 'getGoals',
+    page: 'get Goals',
+    message: `getGoals: success`
   })
   if (fhirData === undefined) { return undefined }
   const patientSource = getPatientSource(fhirData!)
@@ -87,12 +87,14 @@ export const getGoalSummaries = (fhirDataCollection?: FHIRData[]): GoalSummary[]
 }
 
 const extractLabResultSummary = (fhirData?: FHIRData): ObservationSummary[] | undefined => {
+  console.time("extractLabResultsSummary");
   if (fhirData === undefined) { return undefined }
   const patientSource = getPatientSource(fhirData!)
   const extractedSummary = executeLibrary(mccLabResultsLibrary, mccCodeService, patientSource)
 
-  // console.log("CQL Results in extractLabResultSummary: " + JSON.stringify(extractedSummary))
-  // console.log("LabResultSummary: ", JSON.stringify(extractedSummary.LabResultSummary))
+  console.log("CQL Results in extractLabResultSummary: " + JSON.stringify(extractedSummary))
+  console.log("LabResultSummary: ", JSON.stringify(extractedSummary.LabResultSummary))
+  console.timeEnd("extractLabResultsSummary");
   return extractedSummary?.LabResultSummary
 }
 export const getLabResultSummaries = (fhirDataCollection?: FHIRData[]): ObservationSummary[][] | undefined => {

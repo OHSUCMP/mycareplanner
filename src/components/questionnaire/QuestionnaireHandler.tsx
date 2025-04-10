@@ -205,7 +205,7 @@ export class QuestionnaireHandler extends React.Component<QuestionnaireHandlerPr
         busy: true
       }
     }, () => {
-      submitQuestionnaireResponse(this.state.questionnaireResponse)
+      submitQuestionnaireResponse(this.state.selectedQuestionnaire?.id || "", this.state.questionnaireResponse)
         .then(res => {
           this.setState({ status: 'completed', busy: false })
           console.log("res: ", res);

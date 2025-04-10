@@ -914,6 +914,40 @@
                 {
                     "extension": [
                         {
+                            "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-displayCategory",
+                            "valueCodeableConcept": {
+                                "coding": [
+                                    {
+                                        "display": "The PHQ-9 is the standard (and most commonly used) depression measure, and it ranges from 0-27 Scoring: Add up all checked boxes on PHQ-9. For every check: Not at all = 0; Several days = 1; More than half the days = 2; Nearly every day = 3 (the scores are the codes that appear in the answer list for each of the PHQ-9 problem panel terms). Interpretation: 1-4 = Minimal depression; 5-9 = Mild depression; 10-14 = Moderate depression; 15-19 = Moderately severe depression; 20-27 = Severed depression."
+                                    }
+                                ],
+                                "text": "The PHQ-9 is the standard (and most commonly used) depression measure, and it ranges from 0-27 Scoring: Add up all checked boxes on PHQ-9. For every check: Not at all = 0; Several days = 1; More than half the days = 2; Nearly every day = 3 (the scores are the codes that appear in the answer list for each of the PHQ-9 problem panel terms). Interpretation: 1-4 = Minimal depression; 5-9 = Mild depression; 10-14 = Moderate depression; 15-19 = Moderately severe depression; 20-27 = Severed depression."
+                            }
+                        },
+                        {
+                            "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-unit",
+                            "valueCoding": {
+                                "system": "http://loinc.org",
+                                "code": "LP73852-3",
+                                "display": "{score}"
+                            }
+                        }
+                    ],
+                    "linkId": "/44261-6",
+                    "code": [
+                        {
+                            "system": "http://loinc.org",
+                            "code": "44261-6",
+                            "display": "Patient health questionnaire 9 item total score"
+                        }
+                    ],
+                    "text": "Patient health questionnaire 9 item total score",
+                    "type": "decimal",
+                    "required": false
+                },
+                {
+                    "extension": [
+                        {
                             "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-itemControl",
                             "valueCodeableConcept": {
                                 "coding": [
