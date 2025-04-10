@@ -434,10 +434,10 @@ class App extends React.Component<AppProps, AppState> {
         }
     }
 
-    // async componentDidUpdate(prevProps: Readonly<AppProps>, prevState: Readonly<AppState>, snapshot?: any): Promise<void> {
-    //     // process.env.REACT_APP_DEBUG_LOG === "true" && console.log("App.tsx componentDidUpdate()")
-    //     this.setSummary(prevState)
-    // }
+    async componentDidUpdate(prevProps: Readonly<AppProps>, prevState: Readonly<AppState>, snapshot?: any): Promise<void> {
+        // process.env.REACT_APP_DEBUG_LOG === "true" && console.log("App.tsx componentDidUpdate()")
+        this.setSummary(prevState)
+    }
 
     componentWillUnmount() {
         window.removeEventListener('beforeunload', this.handleBeforeUnload);
@@ -590,7 +590,6 @@ class App extends React.Component<AppProps, AppState> {
             this.setFhirDataStates([launcherData])
         }
 
-        this.setSummary2()
         await this.autoShareFHIRDataToSDS()
     }
 
@@ -647,7 +646,6 @@ class App extends React.Component<AppProps, AppState> {
             // !FUNCTION DIFF!: props to this for setFhirDataStates, may need to pass in what we need to set specifically and set that
             this.setFhirDataStates(fhirDataCollection!)
             console.log("fhirDataCollection complete in loadSelectedEndpoints:", fhirDataCollection)
-            this.setSummary2()
             this.autoShareFHIRDataToSDS()
         }
     }
@@ -756,32 +754,6 @@ class App extends React.Component<AppProps, AppState> {
         } else {
             console.error("endpoint === null")
         }
-    }
-
-    setSummary2 = async(): Promise<void> => {
-        console.log("setSummary2() - begin");
-
-        console.log("getting Goal summaries -");
-        const goalSummaries = getGoalSummaries(this.state.fhirDataCollection);
-        this.setState({goalsLoaded: true, goalSummaries: goalSummaries});
-
-        console.log("getting Condition summaries -");
-        const conditionSummaries = getConditionSummaries(this.state.fhirDataCollection);
-        this.setState({conditionsLoaded: true, conditionSummaries: conditionSummaries});
-
-        console.log("getting Medication summaries -");
-        const medicationSummaries = getMedicationSummaries(this.state.fhirDataCollection);
-        this.setState({medicationsLoaded: true, medicationSummaries: medicationSummaries});
-
-        console.log("getting Lab Result summaries -");
-        const labResultSummaries = getLabResultSummaries(this.state.fhirDataCollection);
-        this.setState({labResultsLoaded: true, labResultSummaries: labResultSummaries});
-
-        console.log("getting Vital Sign summaries -");
-        const vitalSignSummaries = getVitalSignSummaries(this.state.fhirDataCollection);
-        this.setState({vitalSignsLoaded: true, vitalSignSummaries: vitalSignSummaries});
-
-        console.log("setSummary2() - end");
     }
 
     setSummary = async (prevState: Readonly<AppState>): Promise<void> => {
