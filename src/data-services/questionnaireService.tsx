@@ -1,10 +1,10 @@
 import Client from 'fhirclient/lib/Client';
-import { Questionnaire, QuestionnaireResponse, QuestionnaireResponseItem, QuestionnaireItem } from './fhir-types/fhir-r4';
+import { Questionnaire, QuestionnaireResponse, QuestionnaireResponseItem, QuestionnaireItem, Coding } from './fhir-types/fhir-r4';
 import { getSupplementalDataClient } from '../data-services/fhirService'
-import { is } from 'immer/dist/internal';
 
-// The list of questionnaires and metadata. Note that resource_id, url, and code needs to match what is in the resource in public/content.
-const questionnaires = [
+// The list of questionnaires and metadata. Note that resource_id, url, and code will overwrite whatever is in the resource in public/content to be sure they match expectations for scoring.
+// The environment variable REACT_APP_AVAILABLE_QUESTIONNAIRES can be used to filter which questionnaires are available.
+const questionnairesMetadata = [
     {
         "id": "PHQ-9",
         "label": "Depression Assessment",
@@ -52,6 +52,7 @@ const questionnaires = [
 ];
 
 export function getLocalQuestionnaire(id: String) {
+    let questionnaireMetadata = findQuestionnaireMetadataById(id);
     let publicPath = `${process.env.PUBLIC_URL}`;
     let resourcePath = publicPath + '/content/' + id + ".json";
     return fetch(resourcePath)
@@ -59,43 +60,37 @@ export function getLocalQuestionnaire(id: String) {
             return response.json();
         })
         .then((questionnaireJson) => {
-            return questionnaireJson as Questionnaire
+            let questionnaire = questionnaireJson as Questionnaire
+            // Replace the questionnaire definition fields to make sure they match what's expected
+            questionnaire.id = questionnaireMetadata?.resource_id;
+            questionnaire.url = questionnaireMetadata?.url;
+            questionnaire.code = [questionnaireMetadata?.code as Coding]
+            return questionnaire;
         }).catch(error => {
             return error;
         });
 }
 
 export function getAvailableQuestionnaires() {
-    return questionnaires;
+    const availableIds = process.env.REACT_APP_AVAILABLE_QUESTIONNAIRES?.split(',') || [];
+    return questionnairesMetadata.filter(q => availableIds.includes(q.id));
 }
 
-export function getAvailableQuestionnaireByResourceId(resourceId: String) {
-    const questionnaire = questionnaires.find((q) => q.resource_id === resourceId);
-    return questionnaire || null;
+function findQuestionnaireMetadataById(id: String) {
+    const questionnaireMetadata = questionnairesMetadata.find((q) => q.id === id);
+    return questionnaireMetadata || null;
+}
+
+function findQuestionnaireMetadataByResourceId(resourceId: String) {
+    const questionnaireMetadata = questionnairesMetadata.find((q) => q.resource_id === resourceId);
+    return questionnaireMetadata || null;
 }
 
 export function isScoreQuestion(item: QuestionnaireItem) {
     return !item.extension?.filter((ext: any) => ext.url === "http://hl7.org/fhir/StructureDefinition/questionnaire-unit").map((ext: any) => { return ext.valueCoding?.code}).includes('LP73852-3');
 }
 
-// storer: commenting out this function as it's never called
-// export function getQuestionnaire(serverUrl: any, questionnaireID: string) {
-//     let url: string;
-//     return getSupplementalDataClient()
-//         .then((client: Client | undefined) => {
-//             if (client) {
-//                 url = client.state.serverUrl;
-//                 return client.request('Questionnaire/' + questionnaireID);
-//             }
-//         })
-//         .then((questionnaire) => {
-//             serverUrl.push(url + '/Questionnaire/' + questionnaire.id);
-//             return questionnaire;
-//         }).catch(error => {
-//             return error;
-//         });
-// }
-
+// This function assumes all questions are grouped under a single item (page)
 function sumValueDecimals(questionnaireResponse: QuestionnaireResponse) {
     let total = 0;
   
@@ -123,10 +118,9 @@ function sumValueDecimals(questionnaireResponse: QuestionnaireResponse) {
     return total;
 }  
 
+// TODO: This should be generalized. Currently relies on the specific link being in the loaded resource in a certain location
 function scorePHQ9(questionnaireResponse: QuestionnaireResponse) {
     const totalScore = sumValueDecimals(questionnaireResponse);
-    console.log('Total Score: ', totalScore);
-
     let score = {
         'linkId': '/44261-6', 
         'text': 'Patient health questionnaire 9 item total score', 
@@ -140,38 +134,57 @@ function scorePHQ9(questionnaireResponse: QuestionnaireResponse) {
     return questionnaireResponse;
 }
 
-function isCompletePHQ9(questionnaireResponse: QuestionnaireResponse) {
-    const items = questionnaireResponse.item?.[0]?.item || [];
-    const links = items.map((item) => item.linkId);
-    const requiredLinks = [
-        '/44250-9',
-        '/44255-8',
-        '/44259-0',
-        '/44254-1',
-        '/44251-7',
-        '/44258-2',
-        '/44252-5',
-        '/44253-3',
-        '/44260-8'
-    ];
+function findResponseItem(
+    linkId: string,
+    responseItems: QuestionnaireResponseItem[]
+  ): QuestionnaireResponseItem | undefined {
+    return responseItems.find((ri) => ri?.linkId === linkId);
+  }
 
-    return requiredLinks.every(link => links.includes(link));
-}
+// Recursive algorithm to check that all required questions are represented in the response
+function requiredQuestionsComplete(
+    questionnaireItems: QuestionnaireItem[],
+    responseItems: QuestionnaireResponseItem[] = []
+  ): boolean {
+    for (const qItem of questionnaireItems) {
+      const responseItem = findResponseItem(qItem.linkId, responseItems);
+  
+      if (qItem.required && (!responseItem || !responseItem.answer || responseItem.answer.length === 0)) {
+        return false;
+      }
+  
+      if (qItem.item && qItem.item.length > 0) {
+        const nestedResponseItems = responseItem?.item || [];
+        const nestedComplete = requiredQuestionsComplete(qItem.item, nestedResponseItems);
+        if (!nestedComplete) {
+          return false;
+        }
+      }
+    }
+  
+    return true;
+  }
 
 export function submitQuestionnaireResponse(questionnaireId: String, questionnaireResponse: QuestionnaireResponse) {
-    const questionnaire = getAvailableQuestionnaireByResourceId(questionnaireId);
-    if (questionnaire?.id === 'PHQ-9' && isCompletePHQ9(questionnaireResponse)) {
-        questionnaireResponse = scorePHQ9(questionnaireResponse);
-    }
-    return getSupplementalDataClient()
-        .then((client: Client | undefined) => {
-            // console.log(JSON.stringify(questionnaireResponse))
-            // @ts-ignore
-            return client.create(questionnaireResponse)
-        })
-        .then((response) => {
-            return response
-        }).catch(error => {
-            console.log('Error saving questionnaire response: ', error)
+    const questionnaireMetadata = findQuestionnaireMetadataByResourceId(questionnaireId);
+    if (questionnaireMetadata !== null && questionnaireMetadata.id) {
+        return getLocalQuestionnaire(questionnaireMetadata.id).then(questionnaireDef => {
+            if (questionnaireMetadata?.id === 'PHQ-9' && requiredQuestionsComplete(questionnaireDef?.item || [], questionnaireResponse?.item || [])) {
+                questionnaireResponse = scorePHQ9(questionnaireResponse);
+            }
+            return getSupplementalDataClient()
+                .then((client: Client | undefined) => {
+                    // @ts-ignore
+                    // TODO: AEY - No saving right now
+                    //return client.create(questionnaireResponse)
+                })
+                .then((response) => {
+                    return response
+                }).catch(error => {
+                    console.log('Error saving questionnaire response: ', error)
+                });
         });
+    }
+
+    return Promise.reject(new Error("Questionnaire metadata not found."));
 }

@@ -217,6 +217,7 @@ export default class Home extends React.Component<HomeProps, HomeState> {
                         <h5 style={{marginTop: '20px'}}>My Tasks</h5>
 
                         <div>
+
                         {availableQuestionnaires.map(({ id, label, url }) => {
                             // Get the most recent authored date from the latestResponses map
                             const latest = latestResponses && latestResponses[url];
@@ -227,7 +228,6 @@ export default class Home extends React.Component<HomeProps, HomeState> {
                                     to={{
                                     pathname: "/questionnaire",
                                     state: {
-                                        patientSummaries: patients,
                                         questionnaireId: id
                                     }
                                     }}

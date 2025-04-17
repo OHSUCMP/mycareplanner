@@ -60,7 +60,7 @@ export class QuestionnaireHandler extends React.Component<QuestionnaireHandlerPr
     getLocalQuestionnaire(this.state.questionnaireId!)
       .then(questionnaire => {
         if (questionnaire === undefined || questionnaire.resourceType !== 'Questionnaire') {
-          let message = 'Questionnarie not found: ' + this.state.questionnaireId
+          let message = 'Questionnaire not found: ' + this.state.questionnaireId
           throw Error(message)
         }
 

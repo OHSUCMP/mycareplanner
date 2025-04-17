@@ -36,7 +36,6 @@
             ],
             "text": "Over the last 2 weeks, how often have you been bothered by any of the following problems?",
             "type": "group",
-            "required": true,
             "item": [
                 {
                     "extension": [
@@ -64,6 +63,7 @@
                     ],
                     "text": "Little interest or pleasure in doing things",
                     "type": "choice",
+                    "required": true,
                     "answerOption": [
                         {
                             "extension": [
@@ -161,6 +161,7 @@
                     ],
                     "text": "Feeling down, depressed, or hopeless",
                     "type": "choice",
+                    "required": true,
                     "answerOption": [
                         {
                             "extension": [
@@ -258,6 +259,7 @@
                     ],
                     "text": "Trouble falling or staying asleep, or sleeping too much",
                     "type": "choice",
+                    "required": true,
                     "answerOption": [
                         {
                             "extension": [
@@ -355,6 +357,7 @@
                     ],
                     "text": "Feeling tired or having little energy",
                     "type": "choice",
+                    "required": true,
                     "answerOption": [
                         {
                             "extension": [
@@ -452,6 +455,7 @@
                     ],
                     "text": "Poor appetite or overeating",
                     "type": "choice",
+                    "required": true,
                     "answerOption": [
                         {
                             "extension": [
@@ -549,6 +553,7 @@
                     ],
                     "text": "Feeling bad about yourself-or that you are a failure or have let yourself or your family down",
                     "type": "choice",
+                    "required": true,
                     "answerOption": [
                         {
                             "extension": [
@@ -646,6 +651,7 @@
                     ],
                     "text": "Trouble concentrating on things, such as reading the newspaper or watching television",
                     "type": "choice",
+                    "required": true,
                     "answerOption": [
                         {
                             "extension": [
@@ -743,6 +749,7 @@
                     ],
                     "text": "Moving or speaking so slowly that other people could have noticed. Or the opposite – being so fidgety or restless that you were moving around a lot more than usual",
                     "type": "choice",
+                    "required": true,
                     "answerOption": [
                         {
                             "extension": [
@@ -840,6 +847,7 @@
                     ],
                     "text": "Thoughts that you would be better off dead, or of hurting yourself in some way",
                     "type": "choice",
+                    "required": true,
                     "answerOption": [
                         {
                             "extension": [
@@ -971,6 +979,7 @@
                     ],
                     "text": "How difficult have these problems made it for you to do your work, take care of things at home, or get along with other people?",
                     "type": "choice",
+                    "required": false,
                     "answerOption": [
                         {
                             "valueCoding": {
