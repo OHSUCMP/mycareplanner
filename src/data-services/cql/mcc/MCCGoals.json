@@ -20,16 +20,6 @@
          "errorType" : "semantic",
          "errorSeverity" : "warning",
          "type" : "CqlToElmError"
-      }, {
-         "message" : "An operand identifier [condition] is hiding another identifier of the same name.",
-         "errorType" : "semantic",
-         "errorSeverity" : "warning",
-         "type" : "CqlToElmError"
-      }, {
-         "message" : "An operand identifier [condition] is hiding another identifier of the same name.",
-         "errorType" : "semantic",
-         "errorSeverity" : "warning",
-         "type" : "CqlToElmError"
       } ],
       "identifier" : {
          "id" : "MCCGoals",
@@ -94,9 +84,10 @@
                }
             }
          }, {
-            "name" : "Active Goals",
+            "name" : "QualifiedGoal",
             "context" : "Patient",
             "accessLevel" : "Public",
+            "type" : "FunctionDef",
             "annotation" : [ ],
             "expression" : {
                "type" : "Query",
@@ -105,14 +96,9 @@
                   "alias" : "G",
                   "annotation" : [ ],
                   "expression" : {
-                     "dataType" : "{http://hl7.org/fhir}Goal",
-                     "templateId" : "http://hl7.org/fhir/StructureDefinition/Goal",
-                     "type" : "Retrieve",
-                     "annotation" : [ ],
-                     "include" : [ ],
-                     "codeFilter" : [ ],
-                     "dateFilter" : [ ],
-                     "otherFilter" : [ ]
+                     "name" : "goals",
+                     "type" : "OperandRef",
+                     "annotation" : [ ]
                   }
                } ],
                "let" : [ ],
@@ -163,7 +149,20 @@
                      } ]
                   } ]
                }
-            }
+            },
+            "operand" : [ {
+               "name" : "goals",
+               "annotation" : [ ],
+               "operandTypeSpecifier" : {
+                  "type" : "ListTypeSpecifier",
+                  "annotation" : [ ],
+                  "elementType" : {
+                     "name" : "{http://hl7.org/fhir}Goal",
+                     "type" : "NamedTypeSpecifier",
+                     "annotation" : [ ]
+                  }
+               }
+            } ]
          }, {
             "name" : "ReportGoals",
             "context" : "Patient",
@@ -2048,9 +2047,20 @@
                      "alias" : "G",
                      "annotation" : [ ],
                      "expression" : {
-                        "name" : "Active Goals",
-                        "type" : "ExpressionRef",
-                        "annotation" : [ ]
+                        "name" : "QualifiedGoal",
+                        "type" : "FunctionRef",
+                        "annotation" : [ ],
+                        "signature" : [ ],
+                        "operand" : [ {
+                           "dataType" : "{http://hl7.org/fhir}Goal",
+                           "templateId" : "http://hl7.org/fhir/StructureDefinition/Goal",
+                           "type" : "Retrieve",
+                           "annotation" : [ ],
+                           "include" : [ ],
+                           "codeFilter" : [ ],
+                           "dateFilter" : [ ],
+                           "otherFilter" : [ ]
+                        } ]
                      }
                   } ],
                   "let" : [ ],
@@ -2085,582 +2095,6 @@
                      } ]
                   }
                } ]
-            }
-         }, {
-            "name" : "HasGoals",
-            "context" : "Patient",
-            "accessLevel" : "Public",
-            "type" : "FunctionDef",
-            "annotation" : [ ],
-            "expression" : {
-               "type" : "Query",
-               "annotation" : [ ],
-               "source" : [ {
-                  "alias" : "goal",
-                  "annotation" : [ ],
-                  "expression" : {
-                     "dataType" : "{http://hl7.org/fhir}Goal",
-                     "templateId" : "http://hl7.org/fhir/StructureDefinition/Goal",
-                     "type" : "Retrieve",
-                     "annotation" : [ ],
-                     "include" : [ ],
-                     "codeFilter" : [ ],
-                     "dateFilter" : [ ],
-                     "otherFilter" : [ ]
-                  }
-               } ],
-               "let" : [ ],
-               "relationship" : [ ],
-               "where" : {
-                  "type" : "Exists",
-                  "annotation" : [ ],
-                  "signature" : [ {
-                     "type" : "ListTypeSpecifier",
-                     "annotation" : [ ],
-                     "elementType" : {
-                        "name" : "{http://hl7.org/fhir}Reference",
-                        "type" : "NamedTypeSpecifier",
-                        "annotation" : [ ]
-                     }
-                  } ],
-                  "operand" : {
-                     "type" : "Query",
-                     "annotation" : [ ],
-                     "source" : [ {
-                        "alias" : "GA",
-                        "annotation" : [ ],
-                        "expression" : {
-                           "path" : "addresses",
-                           "scope" : "goal",
-                           "type" : "Property",
-                           "annotation" : [ ]
-                        }
-                     } ],
-                     "let" : [ ],
-                     "relationship" : [ ],
-                     "where" : {
-                        "type" : "Equal",
-                        "annotation" : [ ],
-                        "signature" : [ {
-                           "name" : "{urn:hl7-org:elm-types:r1}String",
-                           "type" : "NamedTypeSpecifier",
-                           "annotation" : [ ]
-                        }, {
-                           "name" : "{urn:hl7-org:elm-types:r1}String",
-                           "type" : "NamedTypeSpecifier",
-                           "annotation" : [ ]
-                        } ],
-                        "operand" : [ {
-                           "name" : "ToString",
-                           "libraryName" : "FHIRHelpers",
-                           "type" : "FunctionRef",
-                           "annotation" : [ ],
-                           "signature" : [ {
-                              "name" : "{http://hl7.org/fhir}string",
-                              "type" : "NamedTypeSpecifier",
-                              "annotation" : [ ]
-                           } ],
-                           "operand" : [ {
-                              "path" : "id",
-                              "type" : "Property",
-                              "annotation" : [ ],
-                              "source" : {
-                                 "name" : "condition",
-                                 "type" : "OperandRef",
-                                 "annotation" : [ ]
-                              }
-                           } ]
-                        }, {
-                           "name" : "GetId",
-                           "libraryName" : "DE",
-                           "type" : "FunctionRef",
-                           "annotation" : [ ],
-                           "signature" : [ ],
-                           "operand" : [ {
-                              "name" : "ToString",
-                              "libraryName" : "FHIRHelpers",
-                              "type" : "FunctionRef",
-                              "annotation" : [ ],
-                              "signature" : [ {
-                                 "name" : "{http://hl7.org/fhir}string",
-                                 "type" : "NamedTypeSpecifier",
-                                 "annotation" : [ ]
-                              } ],
-                              "operand" : [ {
-                                 "path" : "reference",
-                                 "scope" : "GA",
-                                 "type" : "Property",
-                                 "annotation" : [ ]
-                              } ]
-                           } ]
-                        } ]
-                     }
-                  }
-               }
-            },
-            "operand" : [ {
-               "name" : "condition",
-               "annotation" : [ ],
-               "operandTypeSpecifier" : {
-                  "name" : "{http://hl7.org/fhir}Condition",
-                  "type" : "NamedTypeSpecifier",
-                  "annotation" : [ ]
-               }
-            } ]
-         }, {
-            "name" : "Conditions with Goals",
-            "context" : "Patient",
-            "accessLevel" : "Public",
-            "annotation" : [ ],
-            "expression" : {
-               "type" : "Query",
-               "annotation" : [ ],
-               "source" : [ {
-                  "alias" : "condition",
-                  "annotation" : [ ],
-                  "expression" : {
-                     "dataType" : "{http://hl7.org/fhir}Condition",
-                     "templateId" : "http://hl7.org/fhir/StructureDefinition/Condition",
-                     "type" : "Retrieve",
-                     "annotation" : [ ],
-                     "include" : [ ],
-                     "codeFilter" : [ ],
-                     "dateFilter" : [ ],
-                     "otherFilter" : [ ]
-                  }
-               } ],
-               "let" : [ ],
-               "relationship" : [ ],
-               "where" : {
-                  "type" : "Exists",
-                  "annotation" : [ ],
-                  "signature" : [ {
-                     "type" : "ListTypeSpecifier",
-                     "annotation" : [ ],
-                     "elementType" : {
-                        "name" : "{http://hl7.org/fhir}Goal",
-                        "type" : "NamedTypeSpecifier",
-                        "annotation" : [ ]
-                     }
-                  } ],
-                  "operand" : {
-                     "name" : "HasGoals",
-                     "type" : "FunctionRef",
-                     "annotation" : [ ],
-                     "signature" : [ ],
-                     "operand" : [ {
-                        "name" : "condition",
-                        "type" : "AliasRef",
-                        "annotation" : [ ]
-                     } ]
-                  }
-               }
-            }
-         }, {
-            "name" : "Conditions without Goals",
-            "context" : "Patient",
-            "accessLevel" : "Public",
-            "annotation" : [ ],
-            "expression" : {
-               "type" : "Query",
-               "annotation" : [ ],
-               "source" : [ {
-                  "alias" : "condition",
-                  "annotation" : [ ],
-                  "expression" : {
-                     "dataType" : "{http://hl7.org/fhir}Condition",
-                     "templateId" : "http://hl7.org/fhir/StructureDefinition/Condition",
-                     "type" : "Retrieve",
-                     "annotation" : [ ],
-                     "include" : [ ],
-                     "codeFilter" : [ ],
-                     "dateFilter" : [ ],
-                     "otherFilter" : [ ]
-                  }
-               } ],
-               "let" : [ ],
-               "relationship" : [ ],
-               "where" : {
-                  "type" : "Not",
-                  "annotation" : [ ],
-                  "signature" : [ ],
-                  "operand" : {
-                     "type" : "Exists",
-                     "annotation" : [ ],
-                     "signature" : [ {
-                        "type" : "ListTypeSpecifier",
-                        "annotation" : [ ],
-                        "elementType" : {
-                           "name" : "{http://hl7.org/fhir}Goal",
-                           "type" : "NamedTypeSpecifier",
-                           "annotation" : [ ]
-                        }
-                     } ],
-                     "operand" : {
-                        "name" : "HasGoals",
-                        "type" : "FunctionRef",
-                        "annotation" : [ ],
-                        "signature" : [ ],
-                        "operand" : [ {
-                           "name" : "condition",
-                           "type" : "AliasRef",
-                           "annotation" : [ ]
-                        } ]
-                     }
-                  }
-               }
-            }
-         }, {
-            "name" : "HasEvidence",
-            "context" : "Patient",
-            "accessLevel" : "Public",
-            "type" : "FunctionDef",
-            "annotation" : [ ],
-            "expression" : {
-               "type" : "Flatten",
-               "annotation" : [ ],
-               "signature" : [ ],
-               "operand" : {
-                  "type" : "Query",
-                  "annotation" : [ ],
-                  "source" : [ {
-                     "alias" : "E",
-                     "annotation" : [ ],
-                     "expression" : {
-                        "type" : "Flatten",
-                        "annotation" : [ ],
-                        "signature" : [ ],
-                        "operand" : {
-                           "type" : "Query",
-                           "annotation" : [ ],
-                           "source" : [ {
-                              "alias" : "$this",
-                              "annotation" : [ ],
-                              "expression" : {
-                                 "path" : "evidence",
-                                 "type" : "Property",
-                                 "annotation" : [ ],
-                                 "source" : {
-                                    "name" : "condition",
-                                    "type" : "OperandRef",
-                                    "annotation" : [ ]
-                                 }
-                              }
-                           } ],
-                           "let" : [ ],
-                           "relationship" : [ ],
-                           "where" : {
-                              "type" : "Not",
-                              "annotation" : [ ],
-                              "signature" : [ ],
-                              "operand" : {
-                                 "type" : "IsNull",
-                                 "annotation" : [ ],
-                                 "signature" : [ ],
-                                 "operand" : {
-                                    "path" : "detail",
-                                    "type" : "Property",
-                                    "annotation" : [ ],
-                                    "source" : {
-                                       "name" : "$this",
-                                       "type" : "AliasRef",
-                                       "annotation" : [ ]
-                                    }
-                                 }
-                              }
-                           },
-                           "return" : {
-                              "distinct" : false,
-                              "annotation" : [ ],
-                              "expression" : {
-                                 "path" : "detail",
-                                 "type" : "Property",
-                                 "annotation" : [ ],
-                                 "source" : {
-                                    "name" : "$this",
-                                    "type" : "AliasRef",
-                                    "annotation" : [ ]
-                                 }
-                              }
-                           }
-                        }
-                     }
-                  } ],
-                  "let" : [ ],
-                  "relationship" : [ ],
-                  "return" : {
-                     "annotation" : [ ],
-                     "expression" : {
-                        "type" : "Query",
-                        "annotation" : [ ],
-                        "source" : [ {
-                           "alias" : "res",
-                           "annotation" : [ ],
-                           "expression" : {
-                              "dataType" : "{http://hl7.org/fhir}Observation",
-                              "templateId" : "http://hl7.org/fhir/StructureDefinition/Observation",
-                              "type" : "Retrieve",
-                              "annotation" : [ ],
-                              "include" : [ ],
-                              "codeFilter" : [ ],
-                              "dateFilter" : [ ],
-                              "otherFilter" : [ ]
-                           }
-                        } ],
-                        "let" : [ ],
-                        "relationship" : [ ],
-                        "where" : {
-                           "type" : "Equal",
-                           "annotation" : [ ],
-                           "signature" : [ {
-                              "name" : "{urn:hl7-org:elm-types:r1}String",
-                              "type" : "NamedTypeSpecifier",
-                              "annotation" : [ ]
-                           }, {
-                              "name" : "{urn:hl7-org:elm-types:r1}String",
-                              "type" : "NamedTypeSpecifier",
-                              "annotation" : [ ]
-                           } ],
-                           "operand" : [ {
-                              "name" : "ToString",
-                              "libraryName" : "FHIRHelpers",
-                              "type" : "FunctionRef",
-                              "annotation" : [ ],
-                              "signature" : [ {
-                                 "name" : "{http://hl7.org/fhir}string",
-                                 "type" : "NamedTypeSpecifier",
-                                 "annotation" : [ ]
-                              } ],
-                              "operand" : [ {
-                                 "path" : "id",
-                                 "scope" : "res",
-                                 "type" : "Property",
-                                 "annotation" : [ ]
-                              } ]
-                           }, {
-                              "name" : "GetId",
-                              "libraryName" : "DE",
-                              "type" : "FunctionRef",
-                              "annotation" : [ ],
-                              "signature" : [ ],
-                              "operand" : [ {
-                                 "name" : "ToString",
-                                 "libraryName" : "FHIRHelpers",
-                                 "type" : "FunctionRef",
-                                 "annotation" : [ ],
-                                 "signature" : [ {
-                                    "name" : "{http://hl7.org/fhir}string",
-                                    "type" : "NamedTypeSpecifier",
-                                    "annotation" : [ ]
-                                 } ],
-                                 "operand" : [ {
-                                    "path" : "reference",
-                                    "scope" : "E",
-                                    "type" : "Property",
-                                    "annotation" : [ ]
-                                 } ]
-                              } ]
-                           } ]
-                        }
-                     }
-                  }
-               }
-            },
-            "operand" : [ {
-               "name" : "condition",
-               "annotation" : [ ],
-               "operandTypeSpecifier" : {
-                  "name" : "{http://hl7.org/fhir}Condition",
-                  "type" : "NamedTypeSpecifier",
-                  "annotation" : [ ]
-               }
-            } ]
-         }, {
-            "name" : "Conditions with Evidence",
-            "context" : "Patient",
-            "accessLevel" : "Public",
-            "annotation" : [ ],
-            "expression" : {
-               "type" : "Query",
-               "annotation" : [ ],
-               "source" : [ {
-                  "alias" : "condition",
-                  "annotation" : [ ],
-                  "expression" : {
-                     "dataType" : "{http://hl7.org/fhir}Condition",
-                     "templateId" : "http://hl7.org/fhir/StructureDefinition/Condition",
-                     "type" : "Retrieve",
-                     "annotation" : [ ],
-                     "include" : [ ],
-                     "codeFilter" : [ ],
-                     "dateFilter" : [ ],
-                     "otherFilter" : [ ]
-                  }
-               } ],
-               "let" : [ ],
-               "relationship" : [ ],
-               "where" : {
-                  "type" : "Exists",
-                  "annotation" : [ ],
-                  "signature" : [ {
-                     "type" : "ListTypeSpecifier",
-                     "annotation" : [ ],
-                     "elementType" : {
-                        "name" : "{http://hl7.org/fhir}Resource",
-                        "type" : "NamedTypeSpecifier",
-                        "annotation" : [ ]
-                     }
-                  } ],
-                  "operand" : {
-                     "name" : "HasEvidence",
-                     "type" : "FunctionRef",
-                     "annotation" : [ ],
-                     "signature" : [ ],
-                     "operand" : [ {
-                        "name" : "condition",
-                        "type" : "AliasRef",
-                        "annotation" : [ ]
-                     } ]
-                  }
-               }
-            }
-         }, {
-            "name" : "Display Conditions without Goals",
-            "context" : "Patient",
-            "accessLevel" : "Public",
-            "annotation" : [ ],
-            "expression" : {
-               "name" : "DisplayNames",
-               "libraryName" : "DE",
-               "type" : "FunctionRef",
-               "annotation" : [ ],
-               "signature" : [ ],
-               "operand" : [ {
-                  "name" : "Conditions without Goals",
-                  "type" : "ExpressionRef",
-                  "annotation" : [ ]
-               } ]
-            }
-         }, {
-            "name" : "Display Conditions with Goals",
-            "context" : "Patient",
-            "accessLevel" : "Public",
-            "annotation" : [ ],
-            "expression" : {
-               "type" : "Query",
-               "annotation" : [ ],
-               "source" : [ {
-                  "alias" : "condition",
-                  "annotation" : [ ],
-                  "expression" : {
-                     "dataType" : "{http://hl7.org/fhir}Condition",
-                     "templateId" : "http://hl7.org/fhir/StructureDefinition/Condition",
-                     "type" : "Retrieve",
-                     "annotation" : [ ],
-                     "include" : [ ],
-                     "codeFilter" : [ ],
-                     "dateFilter" : [ ],
-                     "otherFilter" : [ ]
-                  }
-               } ],
-               "let" : [ {
-                  "identifier" : "goals",
-                  "annotation" : [ ],
-                  "expression" : {
-                     "name" : "HasGoals",
-                     "type" : "FunctionRef",
-                     "annotation" : [ ],
-                     "signature" : [ ],
-                     "operand" : [ {
-                        "name" : "condition",
-                        "type" : "AliasRef",
-                        "annotation" : [ ]
-                     } ]
-                  }
-               }, {
-                  "identifier" : "evidence",
-                  "annotation" : [ ],
-                  "expression" : {
-                     "name" : "HasEvidence",
-                     "type" : "FunctionRef",
-                     "annotation" : [ ],
-                     "signature" : [ ],
-                     "operand" : [ {
-                        "name" : "condition",
-                        "type" : "AliasRef",
-                        "annotation" : [ ]
-                     } ]
-                  }
-               } ],
-               "relationship" : [ ],
-               "where" : {
-                  "type" : "Exists",
-                  "annotation" : [ ],
-                  "signature" : [ {
-                     "type" : "ListTypeSpecifier",
-                     "annotation" : [ ],
-                     "elementType" : {
-                        "name" : "{http://hl7.org/fhir}Goal",
-                        "type" : "NamedTypeSpecifier",
-                        "annotation" : [ ]
-                     }
-                  } ],
-                  "operand" : {
-                     "name" : "goals",
-                     "type" : "QueryLetRef",
-                     "annotation" : [ ]
-                  }
-               },
-               "return" : {
-                  "annotation" : [ ],
-                  "expression" : {
-                     "type" : "Tuple",
-                     "annotation" : [ ],
-                     "element" : [ {
-                        "name" : "Condition",
-                        "value" : {
-                           "name" : "DisplayName",
-                           "libraryName" : "DE",
-                           "type" : "FunctionRef",
-                           "annotation" : [ ],
-                           "signature" : [ ],
-                           "operand" : [ {
-                              "name" : "condition",
-                              "type" : "AliasRef",
-                              "annotation" : [ ]
-                           } ]
-                        }
-                     }, {
-                        "name" : "HasEvidence",
-                        "value" : {
-                           "name" : "DisplayNames",
-                           "libraryName" : "DE",
-                           "type" : "FunctionRef",
-                           "annotation" : [ ],
-                           "signature" : [ ],
-                           "operand" : [ {
-                              "name" : "evidence",
-                              "type" : "QueryLetRef",
-                              "annotation" : [ ]
-                           } ]
-                        }
-                     }, {
-                        "name" : "HasGoals",
-                        "value" : {
-                           "name" : "DisplayNames",
-                           "libraryName" : "DE",
-                           "type" : "FunctionRef",
-                           "annotation" : [ ],
-                           "signature" : [ ],
-                           "operand" : [ {
-                              "name" : "goals",
-                              "type" : "QueryLetRef",
-                              "annotation" : [ ]
-                           } ]
-                        }
-                     } ]
-                  }
-               }
             }
          } ]
       }
