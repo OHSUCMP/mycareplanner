@@ -37,7 +37,7 @@ interface HomeProps {
 interface HomeState {
     isModalVisible: boolean;
     isLogout: boolean;
-    isLoggedOut: boolean;
+    // isLoggedOut: boolean;
 }
 
 const IS_DISPLAY_SDS_IN_ENDPOINT_CONNECTION_LIST: boolean = false
@@ -49,8 +49,8 @@ export default class Home extends React.Component<HomeProps, HomeState> {
         this.state = {
             // isModalVisible: true
             isModalVisible: !sessionStorage.getItem('hasSeenModal'),
-            isLogout: this.props.isLogout,
-            isLoggedOut: false,
+            isLogout: this.props.isLogout
+            // isLoggedOut: false,
         };
         console.log('Initial isModalVisible:', this.state.isModalVisible);
     }
@@ -61,14 +61,14 @@ export default class Home extends React.Component<HomeProps, HomeState> {
         this.setState({isModalVisible: false});
     };
 
-    handleLogout = async () => {
-        if (!this.state.isLogout) {
-            this.setState({isLogout: true});
-            sessionStorage.clear();
-            await deleteAllDataFromLocalForage();
-            this.setState({isLoggedOut: true});
-        }
-    };
+    // handleLogout = async () => {
+    //     if (!this.state.isLogout) {
+    //         this.setState({isLogout: true});
+    //         sessionStorage.clear();
+    //         await deleteAllDataFromLocalForage();
+    //         this.setState({isLoggedOut: true});
+    //     }
+    // };
 
     // TODO:MULTI-PROVIDER: Update view to itterate fhirDataCollection if needed
     // TODO:MULTI-PROVIDER: Change patient name list to provider name and display single patient name at top
@@ -185,16 +185,16 @@ export default class Home extends React.Component<HomeProps, HomeState> {
                                       developerErrorMessage={this.props.developerErrorMessage}
                                       errorCaught={this.props.errorCaught}/>
 
-                        <Link to="/logout" onClick={this.handleLogout}
-                              style={{textDecoration: 'none', display: 'block'}}>
-                            <Button
-                                variant="contained"
-                                color="primary"
-                                style={{width: '100%', padding: '15px', fontSize: '16px'}}
-                            >
-                                LOG OUT
-                            </Button>
-                        </Link>
+                        {/*<Link to="/logout" onClick={this.handleLogout}*/}
+                        {/*      style={{textDecoration: 'none', display: 'block'}}>*/}
+                        {/*    <Button*/}
+                        {/*        variant="contained"*/}
+                        {/*        color="primary"*/}
+                        {/*        style={{width: '100%', padding: '15px', fontSize: '16px'}}*/}
+                        {/*    >*/}
+                        {/*        LOG OUT*/}
+                        {/*    </Button>*/}
+                        {/*</Link>*/}
                     </div>
                     : <div>
 
@@ -299,17 +299,17 @@ export default class Home extends React.Component<HomeProps, HomeState> {
                             No physician-patient relationship is created by this application or its use. Neither OHSU,
                             nor its employees, nor any contributor to this application, makes any representations,
                             express or implied, with respect to the information herein or to its use.</p>
-                        <br></br>
-                        <Link to="/logout" onClick={this.handleLogout}
-                              style={{textDecoration: 'none', display: 'block'}}>
-                            <Button
-                                variant="contained"
-                                color="primary"
-                                style={{width: '100%', padding: '15px', fontSize: '16px'}}
-                            >
-                                LOG OUT
-                            </Button>
-                        </Link>
+                        {/*<br></br>*/}
+                        {/*<Link to="/logout" onClick={this.handleLogout}*/}
+                        {/*      style={{textDecoration: 'none', display: 'block'}}>*/}
+                        {/*    <Button*/}
+                        {/*        variant="contained"*/}
+                        {/*        color="primary"*/}
+                        {/*        style={{width: '100%', padding: '15px', fontSize: '16px'}}*/}
+                        {/*    >*/}
+                        {/*        LOG OUT*/}
+                        {/*    </Button>*/}
+                        {/*</Link>*/}
                     </div>
                 }
             </div>

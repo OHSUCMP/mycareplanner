@@ -388,7 +388,7 @@ const saveLauncherData = async (launcherData: LauncherData | undefined): Promise
   return null
 }
 
-const launcherDataExists = async (): Promise<boolean> => {
+export const launcherDataExists = async (): Promise<boolean> => {
   try {
     const launcherData: LauncherData = await localForage.getItem(LAUNCHER_DATA_KEY) as LauncherData
     // If the key does not exist, getItem() in the localForage API will return null specifically to indicate it
