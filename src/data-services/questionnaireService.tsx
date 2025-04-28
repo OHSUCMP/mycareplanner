@@ -1,5 +1,5 @@
 import Client from 'fhirclient/lib/Client';
-import { Questionnaire, QuestionnaireResponse, QuestionnaireResponseItem, QuestionnaireItem, Coding } from './fhir-types/fhir-r4';
+import { Questionnaire, QuestionnaireResponse, QuestionnaireResponseItem, QuestionnaireItem, Coding, Observation } from './fhir-types/fhir-r4';
 import { getSupplementalDataClient } from '../data-services/fhirService'
 
 // The list of questionnaires and metadata. Note that resource_id, url, and code will overwrite whatever is in the resource in public/content to be sure they match expectations for scoring.
@@ -87,7 +87,7 @@ function findQuestionnaireMetadataByResourceId(resourceId: String) {
 }
 
 export function isScoreQuestion(item: QuestionnaireItem) {
-    return !item.extension?.filter((ext: any) => ext.url === "http://hl7.org/fhir/StructureDefinition/questionnaire-unit").map((ext: any) => { return ext.valueCoding?.code}).includes('LP73852-3');
+    return !item.extension?.filter((ext: any) => ext.url === "http://hl7.org/fhir/StructureDefinition/questionnaire-unit").map((ext: any) => { return ext.valueCoding?.code}).includes('care-plan-score');
 }
 
 // This function assumes all questions are grouped under a single item (page)
@@ -126,7 +126,9 @@ function scorePHQ9(questionnaireResponse: QuestionnaireResponse) {
         'text': 'Patient health questionnaire 9 item total score', 
         'answer': [
             {
-                'valueDecimal': totalScore
+                'valueQuantity': {
+                    'value': totalScore
+                }
             }
         ]
     } as QuestionnaireResponseItem;
@@ -165,6 +167,98 @@ function requiredQuestionsComplete(
     return true;
   }
 
+// Flatten matching items into responseItems array
+function collectMatchingItems(questionnaireItems: QuestionnaireItem[], members: (Observation | undefined)[], responseItems: QuestionnaireResponseItem[]) {
+    for (const item of questionnaireItems) {
+        // Assuming the first code in the array is the one we want to match
+        const code = item.code?.[0]?.code;
+        if (!code) {
+            continue;
+        }
+
+        const observation = members.find((o) => o?.code.coding?.some((c) => c.code === code));
+
+        if (observation) {
+            const responseItem: QuestionnaireResponseItem = {
+                linkId: item.linkId,
+                text: item.text,
+                answer: []
+            };
+
+            if (observation.valueCodeableConcept) {
+                observation.valueCodeableConcept.coding?.forEach((coding) => {
+                    responseItem.answer?.push({
+                        valueCoding: {
+                            system: coding.system,
+                            code: coding.code,
+                            display: coding.display
+                        }});
+                });
+            } else if (observation.valueQuantity) {
+                responseItem.answer?.push({
+                    valueQuantity: {
+                        value: observation.valueQuantity.value
+                    }
+                });
+            }
+
+            responseItems.push(responseItem); // ** push flat into the top-level array **
+        }
+
+        // Still check child items recursively
+        if (item.item) {
+            collectMatchingItems(item.item, members, responseItems);
+        }
+    }
+}
+
+/**
+ * Take survey observations corresponding to available questionnaires and convert them to compatible QuestionnaireResponses.
+ * @param surveyObservations 
+ * @returns 
+ */
+export async function convertSurveyObservations(surveyObservations: Observation[]): Promise<QuestionnaireResponse[]> {
+    const questionnaireResponses: QuestionnaireResponse[] = [];
+    const availableQuestionnaires = getAvailableQuestionnaires();
+
+    for (const q of availableQuestionnaires) {
+        const topLevelCode = q.code.code;
+        const topLevelObservations = surveyObservations.filter(o =>
+            o.code.coding?.some(e => e.code === topLevelCode)
+        );
+
+        if (topLevelObservations.length > 0) {
+            const questionnaireDef = await getLocalQuestionnaire(q.id);
+
+            for (const obs of topLevelObservations) {
+                const members = (obs.hasMember ?? []).map((member) => {
+                    const referenceId = member.reference?.split('/')[1];
+                    return surveyObservations.find((o) => o.id === referenceId);
+                }).filter((o): o is Observation => o !== undefined); // remove undefineds
+
+                const questionnaireResponse: QuestionnaireResponse = {
+                    resourceType: 'QuestionnaireResponse',
+                    status: 'completed',
+                    questionnaire: questionnaireDef.url,
+                    authored: obs.effectiveDateTime,
+                    item: []
+                };
+
+                const responseItems: QuestionnaireResponseItem[] = [];
+
+                // Recursively search questionnaire items
+                collectMatchingItems(questionnaireDef.item ?? [], members, responseItems);
+
+                questionnaireResponse.item = responseItems;
+
+                questionnaireResponses.push(questionnaireResponse);    
+            }
+        }
+    }
+
+    return questionnaireResponses;
+}
+
 export function submitQuestionnaireResponse(questionnaireId: String, questionnaireResponse: QuestionnaireResponse) {
     const questionnaireMetadata = findQuestionnaireMetadataByResourceId(questionnaireId);
     if (questionnaireMetadata !== null && questionnaireMetadata.id) {
@@ -175,8 +269,7 @@ export function submitQuestionnaireResponse(questionnaireId: String, questionnai
             return getSupplementalDataClient()
                 .then((client: Client | undefined) => {
                     // @ts-ignore
-                    // TODO: AEY - No saving right now
-                    //return client.create(questionnaireResponse)
+                    return client.create(questionnaireResponse)
                 })
                 .then((response) => {
                     return response

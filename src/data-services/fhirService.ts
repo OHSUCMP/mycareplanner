@@ -12,10 +12,11 @@ import {
     persistStateAsCurrent, getStateForEndpoint,
     persistStateAsLauncherData
 } from './persistenceService'
+import {convertSurveyObservations} from './questionnaireService'
 import {doLog} from '../log';
 
-const resourcesFrom = (response: fhirclient.JsonObject): Resource[] => {
-    const entries = (response[0] as fhirclient.JsonObject)?.entry as [fhirclient.JsonObject];
+const resourcesFrom = (response: fhirclient.JsonObject[]): Resource[] => {
+    const entries = response.flatMap(r => (r as fhirclient.JsonObject)?.entry as fhirclient.JsonObject[] || []);
     return entries?.map((entry: fhirclient.JsonObject) => entry.resource as any)
         .filter((resource: Resource) => resource.resourceType !== 'OperationOutcome');
 };
@@ -69,6 +70,7 @@ const proceduresCountPath = 'Procedure?_count=100' + provenanceSearch
 const diagnosticReportPath = 'DiagnosticReport?date=' + getDateParameter(threeYearsAgo) + provenanceSearch
 const socialHistoryPath = 'Observation?category=social-history' + provenanceSearch
 const questionnaireResponsePath = 'QuestionnaireResponse?status=completed' + provenanceSearch
+const surveyObservationsPath = 'Observation?category=survey' + provenanceSearch
 
 /// category=survey returns 400 error from Epic, so include another category recognized by Epic
 // const surveyResultsPath = 'Observation?category=survey,functional-mental-status' + provenanceSearch
@@ -131,7 +133,7 @@ export async function getEncounters(client: Client): Promise<Encounter[]> {
     })
     // workaround for Allscripts lack of support for both category and status args
     // Epic allows multiple category codes in one query only >= Aug 2021 release
-    resources = resources.concat(resourcesFrom(await client.patient.request(encountersPath, fhirOptions) as fhirclient.JsonObject))
+    resources = resources.concat(resourcesFrom(await client.patient.request(encountersPath, fhirOptions) as fhirclient.JsonObject[]))
 
     const encounters = resources.filter((item: any) => item?.resourceType === 'Encounter') as Encounter[]
     recordProvenance(resources)
@@ -152,12 +154,12 @@ export async function getConditions(client: Client): Promise<Condition[]> {
     const allowedHosts = ['allscripts.com'];
     if (allowedHosts.includes(url.host)) {
         const conditionsPath = 'Condition?category=problem-list-item,health-concern' + provenanceSearch
-        resources = resources.concat(resourcesFrom(await client.patient.request(conditionsPath, fhirOptions) as fhirclient.JsonObject))
+        resources = resources.concat(resourcesFrom(await client.patient.request(conditionsPath, fhirOptions) as fhirclient.JsonObject[]))
 
     } else {
         // Epic allows multiple category codes in one query only >= Aug 2021 release
-        resources = resources.concat(resourcesFrom(await client.patient.request(problemListPath, fhirOptions) as fhirclient.JsonObject))
-        resources = resources.concat(resourcesFrom(await client.patient.request(healthConcernPath, fhirOptions) as fhirclient.JsonObject))
+        resources = resources.concat(resourcesFrom(await client.patient.request(problemListPath, fhirOptions) as fhirclient.JsonObject[]))
+        resources = resources.concat(resourcesFrom(await client.patient.request(healthConcernPath, fhirOptions) as fhirclient.JsonObject[]))
     }
 
     const conditions = resources.filter((item: any) => item?.resourceType === 'Condition') as Condition[]
@@ -192,23 +194,23 @@ export async function getVitalSigns(client: Client): Promise<Observation[]> {
     })
 
     // await can be used only at top-level within a function, cannot use queryPaths.forEach()
-    resources = resources.concat(resourcesFrom(await client.patient.request(queryPaths[0], onePageLimit) as fhirclient.JsonObject) as Observation[])
-    resources = resources.concat(resourcesFrom(await client.patient.request(queryPaths[1], onePageLimit) as fhirclient.JsonObject) as Observation[])
-    resources = resources.concat(resourcesFrom(await client.patient.request(queryPaths[2], onePageLimit) as fhirclient.JsonObject) as Observation[])
-    resources = resources.concat(resourcesFrom(await client.patient.request(queryPaths[3], onePageLimit) as fhirclient.JsonObject) as Observation[])
-    resources = resources.concat(resourcesFrom(await client.patient.request(queryPaths[4], onePageLimit) as fhirclient.JsonObject) as Observation[])
-    resources = resources.concat(resourcesFrom(await client.patient.request(queryPaths[5], onePageLimit) as fhirclient.JsonObject) as Observation[])
+    resources = resources.concat(resourcesFrom(await client.patient.request(queryPaths[0], onePageLimit) as fhirclient.JsonObject[]) as Observation[])
+    resources = resources.concat(resourcesFrom(await client.patient.request(queryPaths[1], onePageLimit) as fhirclient.JsonObject[]) as Observation[])
+    resources = resources.concat(resourcesFrom(await client.patient.request(queryPaths[2], onePageLimit) as fhirclient.JsonObject[]) as Observation[])
+    resources = resources.concat(resourcesFrom(await client.patient.request(queryPaths[3], onePageLimit) as fhirclient.JsonObject[]) as Observation[])
+    resources = resources.concat(resourcesFrom(await client.patient.request(queryPaths[4], onePageLimit) as fhirclient.JsonObject[]) as Observation[])
+    resources = resources.concat(resourcesFrom(await client.patient.request(queryPaths[5], onePageLimit) as fhirclient.JsonObject[]) as Observation[])
     // resources = resources.concat( resourcesFrom(await client.patient.request(queryPaths[6], onePageLimit) as fhirclient.JsonObject) as Observation[] )
     // resources = resources.concat( resourcesFrom(await client.patient.request(queryPaths[7], onePageLimit) as fhirclient.JsonObject) as Observation[] )
 
     // storer: issue1 - pull office BPs from 18 months ago
     const officeBPPath = 'Observation?code=http://loinc.org|85354-9&date=' + getDateParameter(eighteenMonthsAgo) + provenanceSearch
-    resources = resources.concat(resourcesFrom(await client.patient.request(officeBPPath, onePageLimit) as fhirclient.JsonObject) as Observation[])
+    resources = resources.concat(resourcesFrom(await client.patient.request(officeBPPath, onePageLimit) as fhirclient.JsonObject[]) as Observation[])
 
     // storer: issue2 - pull home BPs from 18 months ago
     // One year of history for Home BP vitals, which are returned as separate systolic and diastolic Observation resources.
     const homeBPPath = 'Observation?code=http://loinc.org|72076-3&date=' + getDateParameter(eighteenMonthsAgo) + provenanceSearch
-    resources = resources.concat(resourcesFrom(await client.patient.request(homeBPPath, onePageLimit) as fhirclient.JsonObject) as Observation[])
+    resources = resources.concat(resourcesFrom(await client.patient.request(homeBPPath, onePageLimit) as fhirclient.JsonObject[]) as Observation[])
 
     resources = resources.filter(v => v !== undefined)
     const vitals = resources.filter((item: any) => item?.resourceType === 'Observation') as Observation[]
@@ -634,7 +636,7 @@ const getFHIRQueries = async (client: Client, clientScope: string | undefined,
     try {
         const _careTeamPath = supportsInclude ? careTeamPath_include : careTeamPath
         let careTeamData: Resource[] | undefined = (hasScope(clientScope, 'CareTeam.read')
-            ? resourcesFrom(await client.patient.request(_careTeamPath, fhirOptions) as fhirclient.JsonObject)
+            ? resourcesFrom(await client.patient.request(_careTeamPath, fhirOptions) as fhirclient.JsonObject[])
             : undefined)
         careTeams = careTeamData?.filter((item: any) => item.resourceType === 'CareTeam') as CareTeam[]
         const careTeamPractitioners =
@@ -692,12 +694,12 @@ const getFHIRQueries = async (client: Client, clientScope: string | undefined,
     setAndLogProgressState(`${curResourceName} request: ` + new Date().toLocaleTimeString(), 60)
     try {
         let procedureData: Resource[] | undefined = (hasScope(clientScope, `${curResourceName}.read`)
-            ? resourcesFrom(await client.patient.request(proceduresTimePath, fhirOptions) as fhirclient.JsonObject)
+            ? resourcesFrom(await client.patient.request(proceduresTimePath, fhirOptions) as fhirclient.JsonObject[])
             : undefined)
         // if no procedures found in past 3 years, get _count=100
         if (procedureData === undefined || procedureData.entries?.length === 0) {
             procedureData = (hasScope(clientScope, `${curResourceName}.read`)
-                ? resourcesFrom(await client.patient.request(proceduresCountPath, onePageLimit) as fhirclient.JsonObject)
+                ? resourcesFrom(await client.patient.request(proceduresCountPath, onePageLimit) as fhirclient.JsonObject[])
                 : undefined)
         }
         procedures = procedureData?.filter((item: any) => item.resourceType === curResourceName) as Procedure[]
@@ -733,7 +735,7 @@ const getFHIRQueries = async (client: Client, clientScope: string | undefined,
             // fetch all active meds
             const _medicationRequestActivePath = medicationRequestActivePath + (supportsInclude ? medicationRequesterInclude : '')
             let medicationRequestData: Resource[] | undefined =
-                resourcesFrom(await client.patient.request(_medicationRequestActivePath, fhirOptions) as fhirclient.JsonObject)
+                resourcesFrom(await client.patient.request(_medicationRequestActivePath, fhirOptions) as fhirclient.JsonObject[])
             const medPractitioners =
                 medicationRequestData?.filter((item: any) => item.resourceType === 'Practitioner') as Practitioner[]
             medPractitioners?.forEach((pract: Practitioner) => {
@@ -746,7 +748,7 @@ const getFHIRQueries = async (client: Client, clientScope: string | undefined,
             // medicationRequestData && setResourcesLoadedCountState(++resourcesLoadedCount)
 
             // also fetch the last 10 inactive meds
-            let inactiveMeds = resourcesFrom(await client.patient.request(medicationRequestInactivePath, onePageLimit) as fhirclient.JsonObject)
+            let inactiveMeds = resourcesFrom(await client.patient.request(medicationRequestInactivePath, onePageLimit) as fhirclient.JsonObject[])
             // remove any inactive meds also in the active list (VA does not support the status parameter)
             setAndLogProgressState('Found ' + (inactiveMeds?.length ?? 0) + ' inactive medication requests (before filtering).', 82)
             inactiveMeds = inactiveMeds?.filter((item: any) => medicationRequestData?.find((resource: Resource) => resource.id === item.id) === undefined)
@@ -779,7 +781,7 @@ const getFHIRQueries = async (client: Client, clientScope: string | undefined,
         if (hasScope(clientScope, 'ServiceRequest.read')) {
             const _serviceRequestPath = serviceRequestPath + (supportsInclude ? serviceRequesterInclude : '')
             let serviceRequestData: Resource[] | undefined =
-                resourcesFrom(await client.patient.request(_serviceRequestPath, fhirOptions) as fhirclient.JsonObject)
+                resourcesFrom(await client.patient.request(_serviceRequestPath, fhirOptions) as fhirclient.JsonObject[])
             serviceRequests = serviceRequestData?.filter((item: any) => item.resourceType === 'ServiceRequest') as ServiceRequest[]
             recordProvenance(serviceRequestData)
             const serviceRequestPractitioners =
@@ -826,11 +828,21 @@ const getFHIRQueries = async (client: Client, clientScope: string | undefined,
         vitalSigns && setResourcesLoadedCountState(++resourcesLoadedCount)
     }
 
-    const questionnaireResponses: QuestionnaireResponse[] | undefined = await loadFHIRQuery<QuestionnaireResponse>('QuestionnaireResponse', 'QuestionnaireResponse',
+    let questionnaireResponses: QuestionnaireResponse[] | undefined = await loadFHIRQuery<QuestionnaireResponse>('QuestionnaireResponse', 'QuestionnaireResponse',
         questionnaireResponsePath, true, client, clientScope, 98, setAndLogProgressState, setAndLogErrorMessageState)
     questionnaireResponses && setResourcesLoadedCountState(++resourcesLoadedCount)
     setAndLogProgressState('Found ' + (questionnaireResponses?.length ?? 0) + ' Questionnaire Responses.', 98)
     console.log('getFHIRQueries: Found ' + (questionnaireResponses?.length ?? 0) + ' Questionnaire Responses.')
+
+    const surveyObservations: Observation[] | undefined = await loadFHIRQuery<Observation>('Observation', 'Observation',
+        surveyObservationsPath, true, client, clientScope, 99, setAndLogProgressState, setAndLogErrorMessageState)
+
+    surveyObservations && setResourcesLoadedCountState(++resourcesLoadedCount)
+    setAndLogProgressState('Found ' + (surveyObservations?.length ?? 0) + ' Survey Observations.', 99)
+    console.log('getFHIRQueries: Found ' + (surveyObservations?.length ?? 0) + ' Survey Observations.')
+    const observationBasedQuestionnaireResponses: QuestionnaireResponse[] | undefined = await convertSurveyObservations(surveyObservations || []);
+    console.log((observationBasedQuestionnaireResponses?.length ?? 0) + ' Observation Based Questionnaire Responses.')
+    questionnaireResponses = questionnaireResponses ? questionnaireResponses.concat(observationBasedQuestionnaireResponses || []) : observationBasedQuestionnaireResponses || [];
 
     setAndLogProgressState('All FHIR requests finished: ' + new Date().toLocaleTimeString(), 100)
     console.timeEnd('FHIR queries')
@@ -941,7 +953,7 @@ const loadFHIRQuery = async <T extends Resource>(
 
     try {
         resourceData = (hasScope(clientScope, `${resourceSrcCodeName}.read`)
-            ? resourcesFrom(await client.patient.request(resourcePath, fhirOptions) as fhirclient.JsonObject)
+            ? resourcesFrom(await client.patient.request(resourcePath, fhirOptions) as fhirclient.JsonObject[])
             : undefined)
         resources = resourceData?.filter((item: any) => item.resourceType === resourceSrcCodeName) as T[]
         console.log("loadFHIRQuery: resources:", resources)

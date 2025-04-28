@@ -935,8 +935,7 @@
                         {
                             "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-unit",
                             "valueCoding": {
-                                "system": "http://loinc.org",
-                                "code": "LP73852-3",
+                                "code": "care-plan-score",
                                 "display": "{score}"
                             }
                         }
@@ -950,7 +949,7 @@
                         }
                     ],
                     "text": "Patient health questionnaire 9 item total score",
-                    "type": "decimal",
+                    "type": "quantity",
                     "required": false
                 },
                 {
