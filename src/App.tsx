@@ -61,6 +61,7 @@ import {LabResultList} from "./components/summaries/LabResultList";
 import {VitalsList} from "./components/summaries/VitalsList";
 
 import {CareTeamList} from "./components/summaries/CareTeamList";
+import {AssessmentList} from "./components/summaries/AssessmentList";
 import {ImmunizationList} from "./components/summaries/ImmunizationList";
 import {ServiceRequestList} from "./components/summaries/ServiceRequestList";
 
@@ -1277,6 +1278,7 @@ class App extends React.Component<AppProps, AppState> {
                                                      variant="fullWidth" centered>
                                                 <Tab label="Tests" value="9" wrapped/>
                                                 <Tab label="Vitals" value="10" wrapped/>
+                                                <Tab label="Assessments" value="12" wrapped/>
                                                 <Tab label="Immunization" value="11" wrapped/>
                                             </TabList>
                                             <TabPanel value="9" sx={{padding: '0px 15px'}}>
@@ -1295,10 +1297,13 @@ class App extends React.Component<AppProps, AppState> {
                                                             progressMessage={this.state.progressMessage}
                                                             vitalSignSummaryMatrix={this.state.vitalSignSummaries}/>
                                             </TabPanel>
-                                            {/* <TabPanel>
-                                            <h4 className="title">Assessment Results</h4>
-                                            <p>Coming soon...</p>
-                                        </TabPanel> */}
+                                            <TabPanel value="12">
+                                                <AssessmentList sharingData={this.state.sharingData}
+                                                                  fhirDataCollection={this.state.fhirDataCollection}
+                                                                  progressTitle={this.state.progressTitle}
+                                                                  progressValue={this.state.progressValue}
+                                                                  progressMessage={this.state.progressMessage}/>
+                                            </TabPanel>
                                             <TabPanel value="11">
                                                 <ImmunizationList sharingData={this.state.sharingData}
                                                                   fhirDataCollection={this.state.fhirDataCollection}
