@@ -205,7 +205,7 @@ const buildRows = (obs: ObservationSummary, theSource?: string): SummaryRowItems
             isHeader: false,
             twoColumns: true,
             data1: obs.ResultText,
-            data2: obs.DisplayName == 'Home Blood Pressure' ? displayDateTime(obs.Date) : displayDate(obs.Date),
+            data2: obs.DisplayName === 'Home Blood Pressure' ? displayDateTime(obs.Date) : displayDate(obs.Date),
         },
         {
             isHeader: false,
