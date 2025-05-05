@@ -125,4 +125,5 @@ export interface ObservationSummary {
 export interface ObservationHistory {
   Date?: string,
   ResultText: string,
+  Interpretation?: string,
 }
