@@ -224,7 +224,8 @@ define function ReportObservationHistory(observations List<Observation>):
   observations obs
     return {
       Date: ToString(FindDate(obs)),
-      ResultText: ResultText(obs)
+      ResultText: ResultText(obs),
+      Interpretation: Interpretation(obs)
     }
 
 define function ResultText(o Observation):

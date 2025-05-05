@@ -569,6 +569,14 @@
                                                    "type" : "NamedTypeSpecifier",
                                                    "annotation" : [ ]
                                                 }
+                                             }, {
+                                                "name" : "Interpretation",
+                                                "annotation" : [ ],
+                                                "elementType" : {
+                                                   "name" : "{urn:hl7-org:elm-types:r1}String",
+                                                   "type" : "NamedTypeSpecifier",
+                                                   "annotation" : [ ]
+                                                }
                                              } ]
                                           }
                                        }

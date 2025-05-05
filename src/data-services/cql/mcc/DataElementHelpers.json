@@ -7591,6 +7591,19 @@
                               "annotation" : [ ]
                            } ]
                         }
+                     }, {
+                        "name" : "Interpretation",
+                        "value" : {
+                           "name" : "Interpretation",
+                           "type" : "FunctionRef",
+                           "annotation" : [ ],
+                           "signature" : [ ],
+                           "operand" : [ {
+                              "name" : "obs",
+                              "type" : "AliasRef",
+                              "annotation" : [ ]
+                           } ]
+                        }
                      } ]
                   }
                }
@@ -7850,6 +7863,14 @@
                                  }
                               }, {
                                  "name" : "ResultText",
+                                 "annotation" : [ ],
+                                 "elementType" : {
+                                    "name" : "{urn:hl7-org:elm-types:r1}String",
+                                    "type" : "NamedTypeSpecifier",
+                                    "annotation" : [ ]
+                                 }
+                              }, {
+                                 "name" : "Interpretation",
                                  "annotation" : [ ],
                                  "elementType" : {
                                     "name" : "{urn:hl7-org:elm-types:r1}String",
