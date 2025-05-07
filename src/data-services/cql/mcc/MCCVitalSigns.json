@@ -660,6 +660,52 @@
                            }
                         }
                      }, {
+                        "name" : "Interpretation",
+                        "value" : {
+                           "name" : "Interpret",
+                           "libraryName" : "DE",
+                           "type" : "FunctionRef",
+                           "annotation" : [ ],
+                           "signature" : [ ],
+                           "operand" : [ {
+                              "asType" : "{http://hl7.org/fhir}decimal",
+                              "type" : "As",
+                              "annotation" : [ ],
+                              "signature" : [ ],
+                              "operand" : {
+                                 "path" : "value",
+                                 "type" : "Property",
+                                 "annotation" : [ ],
+                                 "source" : {
+                                    "path" : "value",
+                                    "scope" : "systolicBP",
+                                    "type" : "Property",
+                                    "annotation" : [ ]
+                                 }
+                              }
+                           }, {
+                              "asType" : "{http://hl7.org/fhir}decimal",
+                              "type" : "As",
+                              "annotation" : [ ],
+                              "signature" : [ ],
+                              "operand" : {
+                                 "path" : "value",
+                                 "type" : "Property",
+                                 "annotation" : [ ],
+                                 "source" : {
+                                    "path" : "value",
+                                    "type" : "Property",
+                                    "annotation" : [ ],
+                                    "source" : {
+                                       "name" : "DiastolicObs",
+                                       "type" : "QueryLetRef",
+                                       "annotation" : [ ]
+                                    }
+                                 }
+                              }
+                           } ]
+                        }
+                     }, {
                         "name" : "Notes",
                         "value" : {
                            "type" : "Union",
@@ -777,6 +823,14 @@
                         }
                      }, {
                         "name" : "Performer",
+                        "annotation" : [ ],
+                        "elementType" : {
+                           "name" : "{urn:hl7-org:elm-types:r1}String",
+                           "type" : "NamedTypeSpecifier",
+                           "annotation" : [ ]
+                        }
+                     }, {
+                        "name" : "Interpretation",
                         "annotation" : [ ],
                         "elementType" : {
                            "name" : "{urn:hl7-org:elm-types:r1}String",
@@ -950,6 +1004,14 @@
                            "type" : "Property",
                            "annotation" : [ ]
                         }
+                     }, {
+                        "name" : "Interpretation",
+                        "value" : {
+                           "path" : "Interpretation",
+                           "scope" : "bp",
+                           "type" : "Property",
+                           "annotation" : [ ]
+                        }
                      } ]
                   }
                }
@@ -1054,7 +1116,9 @@
                      }, {
                         "name" : "Interpretation",
                         "value" : {
-                           "type" : "Null",
+                           "path" : "Interpretation",
+                           "scope" : "bp",
+                           "type" : "Property",
                            "annotation" : [ ]
                         }
                      }, {
