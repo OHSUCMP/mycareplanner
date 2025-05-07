@@ -5714,7 +5714,15 @@
                                        "source" : {
                                           "type" : "SingletonFrom",
                                           "annotation" : [ ],
-                                          "signature" : [ ],
+                                          "signature" : [ {
+                                             "type" : "ListTypeSpecifier",
+                                             "annotation" : [ ],
+                                             "elementType" : {
+                                                "name" : "{http://hl7.org/fhir}Observation.Component",
+                                                "type" : "NamedTypeSpecifier",
+                                                "annotation" : [ ]
+                                             }
+                                          } ],
                                           "operand" : {
                                              "type" : "Query",
                                              "annotation" : [ ],
@@ -5820,7 +5828,15 @@
                                     "source" : {
                                        "type" : "SingletonFrom",
                                        "annotation" : [ ],
-                                       "signature" : [ ],
+                                       "signature" : [ {
+                                          "type" : "ListTypeSpecifier",
+                                          "annotation" : [ ],
+                                          "elementType" : {
+                                             "name" : "{http://hl7.org/fhir}Observation.Component",
+                                             "type" : "NamedTypeSpecifier",
+                                             "annotation" : [ ]
+                                          }
+                                       } ],
                                        "operand" : {
                                           "type" : "Query",
                                           "annotation" : [ ],
@@ -6632,67 +6648,75 @@
                "type" : "If",
                "annotation" : [ ],
                "condition" : {
-                  "type" : "Not",
+                  "type" : "And",
                   "annotation" : [ ],
                   "signature" : [ ],
-                  "operand" : {
-                     "type" : "IsNull",
+                  "operand" : [ {
+                     "type" : "And",
                      "annotation" : [ ],
                      "signature" : [ ],
-                     "operand" : {
-                        "path" : "interpretation",
-                        "type" : "Property",
-                        "annotation" : [ ],
-                        "source" : {
-                           "name" : "o",
-                           "type" : "OperandRef",
-                           "annotation" : [ ]
-                        }
-                     }
-                  }
-               },
-               "then" : {
-                  "name" : "ToString",
-                  "libraryName" : "FHIRHelpers",
-                  "type" : "FunctionRef",
-                  "annotation" : [ ],
-                  "signature" : [ {
-                     "name" : "{http://hl7.org/fhir}string",
-                     "type" : "NamedTypeSpecifier",
-                     "annotation" : [ ]
-                  } ],
-                  "operand" : [ {
-                     "type" : "Coalesce",
-                     "annotation" : [ ],
-                     "signature" : [ {
-                        "name" : "{http://hl7.org/fhir}string",
-                        "type" : "NamedTypeSpecifier",
-                        "annotation" : [ ]
-                     }, {
-                        "name" : "{http://hl7.org/fhir}string",
-                        "type" : "NamedTypeSpecifier",
-                        "annotation" : [ ]
-                     } ],
                      "operand" : [ {
-                        "type" : "First",
+                        "type" : "Equivalent",
+                        "annotation" : [ ],
+                        "signature" : [ {
+                           "name" : "{urn:hl7-org:elm-types:r1}Concept",
+                           "type" : "NamedTypeSpecifier",
+                           "annotation" : [ ]
+                        }, {
+                           "name" : "{urn:hl7-org:elm-types:r1}Concept",
+                           "type" : "NamedTypeSpecifier",
+                           "annotation" : [ ]
+                        } ],
+                        "operand" : [ {
+                           "name" : "ToConcept",
+                           "libraryName" : "FHIRHelpers",
+                           "type" : "FunctionRef",
+                           "annotation" : [ ],
+                           "signature" : [ ],
+                           "operand" : [ {
+                              "path" : "code",
+                              "type" : "Property",
+                              "annotation" : [ ],
+                              "source" : {
+                                 "name" : "o",
+                                 "type" : "OperandRef",
+                                 "annotation" : [ ]
+                              }
+                           } ]
+                        }, {
+                           "type" : "ToConcept",
+                           "annotation" : [ ],
+                           "signature" : [ {
+                              "name" : "{urn:hl7-org:elm-types:r1}Code",
+                              "type" : "NamedTypeSpecifier",
+                              "annotation" : [ ]
+                           } ],
+                           "operand" : {
+                              "name" : "Blood pressure",
+                              "type" : "CodeRef",
+                              "annotation" : [ ]
+                           }
+                        } ]
+                     }, {
+                        "type" : "Exists",
                         "annotation" : [ ],
                         "signature" : [ {
                            "type" : "ListTypeSpecifier",
                            "annotation" : [ ],
                            "elementType" : {
-                              "name" : "{http://hl7.org/fhir}string",
+                              "name" : "{http://hl7.org/fhir}Observation.Component",
                               "type" : "NamedTypeSpecifier",
                               "annotation" : [ ]
                            }
                         } ],
-                        "source" : {
+                        "operand" : {
                            "type" : "Query",
                            "annotation" : [ ],
                            "source" : [ {
-                              "alias" : "$this",
+                              "alias" : "C",
                               "annotation" : [ ],
                               "expression" : {
-                                 "path" : "interpretation",
+                                 "path" : "component",
                                  "type" : "Property",
                                  "annotation" : [ ],
                                  "source" : {
@@ -6705,81 +6729,270 @@
                            "let" : [ ],
                            "relationship" : [ ],
                            "where" : {
-                              "type" : "Not",
+                              "type" : "Equivalent",
                               "annotation" : [ ],
-                              "signature" : [ ],
-                              "operand" : {
-                                 "type" : "IsNull",
+                              "signature" : [ {
+                                 "name" : "{urn:hl7-org:elm-types:r1}Concept",
+                                 "type" : "NamedTypeSpecifier",
+                                 "annotation" : [ ]
+                              }, {
+                                 "name" : "{urn:hl7-org:elm-types:r1}Concept",
+                                 "type" : "NamedTypeSpecifier",
+                                 "annotation" : [ ]
+                              } ],
+                              "operand" : [ {
+                                 "name" : "ToConcept",
+                                 "libraryName" : "FHIRHelpers",
+                                 "type" : "FunctionRef",
                                  "annotation" : [ ],
                                  "signature" : [ ],
-                                 "operand" : {
-                                    "path" : "text",
+                                 "operand" : [ {
+                                    "path" : "code",
+                                    "scope" : "C",
                                     "type" : "Property",
-                                    "annotation" : [ ],
-                                    "source" : {
-                                       "name" : "$this",
-                                       "type" : "AliasRef",
-                                       "annotation" : [ ]
-                                    }
-                                 }
-                              }
-                           },
-                           "return" : {
-                              "distinct" : false,
-                              "annotation" : [ ],
-                              "expression" : {
-                                 "path" : "text",
-                                 "type" : "Property",
+                                    "annotation" : [ ]
+                                 } ]
+                              }, {
+                                 "type" : "ToConcept",
                                  "annotation" : [ ],
-                                 "source" : {
-                                    "name" : "$this",
-                                    "type" : "AliasRef",
+                                 "signature" : [ {
+                                    "name" : "{urn:hl7-org:elm-types:r1}Code",
+                                    "type" : "NamedTypeSpecifier",
+                                    "annotation" : [ ]
+                                 } ],
+                                 "operand" : {
+                                    "name" : "Systolic blood pressure",
+                                    "type" : "CodeRef",
                                     "annotation" : [ ]
                                  }
-                              }
+                              } ]
                            }
                         }
-                     }, {
-                        "type" : "First",
+                     } ]
+                  }, {
+                     "type" : "Exists",
+                     "annotation" : [ ],
+                     "signature" : [ {
+                        "type" : "ListTypeSpecifier",
+                        "annotation" : [ ],
+                        "elementType" : {
+                           "name" : "{http://hl7.org/fhir}Observation.Component",
+                           "type" : "NamedTypeSpecifier",
+                           "annotation" : [ ]
+                        }
+                     } ],
+                     "operand" : {
+                        "type" : "Query",
+                        "annotation" : [ ],
+                        "source" : [ {
+                           "alias" : "C",
+                           "annotation" : [ ],
+                           "expression" : {
+                              "path" : "component",
+                              "type" : "Property",
+                              "annotation" : [ ],
+                              "source" : {
+                                 "name" : "o",
+                                 "type" : "OperandRef",
+                                 "annotation" : [ ]
+                              }
+                           }
+                        } ],
+                        "let" : [ ],
+                        "relationship" : [ ],
+                        "where" : {
+                           "type" : "Equivalent",
+                           "annotation" : [ ],
+                           "signature" : [ {
+                              "name" : "{urn:hl7-org:elm-types:r1}Concept",
+                              "type" : "NamedTypeSpecifier",
+                              "annotation" : [ ]
+                           }, {
+                              "name" : "{urn:hl7-org:elm-types:r1}Concept",
+                              "type" : "NamedTypeSpecifier",
+                              "annotation" : [ ]
+                           } ],
+                           "operand" : [ {
+                              "name" : "ToConcept",
+                              "libraryName" : "FHIRHelpers",
+                              "type" : "FunctionRef",
+                              "annotation" : [ ],
+                              "signature" : [ ],
+                              "operand" : [ {
+                                 "path" : "code",
+                                 "scope" : "C",
+                                 "type" : "Property",
+                                 "annotation" : [ ]
+                              } ]
+                           }, {
+                              "type" : "ToConcept",
+                              "annotation" : [ ],
+                              "signature" : [ {
+                                 "name" : "{urn:hl7-org:elm-types:r1}Code",
+                                 "type" : "NamedTypeSpecifier",
+                                 "annotation" : [ ]
+                              } ],
+                              "operand" : {
+                                 "name" : "Diastolic blood pressure",
+                                 "type" : "CodeRef",
+                                 "annotation" : [ ]
+                              }
+                           } ]
+                        }
+                     }
+                  } ]
+               },
+               "then" : {
+                  "name" : "Interpret",
+                  "type" : "FunctionRef",
+                  "annotation" : [ ],
+                  "signature" : [ ],
+                  "operand" : [ {
+                     "asType" : "{http://hl7.org/fhir}decimal",
+                     "type" : "As",
+                     "annotation" : [ ],
+                     "signature" : [ ],
+                     "operand" : {
+                        "type" : "SingletonFrom",
                         "annotation" : [ ],
                         "signature" : [ {
                            "type" : "ListTypeSpecifier",
                            "annotation" : [ ],
                            "elementType" : {
-                              "name" : "{http://hl7.org/fhir}string",
-                              "type" : "NamedTypeSpecifier",
-                              "annotation" : [ ]
+                              "type" : "ChoiceTypeSpecifier",
+                              "annotation" : [ ],
+                              "type" : [ ],
+                              "choice" : [ {
+                                 "name" : "{urn:hl7-org:elm-types:r1}Boolean",
+                                 "type" : "NamedTypeSpecifier",
+                                 "annotation" : [ ]
+                              }, {
+                                 "name" : "{urn:hl7-org:elm-types:r1}Time",
+                                 "type" : "NamedTypeSpecifier",
+                                 "annotation" : [ ]
+                              }, {
+                                 "name" : "{urn:hl7-org:elm-types:r1}DateTime",
+                                 "type" : "NamedTypeSpecifier",
+                                 "annotation" : [ ]
+                              }, {
+                                 "name" : "{urn:hl7-org:elm-types:r1}Integer",
+                                 "type" : "NamedTypeSpecifier",
+                                 "annotation" : [ ]
+                              }, {
+                                 "name" : "{http://hl7.org/fhir}decimal",
+                                 "type" : "NamedTypeSpecifier",
+                                 "annotation" : [ ]
+                              }, {
+                                 "name" : "{urn:hl7-org:elm-types:r1}String",
+                                 "type" : "NamedTypeSpecifier",
+                                 "annotation" : [ ]
+                              } ]
                            }
                         } ],
-                        "source" : {
+                        "operand" : {
                            "type" : "Query",
                            "annotation" : [ ],
                            "source" : [ {
                               "alias" : "$this",
                               "annotation" : [ ],
                               "expression" : {
-                                 "path" : "coding",
-                                 "type" : "Property",
+                                 "type" : "Query",
                                  "annotation" : [ ],
-                                 "source" : {
-                                    "type" : "First",
+                                 "source" : [ {
+                                    "alias" : "$this",
                                     "annotation" : [ ],
-                                    "signature" : [ {
-                                       "type" : "ListTypeSpecifier",
+                                    "expression" : {
+                                       "type" : "Query",
                                        "annotation" : [ ],
-                                       "elementType" : {
-                                          "name" : "{http://hl7.org/fhir}CodeableConcept",
-                                          "type" : "NamedTypeSpecifier",
-                                          "annotation" : [ ]
+                                       "source" : [ {
+                                          "alias" : "C",
+                                          "annotation" : [ ],
+                                          "expression" : {
+                                             "path" : "component",
+                                             "type" : "Property",
+                                             "annotation" : [ ],
+                                             "source" : {
+                                                "name" : "o",
+                                                "type" : "OperandRef",
+                                                "annotation" : [ ]
+                                             }
+                                          }
+                                       } ],
+                                       "let" : [ ],
+                                       "relationship" : [ ],
+                                       "where" : {
+                                          "type" : "Equivalent",
+                                          "annotation" : [ ],
+                                          "signature" : [ {
+                                             "name" : "{urn:hl7-org:elm-types:r1}Concept",
+                                             "type" : "NamedTypeSpecifier",
+                                             "annotation" : [ ]
+                                          }, {
+                                             "name" : "{urn:hl7-org:elm-types:r1}Concept",
+                                             "type" : "NamedTypeSpecifier",
+                                             "annotation" : [ ]
+                                          } ],
+                                          "operand" : [ {
+                                             "name" : "ToConcept",
+                                             "libraryName" : "FHIRHelpers",
+                                             "type" : "FunctionRef",
+                                             "annotation" : [ ],
+                                             "signature" : [ ],
+                                             "operand" : [ {
+                                                "path" : "code",
+                                                "scope" : "C",
+                                                "type" : "Property",
+                                                "annotation" : [ ]
+                                             } ]
+                                          }, {
+                                             "type" : "ToConcept",
+                                             "annotation" : [ ],
+                                             "signature" : [ {
+                                                "name" : "{urn:hl7-org:elm-types:r1}Code",
+                                                "type" : "NamedTypeSpecifier",
+                                                "annotation" : [ ]
+                                             } ],
+                                             "operand" : {
+                                                "name" : "Systolic blood pressure",
+                                                "type" : "CodeRef",
+                                                "annotation" : [ ]
+                                             }
+                                          } ]
                                        }
-                                    } ],
-                                    "source" : {
-                                       "path" : "interpretation",
+                                    }
+                                 } ],
+                                 "let" : [ ],
+                                 "relationship" : [ ],
+                                 "where" : {
+                                    "type" : "Not",
+                                    "annotation" : [ ],
+                                    "signature" : [ ],
+                                    "operand" : {
+                                       "type" : "IsNull",
+                                       "annotation" : [ ],
+                                       "signature" : [ ],
+                                       "operand" : {
+                                          "path" : "value",
+                                          "type" : "Property",
+                                          "annotation" : [ ],
+                                          "source" : {
+                                             "name" : "$this",
+                                             "type" : "AliasRef",
+                                             "annotation" : [ ]
+                                          }
+                                       }
+                                    }
+                                 },
+                                 "return" : {
+                                    "distinct" : false,
+                                    "annotation" : [ ],
+                                    "expression" : {
+                                       "path" : "value",
                                        "type" : "Property",
                                        "annotation" : [ ],
                                        "source" : {
-                                          "name" : "o",
-                                          "type" : "OperandRef",
+                                          "name" : "$this",
+                                          "type" : "AliasRef",
                                           "annotation" : [ ]
                                        }
                                     }
@@ -6797,7 +7010,7 @@
                                  "annotation" : [ ],
                                  "signature" : [ ],
                                  "operand" : {
-                                    "path" : "display",
+                                    "path" : "value",
                                     "type" : "Property",
                                     "annotation" : [ ],
                                     "source" : {
@@ -6812,7 +7025,7 @@
                               "distinct" : false,
                               "annotation" : [ ],
                               "expression" : {
-                                 "path" : "display",
+                                 "path" : "value",
                                  "type" : "Property",
                                  "annotation" : [ ],
                                  "source" : {
@@ -6823,41 +7036,212 @@
                               }
                            }
                         }
-                     } ]
+                     }
+                  }, {
+                     "asType" : "{http://hl7.org/fhir}decimal",
+                     "type" : "As",
+                     "annotation" : [ ],
+                     "signature" : [ ],
+                     "operand" : {
+                        "type" : "SingletonFrom",
+                        "annotation" : [ ],
+                        "signature" : [ {
+                           "type" : "ListTypeSpecifier",
+                           "annotation" : [ ],
+                           "elementType" : {
+                              "type" : "ChoiceTypeSpecifier",
+                              "annotation" : [ ],
+                              "type" : [ ],
+                              "choice" : [ {
+                                 "name" : "{urn:hl7-org:elm-types:r1}Boolean",
+                                 "type" : "NamedTypeSpecifier",
+                                 "annotation" : [ ]
+                              }, {
+                                 "name" : "{urn:hl7-org:elm-types:r1}Time",
+                                 "type" : "NamedTypeSpecifier",
+                                 "annotation" : [ ]
+                              }, {
+                                 "name" : "{urn:hl7-org:elm-types:r1}DateTime",
+                                 "type" : "NamedTypeSpecifier",
+                                 "annotation" : [ ]
+                              }, {
+                                 "name" : "{urn:hl7-org:elm-types:r1}Integer",
+                                 "type" : "NamedTypeSpecifier",
+                                 "annotation" : [ ]
+                              }, {
+                                 "name" : "{http://hl7.org/fhir}decimal",
+                                 "type" : "NamedTypeSpecifier",
+                                 "annotation" : [ ]
+                              }, {
+                                 "name" : "{urn:hl7-org:elm-types:r1}String",
+                                 "type" : "NamedTypeSpecifier",
+                                 "annotation" : [ ]
+                              } ]
+                           }
+                        } ],
+                        "operand" : {
+                           "type" : "Query",
+                           "annotation" : [ ],
+                           "source" : [ {
+                              "alias" : "$this",
+                              "annotation" : [ ],
+                              "expression" : {
+                                 "type" : "Query",
+                                 "annotation" : [ ],
+                                 "source" : [ {
+                                    "alias" : "$this",
+                                    "annotation" : [ ],
+                                    "expression" : {
+                                       "type" : "Query",
+                                       "annotation" : [ ],
+                                       "source" : [ {
+                                          "alias" : "C",
+                                          "annotation" : [ ],
+                                          "expression" : {
+                                             "path" : "component",
+                                             "type" : "Property",
+                                             "annotation" : [ ],
+                                             "source" : {
+                                                "name" : "o",
+                                                "type" : "OperandRef",
+                                                "annotation" : [ ]
+                                             }
+                                          }
+                                       } ],
+                                       "let" : [ ],
+                                       "relationship" : [ ],
+                                       "where" : {
+                                          "type" : "Equivalent",
+                                          "annotation" : [ ],
+                                          "signature" : [ {
+                                             "name" : "{urn:hl7-org:elm-types:r1}Concept",
+                                             "type" : "NamedTypeSpecifier",
+                                             "annotation" : [ ]
+                                          }, {
+                                             "name" : "{urn:hl7-org:elm-types:r1}Concept",
+                                             "type" : "NamedTypeSpecifier",
+                                             "annotation" : [ ]
+                                          } ],
+                                          "operand" : [ {
+                                             "name" : "ToConcept",
+                                             "libraryName" : "FHIRHelpers",
+                                             "type" : "FunctionRef",
+                                             "annotation" : [ ],
+                                             "signature" : [ ],
+                                             "operand" : [ {
+                                                "path" : "code",
+                                                "scope" : "C",
+                                                "type" : "Property",
+                                                "annotation" : [ ]
+                                             } ]
+                                          }, {
+                                             "type" : "ToConcept",
+                                             "annotation" : [ ],
+                                             "signature" : [ {
+                                                "name" : "{urn:hl7-org:elm-types:r1}Code",
+                                                "type" : "NamedTypeSpecifier",
+                                                "annotation" : [ ]
+                                             } ],
+                                             "operand" : {
+                                                "name" : "Diastolic blood pressure",
+                                                "type" : "CodeRef",
+                                                "annotation" : [ ]
+                                             }
+                                          } ]
+                                       }
+                                    }
+                                 } ],
+                                 "let" : [ ],
+                                 "relationship" : [ ],
+                                 "where" : {
+                                    "type" : "Not",
+                                    "annotation" : [ ],
+                                    "signature" : [ ],
+                                    "operand" : {
+                                       "type" : "IsNull",
+                                       "annotation" : [ ],
+                                       "signature" : [ ],
+                                       "operand" : {
+                                          "path" : "value",
+                                          "type" : "Property",
+                                          "annotation" : [ ],
+                                          "source" : {
+                                             "name" : "$this",
+                                             "type" : "AliasRef",
+                                             "annotation" : [ ]
+                                          }
+                                       }
+                                    }
+                                 },
+                                 "return" : {
+                                    "distinct" : false,
+                                    "annotation" : [ ],
+                                    "expression" : {
+                                       "path" : "value",
+                                       "type" : "Property",
+                                       "annotation" : [ ],
+                                       "source" : {
+                                          "name" : "$this",
+                                          "type" : "AliasRef",
+                                          "annotation" : [ ]
+                                       }
+                                    }
+                                 }
+                              }
+                           } ],
+                           "let" : [ ],
+                           "relationship" : [ ],
+                           "where" : {
+                              "type" : "Not",
+                              "annotation" : [ ],
+                              "signature" : [ ],
+                              "operand" : {
+                                 "type" : "IsNull",
+                                 "annotation" : [ ],
+                                 "signature" : [ ],
+                                 "operand" : {
+                                    "path" : "value",
+                                    "type" : "Property",
+                                    "annotation" : [ ],
+                                    "source" : {
+                                       "name" : "$this",
+                                       "type" : "AliasRef",
+                                       "annotation" : [ ]
+                                    }
+                                 }
+                              }
+                           },
+                           "return" : {
+                              "distinct" : false,
+                              "annotation" : [ ],
+                              "expression" : {
+                                 "path" : "value",
+                                 "type" : "Property",
+                                 "annotation" : [ ],
+                                 "source" : {
+                                    "name" : "$this",
+                                    "type" : "AliasRef",
+                                    "annotation" : [ ]
+                                 }
+                              }
+                           }
+                        }
+                     }
                   } ]
                },
                "else" : {
                   "type" : "If",
                   "annotation" : [ ],
                   "condition" : {
-                     "type" : "And",
+                     "type" : "Not",
                      "annotation" : [ ],
                      "signature" : [ ],
-                     "operand" : [ {
-                        "type" : "Not",
+                     "operand" : {
+                        "type" : "IsNull",
                         "annotation" : [ ],
                         "signature" : [ ],
                         "operand" : {
-                           "type" : "IsNull",
-                           "annotation" : [ ],
-                           "signature" : [ ],
-                           "operand" : {
-                              "path" : "referenceRange",
-                              "type" : "Property",
-                              "annotation" : [ ],
-                              "source" : {
-                                 "name" : "o",
-                                 "type" : "OperandRef",
-                                 "annotation" : [ ]
-                              }
-                           }
-                        }
-                     }, {
-                        "type" : "Is",
-                        "annotation" : [ ],
-                        "signature" : [ ],
-                        "operand" : {
-                           "path" : "value",
+                           "path" : "interpretation",
                            "type" : "Property",
                            "annotation" : [ ],
                            "source" : {
@@ -6865,171 +7249,236 @@
                               "type" : "OperandRef",
                               "annotation" : [ ]
                            }
-                        },
-                        "isTypeSpecifier" : {
-                           "name" : "{http://hl7.org/fhir}Quantity",
-                           "type" : "NamedTypeSpecifier",
-                           "annotation" : [ ]
                         }
-                     } ]
+                     }
                   },
                   "then" : {
-                     "type" : "If",
+                     "name" : "ToString",
+                     "libraryName" : "FHIRHelpers",
+                     "type" : "FunctionRef",
                      "annotation" : [ ],
-                     "condition" : {
-                        "type" : "Less",
+                     "signature" : [ {
+                        "name" : "{http://hl7.org/fhir}string",
+                        "type" : "NamedTypeSpecifier",
+                        "annotation" : [ ]
+                     } ],
+                     "operand" : [ {
+                        "type" : "Coalesce",
                         "annotation" : [ ],
                         "signature" : [ {
-                           "name" : "{urn:hl7-org:elm-types:r1}Decimal",
+                           "name" : "{http://hl7.org/fhir}string",
                            "type" : "NamedTypeSpecifier",
                            "annotation" : [ ]
                         }, {
-                           "name" : "{urn:hl7-org:elm-types:r1}Decimal",
+                           "name" : "{http://hl7.org/fhir}string",
                            "type" : "NamedTypeSpecifier",
                            "annotation" : [ ]
                         } ],
                         "operand" : [ {
-                           "type" : "Case",
+                           "type" : "First",
                            "annotation" : [ ],
-                           "caseItem" : [ {
+                           "signature" : [ {
+                              "type" : "ListTypeSpecifier",
                               "annotation" : [ ],
-                              "when" : {
-                                 "isType" : "{urn:hl7-org:elm-types:r1}Integer",
-                                 "type" : "Is",
-                                 "annotation" : [ ],
-                                 "signature" : [ ],
-                                 "operand" : {
-                                    "path" : "value",
-                                    "type" : "Property",
-                                    "annotation" : [ ],
-                                    "source" : {
-                                       "path" : "value",
-                                       "type" : "Property",
-                                       "annotation" : [ ],
-                                       "source" : {
-                                          "name" : "o",
-                                          "type" : "OperandRef",
-                                          "annotation" : [ ]
-                                       }
-                                    }
-                                 }
-                              },
-                              "then" : {
-                                 "type" : "ToDecimal",
-                                 "annotation" : [ ],
-                                 "signature" : [ {
-                                    "name" : "{urn:hl7-org:elm-types:r1}Integer",
-                                    "type" : "NamedTypeSpecifier",
-                                    "annotation" : [ ]
-                                 } ],
-                                 "operand" : {
-                                    "asType" : "{urn:hl7-org:elm-types:r1}Integer",
-                                    "type" : "As",
-                                    "annotation" : [ ],
-                                    "signature" : [ ],
-                                    "operand" : {
-                                       "path" : "value",
-                                       "type" : "Property",
-                                       "annotation" : [ ],
-                                       "source" : {
-                                          "path" : "value",
-                                          "type" : "Property",
-                                          "annotation" : [ ],
-                                          "source" : {
-                                             "name" : "o",
-                                             "type" : "OperandRef",
-                                             "annotation" : [ ]
-                                          }
-                                       }
-                                    }
-                                 }
-                              }
-                           }, {
-                              "annotation" : [ ],
-                              "when" : {
-                                 "isType" : "{http://hl7.org/fhir}decimal",
-                                 "type" : "Is",
-                                 "annotation" : [ ],
-                                 "signature" : [ ],
-                                 "operand" : {
-                                    "path" : "value",
-                                    "type" : "Property",
-                                    "annotation" : [ ],
-                                    "source" : {
-                                       "path" : "value",
-                                       "type" : "Property",
-                                       "annotation" : [ ],
-                                       "source" : {
-                                          "name" : "o",
-                                          "type" : "OperandRef",
-                                          "annotation" : [ ]
-                                       }
-                                    }
-                                 }
-                              },
-                              "then" : {
-                                 "name" : "ToDecimal",
-                                 "libraryName" : "FHIRHelpers",
-                                 "type" : "FunctionRef",
-                                 "annotation" : [ ],
-                                 "signature" : [ ],
-                                 "operand" : [ {
-                                    "asType" : "{http://hl7.org/fhir}decimal",
-                                    "type" : "As",
-                                    "annotation" : [ ],
-                                    "signature" : [ ],
-                                    "operand" : {
-                                       "path" : "value",
-                                       "type" : "Property",
-                                       "annotation" : [ ],
-                                       "source" : {
-                                          "path" : "value",
-                                          "type" : "Property",
-                                          "annotation" : [ ],
-                                          "source" : {
-                                             "name" : "o",
-                                             "type" : "OperandRef",
-                                             "annotation" : [ ]
-                                          }
-                                       }
-                                    }
-                                 } ]
+                              "elementType" : {
+                                 "name" : "{http://hl7.org/fhir}string",
+                                 "type" : "NamedTypeSpecifier",
+                                 "annotation" : [ ]
                               }
                            } ],
-                           "else" : {
-                              "type" : "Null",
-                              "annotation" : [ ]
+                           "source" : {
+                              "type" : "Query",
+                              "annotation" : [ ],
+                              "source" : [ {
+                                 "alias" : "$this",
+                                 "annotation" : [ ],
+                                 "expression" : {
+                                    "path" : "interpretation",
+                                    "type" : "Property",
+                                    "annotation" : [ ],
+                                    "source" : {
+                                       "name" : "o",
+                                       "type" : "OperandRef",
+                                       "annotation" : [ ]
+                                    }
+                                 }
+                              } ],
+                              "let" : [ ],
+                              "relationship" : [ ],
+                              "where" : {
+                                 "type" : "Not",
+                                 "annotation" : [ ],
+                                 "signature" : [ ],
+                                 "operand" : {
+                                    "type" : "IsNull",
+                                    "annotation" : [ ],
+                                    "signature" : [ ],
+                                    "operand" : {
+                                       "path" : "text",
+                                       "type" : "Property",
+                                       "annotation" : [ ],
+                                       "source" : {
+                                          "name" : "$this",
+                                          "type" : "AliasRef",
+                                          "annotation" : [ ]
+                                       }
+                                    }
+                                 }
+                              },
+                              "return" : {
+                                 "distinct" : false,
+                                 "annotation" : [ ],
+                                 "expression" : {
+                                    "path" : "text",
+                                    "type" : "Property",
+                                    "annotation" : [ ],
+                                    "source" : {
+                                       "name" : "$this",
+                                       "type" : "AliasRef",
+                                       "annotation" : [ ]
+                                    }
+                                 }
+                              }
                            }
                         }, {
-                           "name" : "ToDecimal",
-                           "libraryName" : "FHIRHelpers",
-                           "type" : "FunctionRef",
+                           "type" : "First",
+                           "annotation" : [ ],
+                           "signature" : [ {
+                              "type" : "ListTypeSpecifier",
+                              "annotation" : [ ],
+                              "elementType" : {
+                                 "name" : "{http://hl7.org/fhir}string",
+                                 "type" : "NamedTypeSpecifier",
+                                 "annotation" : [ ]
+                              }
+                           } ],
+                           "source" : {
+                              "type" : "Query",
+                              "annotation" : [ ],
+                              "source" : [ {
+                                 "alias" : "$this",
+                                 "annotation" : [ ],
+                                 "expression" : {
+                                    "path" : "coding",
+                                    "type" : "Property",
+                                    "annotation" : [ ],
+                                    "source" : {
+                                       "type" : "First",
+                                       "annotation" : [ ],
+                                       "signature" : [ {
+                                          "type" : "ListTypeSpecifier",
+                                          "annotation" : [ ],
+                                          "elementType" : {
+                                             "name" : "{http://hl7.org/fhir}CodeableConcept",
+                                             "type" : "NamedTypeSpecifier",
+                                             "annotation" : [ ]
+                                          }
+                                       } ],
+                                       "source" : {
+                                          "path" : "interpretation",
+                                          "type" : "Property",
+                                          "annotation" : [ ],
+                                          "source" : {
+                                             "name" : "o",
+                                             "type" : "OperandRef",
+                                             "annotation" : [ ]
+                                          }
+                                       }
+                                    }
+                                 }
+                              } ],
+                              "let" : [ ],
+                              "relationship" : [ ],
+                              "where" : {
+                                 "type" : "Not",
+                                 "annotation" : [ ],
+                                 "signature" : [ ],
+                                 "operand" : {
+                                    "type" : "IsNull",
+                                    "annotation" : [ ],
+                                    "signature" : [ ],
+                                    "operand" : {
+                                       "path" : "display",
+                                       "type" : "Property",
+                                       "annotation" : [ ],
+                                       "source" : {
+                                          "name" : "$this",
+                                          "type" : "AliasRef",
+                                          "annotation" : [ ]
+                                       }
+                                    }
+                                 }
+                              },
+                              "return" : {
+                                 "distinct" : false,
+                                 "annotation" : [ ],
+                                 "expression" : {
+                                    "path" : "display",
+                                    "type" : "Property",
+                                    "annotation" : [ ],
+                                    "source" : {
+                                       "name" : "$this",
+                                       "type" : "AliasRef",
+                                       "annotation" : [ ]
+                                    }
+                                 }
+                              }
+                           }
+                        } ]
+                     } ]
+                  },
+                  "else" : {
+                     "type" : "If",
+                     "annotation" : [ ],
+                     "condition" : {
+                        "type" : "And",
+                        "annotation" : [ ],
+                        "signature" : [ ],
+                        "operand" : [ {
+                           "type" : "Not",
                            "annotation" : [ ],
                            "signature" : [ ],
-                           "operand" : [ {
-                              "name" : "ReferenceRangeLow",
-                              "type" : "FunctionRef",
+                           "operand" : {
+                              "type" : "IsNull",
                               "annotation" : [ ],
                               "signature" : [ ],
-                              "operand" : [ {
+                              "operand" : {
+                                 "path" : "referenceRange",
+                                 "type" : "Property",
+                                 "annotation" : [ ],
+                                 "source" : {
+                                    "name" : "o",
+                                    "type" : "OperandRef",
+                                    "annotation" : [ ]
+                                 }
+                              }
+                           }
+                        }, {
+                           "type" : "Is",
+                           "annotation" : [ ],
+                           "signature" : [ ],
+                           "operand" : {
+                              "path" : "value",
+                              "type" : "Property",
+                              "annotation" : [ ],
+                              "source" : {
                                  "name" : "o",
                                  "type" : "OperandRef",
                                  "annotation" : [ ]
-                              } ]
-                           } ]
+                              }
+                           },
+                           "isTypeSpecifier" : {
+                              "name" : "{http://hl7.org/fhir}Quantity",
+                              "type" : "NamedTypeSpecifier",
+                              "annotation" : [ ]
+                           }
                         } ]
                      },
                      "then" : {
-                        "valueType" : "{urn:hl7-org:elm-types:r1}String",
-                        "value" : "Low",
-                        "type" : "Literal",
-                        "annotation" : [ ]
-                     },
-                     "else" : {
                         "type" : "If",
                         "annotation" : [ ],
                         "condition" : {
-                           "type" : "Greater",
+                           "type" : "Less",
                            "annotation" : [ ],
                            "signature" : [ {
                               "name" : "{urn:hl7-org:elm-types:r1}Decimal",
@@ -7159,7 +7608,7 @@
                               "annotation" : [ ],
                               "signature" : [ ],
                               "operand" : [ {
-                                 "name" : "ReferenceRangeHigh",
+                                 "name" : "ReferenceRangeLow",
                                  "type" : "FunctionRef",
                                  "annotation" : [ ],
                                  "signature" : [ ],
@@ -7173,21 +7622,383 @@
                         },
                         "then" : {
                            "valueType" : "{urn:hl7-org:elm-types:r1}String",
-                           "value" : "High",
+                           "value" : "Low",
                            "type" : "Literal",
                            "annotation" : [ ]
                         },
                         "else" : {
-                           "asType" : "{urn:hl7-org:elm-types:r1}String",
-                           "type" : "As",
+                           "type" : "If",
                            "annotation" : [ ],
-                           "signature" : [ ],
-                           "operand" : {
-                              "type" : "Null",
+                           "condition" : {
+                              "type" : "Greater",
+                              "annotation" : [ ],
+                              "signature" : [ {
+                                 "name" : "{urn:hl7-org:elm-types:r1}Decimal",
+                                 "type" : "NamedTypeSpecifier",
+                                 "annotation" : [ ]
+                              }, {
+                                 "name" : "{urn:hl7-org:elm-types:r1}Decimal",
+                                 "type" : "NamedTypeSpecifier",
+                                 "annotation" : [ ]
+                              } ],
+                              "operand" : [ {
+                                 "type" : "Case",
+                                 "annotation" : [ ],
+                                 "caseItem" : [ {
+                                    "annotation" : [ ],
+                                    "when" : {
+                                       "isType" : "{urn:hl7-org:elm-types:r1}Integer",
+                                       "type" : "Is",
+                                       "annotation" : [ ],
+                                       "signature" : [ ],
+                                       "operand" : {
+                                          "path" : "value",
+                                          "type" : "Property",
+                                          "annotation" : [ ],
+                                          "source" : {
+                                             "path" : "value",
+                                             "type" : "Property",
+                                             "annotation" : [ ],
+                                             "source" : {
+                                                "name" : "o",
+                                                "type" : "OperandRef",
+                                                "annotation" : [ ]
+                                             }
+                                          }
+                                       }
+                                    },
+                                    "then" : {
+                                       "type" : "ToDecimal",
+                                       "annotation" : [ ],
+                                       "signature" : [ {
+                                          "name" : "{urn:hl7-org:elm-types:r1}Integer",
+                                          "type" : "NamedTypeSpecifier",
+                                          "annotation" : [ ]
+                                       } ],
+                                       "operand" : {
+                                          "asType" : "{urn:hl7-org:elm-types:r1}Integer",
+                                          "type" : "As",
+                                          "annotation" : [ ],
+                                          "signature" : [ ],
+                                          "operand" : {
+                                             "path" : "value",
+                                             "type" : "Property",
+                                             "annotation" : [ ],
+                                             "source" : {
+                                                "path" : "value",
+                                                "type" : "Property",
+                                                "annotation" : [ ],
+                                                "source" : {
+                                                   "name" : "o",
+                                                   "type" : "OperandRef",
+                                                   "annotation" : [ ]
+                                                }
+                                             }
+                                          }
+                                       }
+                                    }
+                                 }, {
+                                    "annotation" : [ ],
+                                    "when" : {
+                                       "isType" : "{http://hl7.org/fhir}decimal",
+                                       "type" : "Is",
+                                       "annotation" : [ ],
+                                       "signature" : [ ],
+                                       "operand" : {
+                                          "path" : "value",
+                                          "type" : "Property",
+                                          "annotation" : [ ],
+                                          "source" : {
+                                             "path" : "value",
+                                             "type" : "Property",
+                                             "annotation" : [ ],
+                                             "source" : {
+                                                "name" : "o",
+                                                "type" : "OperandRef",
+                                                "annotation" : [ ]
+                                             }
+                                          }
+                                       }
+                                    },
+                                    "then" : {
+                                       "name" : "ToDecimal",
+                                       "libraryName" : "FHIRHelpers",
+                                       "type" : "FunctionRef",
+                                       "annotation" : [ ],
+                                       "signature" : [ ],
+                                       "operand" : [ {
+                                          "asType" : "{http://hl7.org/fhir}decimal",
+                                          "type" : "As",
+                                          "annotation" : [ ],
+                                          "signature" : [ ],
+                                          "operand" : {
+                                             "path" : "value",
+                                             "type" : "Property",
+                                             "annotation" : [ ],
+                                             "source" : {
+                                                "path" : "value",
+                                                "type" : "Property",
+                                                "annotation" : [ ],
+                                                "source" : {
+                                                   "name" : "o",
+                                                   "type" : "OperandRef",
+                                                   "annotation" : [ ]
+                                                }
+                                             }
+                                          }
+                                       } ]
+                                    }
+                                 } ],
+                                 "else" : {
+                                    "type" : "Null",
+                                    "annotation" : [ ]
+                                 }
+                              }, {
+                                 "name" : "ToDecimal",
+                                 "libraryName" : "FHIRHelpers",
+                                 "type" : "FunctionRef",
+                                 "annotation" : [ ],
+                                 "signature" : [ ],
+                                 "operand" : [ {
+                                    "name" : "ReferenceRangeHigh",
+                                    "type" : "FunctionRef",
+                                    "annotation" : [ ],
+                                    "signature" : [ ],
+                                    "operand" : [ {
+                                       "name" : "o",
+                                       "type" : "OperandRef",
+                                       "annotation" : [ ]
+                                    } ]
+                                 } ]
+                              } ]
+                           },
+                           "then" : {
+                              "valueType" : "{urn:hl7-org:elm-types:r1}String",
+                              "value" : "High",
+                              "type" : "Literal",
                               "annotation" : [ ]
+                           },
+                           "else" : {
+                              "asType" : "{urn:hl7-org:elm-types:r1}String",
+                              "type" : "As",
+                              "annotation" : [ ],
+                              "signature" : [ ],
+                              "operand" : {
+                                 "type" : "Null",
+                                 "annotation" : [ ]
+                              }
                            }
                         }
+                     },
+                     "else" : {
+                        "asType" : "{urn:hl7-org:elm-types:r1}String",
+                        "type" : "As",
+                        "annotation" : [ ],
+                        "signature" : [ ],
+                        "operand" : {
+                           "type" : "Null",
+                           "annotation" : [ ]
+                        }
                      }
+                  }
+               }
+            },
+            "operand" : [ {
+               "name" : "o",
+               "annotation" : [ ],
+               "operandTypeSpecifier" : {
+                  "name" : "{http://hl7.org/fhir}Observation",
+                  "type" : "NamedTypeSpecifier",
+                  "annotation" : [ ]
+               }
+            } ]
+         }, {
+            "name" : "Interpret",
+            "context" : "Unfiltered",
+            "accessLevel" : "Public",
+            "type" : "FunctionDef",
+            "annotation" : [ ],
+            "expression" : {
+               "type" : "If",
+               "annotation" : [ ],
+               "condition" : {
+                  "type" : "Or",
+                  "annotation" : [ ],
+                  "signature" : [ ],
+                  "operand" : [ {
+                     "type" : "Greater",
+                     "annotation" : [ ],
+                     "signature" : [ {
+                        "name" : "{urn:hl7-org:elm-types:r1}Decimal",
+                        "type" : "NamedTypeSpecifier",
+                        "annotation" : [ ]
+                     }, {
+                        "name" : "{urn:hl7-org:elm-types:r1}Decimal",
+                        "type" : "NamedTypeSpecifier",
+                        "annotation" : [ ]
+                     } ],
+                     "operand" : [ {
+                        "name" : "ToDecimal",
+                        "libraryName" : "FHIRHelpers",
+                        "type" : "FunctionRef",
+                        "annotation" : [ ],
+                        "signature" : [ ],
+                        "operand" : [ {
+                           "name" : "systolicBP",
+                           "type" : "OperandRef",
+                           "annotation" : [ ]
+                        } ]
+                     }, {
+                        "type" : "ToDecimal",
+                        "annotation" : [ ],
+                        "signature" : [ {
+                           "name" : "{urn:hl7-org:elm-types:r1}Integer",
+                           "type" : "NamedTypeSpecifier",
+                           "annotation" : [ ]
+                        } ],
+                        "operand" : {
+                           "valueType" : "{urn:hl7-org:elm-types:r1}Integer",
+                           "value" : "180",
+                           "type" : "Literal",
+                           "annotation" : [ ]
+                        }
+                     } ]
+                  }, {
+                     "type" : "Greater",
+                     "annotation" : [ ],
+                     "signature" : [ {
+                        "name" : "{urn:hl7-org:elm-types:r1}Decimal",
+                        "type" : "NamedTypeSpecifier",
+                        "annotation" : [ ]
+                     }, {
+                        "name" : "{urn:hl7-org:elm-types:r1}Decimal",
+                        "type" : "NamedTypeSpecifier",
+                        "annotation" : [ ]
+                     } ],
+                     "operand" : [ {
+                        "name" : "ToDecimal",
+                        "libraryName" : "FHIRHelpers",
+                        "type" : "FunctionRef",
+                        "annotation" : [ ],
+                        "signature" : [ ],
+                        "operand" : [ {
+                           "name" : "diastolicBP",
+                           "type" : "OperandRef",
+                           "annotation" : [ ]
+                        } ]
+                     }, {
+                        "type" : "ToDecimal",
+                        "annotation" : [ ],
+                        "signature" : [ {
+                           "name" : "{urn:hl7-org:elm-types:r1}Integer",
+                           "type" : "NamedTypeSpecifier",
+                           "annotation" : [ ]
+                        } ],
+                        "operand" : {
+                           "valueType" : "{urn:hl7-org:elm-types:r1}Integer",
+                           "value" : "120",
+                           "type" : "Literal",
+                           "annotation" : [ ]
+                        }
+                     } ]
+                  } ]
+               },
+               "then" : {
+                  "valueType" : "{urn:hl7-org:elm-types:r1}String",
+                  "value" : "Very High",
+                  "type" : "Literal",
+                  "annotation" : [ ]
+               },
+               "else" : {
+                  "type" : "If",
+                  "annotation" : [ ],
+                  "condition" : {
+                     "type" : "Or",
+                     "annotation" : [ ],
+                     "signature" : [ ],
+                     "operand" : [ {
+                        "type" : "Less",
+                        "annotation" : [ ],
+                        "signature" : [ {
+                           "name" : "{urn:hl7-org:elm-types:r1}Decimal",
+                           "type" : "NamedTypeSpecifier",
+                           "annotation" : [ ]
+                        }, {
+                           "name" : "{urn:hl7-org:elm-types:r1}Decimal",
+                           "type" : "NamedTypeSpecifier",
+                           "annotation" : [ ]
+                        } ],
+                        "operand" : [ {
+                           "name" : "ToDecimal",
+                           "libraryName" : "FHIRHelpers",
+                           "type" : "FunctionRef",
+                           "annotation" : [ ],
+                           "signature" : [ ],
+                           "operand" : [ {
+                              "name" : "systolicBP",
+                              "type" : "OperandRef",
+                              "annotation" : [ ]
+                           } ]
+                        }, {
+                           "type" : "ToDecimal",
+                           "annotation" : [ ],
+                           "signature" : [ {
+                              "name" : "{urn:hl7-org:elm-types:r1}Integer",
+                              "type" : "NamedTypeSpecifier",
+                              "annotation" : [ ]
+                           } ],
+                           "operand" : {
+                              "valueType" : "{urn:hl7-org:elm-types:r1}Integer",
+                              "value" : "90",
+                              "type" : "Literal",
+                              "annotation" : [ ]
+                           }
+                        } ]
+                     }, {
+                        "type" : "Less",
+                        "annotation" : [ ],
+                        "signature" : [ {
+                           "name" : "{urn:hl7-org:elm-types:r1}Decimal",
+                           "type" : "NamedTypeSpecifier",
+                           "annotation" : [ ]
+                        }, {
+                           "name" : "{urn:hl7-org:elm-types:r1}Decimal",
+                           "type" : "NamedTypeSpecifier",
+                           "annotation" : [ ]
+                        } ],
+                        "operand" : [ {
+                           "name" : "ToDecimal",
+                           "libraryName" : "FHIRHelpers",
+                           "type" : "FunctionRef",
+                           "annotation" : [ ],
+                           "signature" : [ ],
+                           "operand" : [ {
+                              "name" : "diastolicBP",
+                              "type" : "OperandRef",
+                              "annotation" : [ ]
+                           } ]
+                        }, {
+                           "type" : "ToDecimal",
+                           "annotation" : [ ],
+                           "signature" : [ {
+                              "name" : "{urn:hl7-org:elm-types:r1}Integer",
+                              "type" : "NamedTypeSpecifier",
+                              "annotation" : [ ]
+                           } ],
+                           "operand" : {
+                              "valueType" : "{urn:hl7-org:elm-types:r1}Integer",
+                              "value" : "60",
+                              "type" : "Literal",
+                              "annotation" : [ ]
+                           }
+                        } ]
+                     } ]
+                  },
+                  "then" : {
+                     "valueType" : "{urn:hl7-org:elm-types:r1}String",
+                     "value" : "Very Low",
+                     "type" : "Literal",
+                     "annotation" : [ ]
                   },
                   "else" : {
                      "asType" : "{urn:hl7-org:elm-types:r1}String",
@@ -7202,10 +8013,18 @@
                }
             },
             "operand" : [ {
-               "name" : "o",
+               "name" : "systolicBP",
                "annotation" : [ ],
                "operandTypeSpecifier" : {
-                  "name" : "{http://hl7.org/fhir}Observation",
+                  "name" : "{http://hl7.org/fhir}decimal",
+                  "type" : "NamedTypeSpecifier",
+                  "annotation" : [ ]
+               }
+            }, {
+               "name" : "diastolicBP",
+               "annotation" : [ ],
+               "operandTypeSpecifier" : {
+                  "name" : "{http://hl7.org/fhir}decimal",
                   "type" : "NamedTypeSpecifier",
                   "annotation" : [ ]
                }

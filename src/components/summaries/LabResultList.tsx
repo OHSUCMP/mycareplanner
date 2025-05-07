@@ -190,7 +190,7 @@ const buildRows = (obs: ObservationSummary, theSource?: string): SummaryRowItems
         {
             isHeader: false,
             twoColumns: true,
-            data1: obs.ResultText,
+            data1: (obs.Interpretation ? '<span class="text-danger">' + obs.ResultText + '</span>': obs.ResultText ),
             data2: displayDate(obs.Date),
         },
     ];

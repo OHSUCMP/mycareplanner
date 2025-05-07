@@ -280,7 +280,14 @@ define function ReferenceRangeFlag(o FHIR.Observation):
   else false
 
 define function Interpretation(o FHIR.Observation):
-  if (o.interpretation is not null) then
+  // If Blood pressure observation, then extract component values and override interpretation.
+  if o.code ~ "Blood pressure" and 
+   exists (o.component C where (C.code ~ "Systolic blood pressure")) and 
+   exists (o.component C where (C.code ~ "Diastolic blood pressure")) then
+      Interpret(
+        singleton from (o.component C where (C.code ~ "Systolic blood pressure")).value.value, 
+        singleton from (o.component C where (C.code ~ "Diastolic blood pressure")).value.value)
+  else if (o.interpretation is not null) then
     Coalesce(First(o.interpretation.text), First(First(o.interpretation).coding.display))
   else if o.referenceRange is not null and (o.value is FHIR.Quantity) then
     // Derive interpretation from the reference range, return null if within normal range.
@@ -289,6 +296,11 @@ define function Interpretation(o FHIR.Observation):
     else null
   else
     null
+
+define function Interpret(systolicBP decimal, diastolicBP decimal):
+  if systolicBP > 180 or diastolicBP > 120 then 'Very High'
+  else if systolicBP < 90 or diastolicBP < 60 then 'Very Low'
+  else null
 
 /**
  * Finds the first non-null meaningful date that can be associated with this Observation.  This will look through the
