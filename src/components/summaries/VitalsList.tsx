@@ -204,14 +204,14 @@ const buildRows = (obs: ObservationSummary, theSource?: string): SummaryRowItems
         {
             isHeader: false,
             twoColumns: true,
-            data1: obs.ResultText,
+            data1: (obs.Interpretation ? '<span class="text-danger">' + obs.ResultText + '</span>': obs.ResultText ),
             data2: obs.DisplayName === 'Home Blood Pressure' ? displayDateTime(obs.Date) : displayDate(obs.Date),
         },
         {
             isHeader: false,
-            twoColumns: false,
+            twoColumns: true,
             data1: "Performed by: " + (obs.Performer ?? 'Unknown'),
-            data2: '',
+            data2: obs.Interpretation ? ('<span class="text-danger" style="font-weight:bold;">' + obs.Interpretation + '</span>'):'',
         },
     ];
 
@@ -254,8 +254,8 @@ const buildRows = (obs: ObservationSummary, theSource?: string): SummaryRowItems
         {
             isHeader: false,
             twoColumns: true,
-            data1: historyItem.ResultText,
-            data2: obs.DisplayName == 'Home Blood Pressure' ? displayDateTime(historyItem.Date) : displayDate(historyItem.Date),
+            data1: (historyItem.Interpretation ? '<span class="text-danger">' + historyItem.ResultText + '</span>': historyItem.ResultText ),
+            data2: (obs.DisplayName == 'Home Blood Pressure' ? displayDateTime(historyItem.Date) : displayDate(historyItem.Date)) + (historyItem.Interpretation ? '<span class="text-danger pl-3 float-right font-weight-bold">' + historyItem.Interpretation + '</span>':''),
         }
     ));
 
@@ -270,11 +270,15 @@ const buildRows = (obs: ObservationSummary, theSource?: string): SummaryRowItems
                     <Grid container spacing={2}>
                         {history.map((historyItem, index) => (
                             <React.Fragment key={index}>
-                                <Grid item xs={6}>
-                                    <Typography variant="body2">{historyItem.data1}</Typography>
+                                <Grid item xs={4}>
+                                    <Typography variant="body2">
+                                    {typeof historyItem.data1 === 'string' ? <span dangerouslySetInnerHTML={{ __html: historyItem.data1 }} /> : historyItem.data1}
+                                    </Typography>
                                 </Grid>
-                                <Grid item xs={6}>
-                                    <Typography variant="body2">{historyItem.data2}</Typography>
+                                <Grid item xs={8}>
+                                    <Typography variant="body2">
+                                        {typeof historyItem.data2 === 'string' ? <span dangerouslySetInnerHTML={{ __html: historyItem.data2 }} /> : historyItem.data2}
+                                    </Typography>
                                 </Grid>
                             </React.Fragment>
                         ))}

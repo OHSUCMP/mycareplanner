@@ -24,12 +24,12 @@ export const SummaryRow: React.FC<SummaryRowProps> = (props: SummaryRowProps) =>
       <>
         <Grid item xs={6}>
           <Typography variant={props.isHeader ? "h6" : "body2"} component={props.isHeader ? "h6" : "p"}>
-            {props.data1}
+            {typeof props.data1 === 'string' ? <span dangerouslySetInnerHTML={{ __html: props.data1 }} /> : props.data1}
           </Typography>
         </Grid>
         <Grid item xs={6}>
           <Typography variant="body2" component="p" align="right">
-            {props.data2}
+             {typeof props.data2 === 'string' ? <span dangerouslySetInnerHTML={{ __html: props.data2 }} /> : props.data2}
           </Typography>
         </Grid>
       </>
