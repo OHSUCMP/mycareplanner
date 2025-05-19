@@ -51,6 +51,7 @@ define "Combined Blood Pressure Observations":
       "Diastolic": DiastolicValue,
       "Display": Coalesce(ToString(SystolicValue), '-') + '/' + Coalesce(ToString(DiastolicValue), '-') + ' mmHg',
       "Performer": First(systolicBP.performer).display.value,
+      "Interpretation": DE.Interpret(systolicBP.value.value, DiastolicObs.value.value),
       "Notes": DE.ToString(systolicBP.note) union DE.ToString(DiastolicObs.note),
       "Provenance": DE.ReportProvenance(systolicBP)
     }
@@ -72,7 +73,7 @@ define ReportHomeBP:
       ResultValue: null,
       ResultUnits: null,
       ReferenceRange: null,
-      Interpretation: null,
+      Interpretation: bp.Interpretation,
       Flag: null,
       Performer: bp.Performer,
       Notes: bp.Notes,
@@ -86,7 +87,8 @@ define HomeBPHistory:
     where bp.Display is not null
     return {
       Date: ToString(bp.Date),
-      ResultText: bp.Display
+      ResultText: bp.Display,
+      Interpretation: bp.Interpretation
     }
 
 define FirstHomeBP:

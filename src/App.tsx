@@ -1,7 +1,7 @@
 import './App.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import React from 'react';
-import {Switch, Route, RouteComponentProps} from 'react-router-dom';
+import {Switch, Route, RouteComponentProps, Link} from 'react-router-dom';
 import {Tab, Box, Paper} from '@mui/material';
 import {TabList, TabPanel, TabContext} from '@mui/lab';
 //import { Patient} from './data-services/fhir-types/fhir-r4';
@@ -37,6 +37,7 @@ import {
     getSelectedEndpoints,
     deleteSelectedEndpoints,
     getLauncherData,
+    launcherDataExists,
     deleteAllDataFromLocalForage,
     saveSessionId,
     sessionIdExistsInLocalForage,
@@ -854,14 +855,15 @@ class App extends React.Component<AppProps, AppState> {
         this.setState({goalSummaries: newGoalSummaries})
     }
 
-    // setLogout called when un-sharing data to the SDS
-    setLogout = () => {
-        this.setState({isLogout: true});
-        sessionStorage.clear();
-        deleteAllDataFromLocalForage();
-        this.props.history.push('/logout')
-        // this.setState({ isLoggedOut: true });
-    }
+    handleLogout = async () => {
+        if (await launcherDataExists()) {
+            console.log('Logging out...')
+            this.setState({isLogout: true});
+            sessionStorage.clear();
+            await deleteAllDataFromLocalForage();
+            this.props.history.push('/logout')
+        }
+    };
 
     // callback function to update conditions from ConditionEditForm
     setConditionSummaries = (newConditionSummaries: ConditionSummary[][]) => {
@@ -1009,19 +1011,6 @@ class App extends React.Component<AppProps, AppState> {
         this.setState({userErrorMessage: undefined})
     }
 
-    // storer: commenting out handleLogout and slating for deletion, as it does literally nothing
-    // private handleLogout = async () => {
-    //     if (!this.state.isLogout) {
-    //         // Clear session storage or perform other logout logic here
-    //         // console.log('Logging out and clearing session');
-    //         // this.setState({ isLogout: true });
-    //         // this.setState({ isLogout: true })
-    //         // sessionStorage.clear()
-    //         // await deleteAllDataFromLocalForage()
-    //         // this.props.history.push('/logout')
-    //     }
-    // }
-
     updateLogMainTab = async (event: any, value: any) => {
         this.setState({mainTabIndex: value});
 
@@ -1113,8 +1102,18 @@ class App extends React.Component<AppProps, AppState> {
                     {/* <img className="mypain-header-logo" src={`${process.env.PUBLIC_URL}/assets/images/mpc-logo.png`} alt="MyPreventiveCare"/> */}
                     <img className="mypain-header-logo"
                          src={`${process.env.PUBLIC_URL}/assets/images/ecareplan-logo.png`} alt="My Care Planner"/>
+                    <span style={{margin: 'auto' }}>&nbsp;</span>
                     {/* {patient === undefined ? '' : <p>&npsp;&npsp;{patient[0]?.fullName}</p>} */}
-                    <p className='version'>{process.env.REACT_APP_VERSION}</p>
+
+                    <div className='app-header-right'>
+                        { ! this.state.isLogout ?
+                            <span><Link to="/logout" onClick={this.handleLogout} className='logoutLink'>
+                                Logout
+                            </Link></span> : ''
+                        }
+                        <span className='version'>{process.env.REACT_APP_VERSION}</span>
+                    </div>
+
                 </header>
 
                 <Switch>
@@ -1147,11 +1146,11 @@ class App extends React.Component<AppProps, AppState> {
                                />
                            )}
                     />
-                    <Route path="/unshare-data">
-                        <SessionProtected isLoggedIn={!this.state.isLogout}>
-                            <UnShareData fhirDataCollection={this.state.fhirDataCollection} setLogout={this.setLogout}/>
-                        </SessionProtected>
-                    </Route>
+                    {/*<Route path="/unshare-data">*/}
+                    {/*    <SessionProtected isLoggedIn={!this.state.isLogout}>*/}
+                    {/*        <UnShareData fhirDataCollection={this.state.fhirDataCollection} setLogout={this.setLogout}/>*/}
+                    {/*    </SessionProtected>*/}
+                    {/*</Route>*/}
                     <Route path="/shared-data-summary">
                         <SessionProtected isLoggedIn={!this.state.isLogout}>
                             <SharedDataSummary/>

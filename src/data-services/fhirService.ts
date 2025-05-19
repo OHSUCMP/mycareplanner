@@ -23,12 +23,14 @@ const resourcesFrom = (response: fhirclient.JsonObject[]): Resource[] => {
 
 // TODO full date argument does not work correctly in Logica?  Use only yyyy-MM for now.
 // export const getDateParameter = (d: Date): string => `ge${format(d, 'yyyy-MM-dd')}`;
-export const getDateParameter = (d: Date): string => `ge${format(d, 'yyyy-MM')}`;
+export const getGEDateParameter = (d: Date): string => `ge${format(d, 'yyyy-MM')}`;
+export const getLTDateParameter = (d: Date): string => `lt${format(d, 'yyyy-MM')}`;
 const today: Date = new Date()
 const oneYearAgo = addPeriodToDate(today, {years: -1})
 const threeYearsAgo = addPeriodToDate(today, {years: -3})
 const fiveYearsAgo = addPeriodToDate(today, {years: -5})
 const eighteenMonthsAgo = addPeriodToDate(today, {months: -18})
+const tenYearsAgo = addPeriodToDate(today, {years: -10})
 
 const provenanceSearch = '&_revinclude=Provenance:target'
 
@@ -45,7 +47,7 @@ const careTeamPath_include = 'CareTeam?_include=CareTeam:participant' + provenan
 
 const goalsPath = 'Goal?lifecycle-status=active,completed,cancelled' + provenanceSearch
 
-const encountersPath = 'Encounter?date=' + getDateParameter(eighteenMonthsAgo) + provenanceSearch
+const encountersPath = 'Encounter?date=' + getGEDateParameter(eighteenMonthsAgo) + provenanceSearch
 
 /// Epic allows multiple category codes only >= Aug 2021 release
 // const conditionsPath = 'Condition?category=problem-list-item,health-concern,LG41762-2&clinical-status=active';
@@ -54,7 +56,8 @@ const healthConcernPath = 'Condition?category=health-concern&clinical-status=act
 
 const immunizationsPath = 'Immunization?status=completed' + provenanceSearch
 // storer: lab results now pulling from 3 years back, was 5, for #4
-const labResultsPath = 'Observation?category=laboratory&date=' + getDateParameter(threeYearsAgo) + provenanceSearch
+const labResultsPath = 'Observation?category=laboratory&date=' + getGEDateParameter(threeYearsAgo) + provenanceSearch
+const eGFRExtraResultsPath = 'Observation?code=http://loinc.org|45066-8,http://loinc.org|48642-3,http://loinc.org|48643-1,http://loinc.org|50044-7,http://loinc.org|50210-4,http://loinc.org|50384-7,http://loinc.org|62238-1,http://loinc.org|69405-9,http://loinc.org|70969-1,http://loinc.org|77147-7,http://loinc.org|88293-6,http://loinc.org|88294-4,http://loinc.org|94677-2,http://loinc.org|98979-8,http://loinc.org|98980-6&date=' + getGEDateParameter(tenYearsAgo) + '&date=' + getLTDateParameter(threeYearsAgo) + provenanceSearch
 
 // Allscripts does not support both status and authoredon args
 // const medicationRequestPath = 'MedicationRequest?status=active&authoredon=' + getDateParameter(threeYearsAgo) + provenanceSearch
@@ -62,12 +65,12 @@ const medicationRequestActivePath = 'MedicationRequest?status=active' + provenan
 const medicationRequestInactivePath = 'MedicationRequest?status=on-hold,cancelled,completed,stopped&_count=10' + provenanceSearch
 const medicationRequesterInclude = '&_include=MedicationRequest:requester'
 
-const serviceRequestPath = 'ServiceRequest?status=active&authored=' + getDateParameter(eighteenMonthsAgo) + provenanceSearch
+const serviceRequestPath = 'ServiceRequest?status=active&authored=' + getGEDateParameter(eighteenMonthsAgo) + provenanceSearch
 const serviceRequesterInclude = '&_include=ServiceRequest:requester'
 
-const proceduresTimePath = 'Procedure?date=' + getDateParameter(threeYearsAgo) + provenanceSearch
+const proceduresTimePath = 'Procedure?date=' + getGEDateParameter(threeYearsAgo) + provenanceSearch
 const proceduresCountPath = 'Procedure?_count=100' + provenanceSearch
-const diagnosticReportPath = 'DiagnosticReport?date=' + getDateParameter(threeYearsAgo) + provenanceSearch
+const diagnosticReportPath = 'DiagnosticReport?date=' + getGEDateParameter(threeYearsAgo) + provenanceSearch
 const socialHistoryPath = 'Observation?category=social-history' + provenanceSearch
 const questionnaireResponsePath = 'QuestionnaireResponse?status=completed' + provenanceSearch
 const surveyObservationsPath = 'Observation?category=survey' + provenanceSearch
@@ -190,7 +193,7 @@ export async function getVitalSigns(client: Client): Promise<Observation[]> {
         // Issue: UCHealth returns 400 error if include both category and code.
         // return 'Observation?category=vital-signs&code=http://loinc.org|' + code + '&_sort:desc=date&_count=1'
         // return 'Observation?code=http://loinc.org|' + code + '&_sort:desc=date&_count=1' + provenanceSearch
-        return 'Observation?code=http://loinc.org|' + code + '&date=' + getDateParameter(eighteenMonthsAgo) + '&_count=10' + provenanceSearch
+        return 'Observation?code=http://loinc.org|' + code + '&date=' + getGEDateParameter(eighteenMonthsAgo) + '&_count=10' + provenanceSearch
     })
 
     // await can be used only at top-level within a function, cannot use queryPaths.forEach()
@@ -200,16 +203,16 @@ export async function getVitalSigns(client: Client): Promise<Observation[]> {
     resources = resources.concat(resourcesFrom(await client.patient.request(queryPaths[3], onePageLimit) as fhirclient.JsonObject[]) as Observation[])
     resources = resources.concat(resourcesFrom(await client.patient.request(queryPaths[4], onePageLimit) as fhirclient.JsonObject[]) as Observation[])
     resources = resources.concat(resourcesFrom(await client.patient.request(queryPaths[5], onePageLimit) as fhirclient.JsonObject[]) as Observation[])
-    // resources = resources.concat( resourcesFrom(await client.patient.request(queryPaths[6], onePageLimit) as fhirclient.JsonObject) as Observation[] )
-    // resources = resources.concat( resourcesFrom(await client.patient.request(queryPaths[7], onePageLimit) as fhirclient.JsonObject) as Observation[] )
+    // resources = resources.concat( resourcesFrom(await client.patient.request(queryPaths[6], onePageLimit) as fhirclient.JsonObject[]) as Observation[] )
+    // resources = resources.concat( resourcesFrom(await client.patient.request(queryPaths[7], onePageLimit) as fhirclient.JsonObject[]) as Observation[] )
 
     // storer: issue1 - pull office BPs from 18 months ago
-    const officeBPPath = 'Observation?code=http://loinc.org|85354-9&date=' + getDateParameter(eighteenMonthsAgo) + provenanceSearch
+    const officeBPPath = 'Observation?code=http://loinc.org|85354-9&date=' + getGEDateParameter(eighteenMonthsAgo) + provenanceSearch
     resources = resources.concat(resourcesFrom(await client.patient.request(officeBPPath, onePageLimit) as fhirclient.JsonObject[]) as Observation[])
 
     // storer: issue2 - pull home BPs from 18 months ago
     // One year of history for Home BP vitals, which are returned as separate systolic and diastolic Observation resources.
-    const homeBPPath = 'Observation?code=http://loinc.org|72076-3&date=' + getDateParameter(eighteenMonthsAgo) + provenanceSearch
+    const homeBPPath = 'Observation?code=http://loinc.org|72076-3&date=' + getGEDateParameter(eighteenMonthsAgo) + provenanceSearch
     resources = resources.concat(resourcesFrom(await client.patient.request(homeBPPath, onePageLimit) as fhirclient.JsonObject[]) as Observation[])
 
     resources = resources.filter(v => v !== undefined)
@@ -721,8 +724,24 @@ const getFHIRQueries = async (client: Client, clientScope: string | undefined,
     immunizations && setResourcesLoadedCountState(++resourcesLoadedCount)
     setAndLogProgressState('Found ' + (immunizations?.length ?? 0) + ' immunization.', 70)
 
-    const labResults: Observation[] | undefined = await loadFHIRQuery<Observation>('Lab Results', 'Observation',
+    const standardLabResults: Observation[] | undefined = await loadFHIRQuery<Observation>('Lab Results', 'Observation',
         labResultsPath, true, client, clientScope, 75, setAndLogProgressState, setAndLogErrorMessageState)
+
+    // issue 61
+    const eGFRExtraLabResults: Observation[] | undefined = await loadFHIRQuery<Observation>('eGFR Extra Lab Results', 'Observation',
+        eGFRExtraResultsPath, true, client, clientScope, 75, setAndLogProgressState, setAndLogErrorMessageState)
+
+    let labResults: Observation[] | undefined;
+    if (standardLabResults !== undefined && eGFRExtraLabResults === undefined) {
+        labResults = standardLabResults;
+    } else if (standardLabResults === undefined && eGFRExtraLabResults !== undefined) {
+        labResults = eGFRExtraLabResults;
+    } else if (standardLabResults !== undefined && eGFRExtraLabResults !== undefined) {
+        labResults = standardLabResults.concat(eGFRExtraLabResults);
+    } else {
+        labResults = undefined;
+    }
+
     labResults && setResourcesLoadedCountState(++resourcesLoadedCount)
     setAndLogProgressState('Found ' + (labResults?.length ?? 0) + ' lab results.', 75)
 
@@ -1022,7 +1041,7 @@ export async function updateSharedDataResource(component:React.Component, client
 //   // console.log("Patient.id = " + client?.patient.id)
 //   await client?.patient.read()
 //   try {
-//     resources = resources.concat(resourcesFrom(await client?.patient.request(goalsPath, fhirOptions) as fhirclient.JsonObject))
+//     resources = resources.concat(resourcesFrom(await client?.patient.request(goalsPath, fhirOptions) as fhirclient.JsonObject[]))
 //   } catch (err) {
 //     console.log("Error reading shared Goals: " + JSON.stringify(err))
 //   }
