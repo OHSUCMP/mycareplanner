@@ -1,15 +1,17 @@
 import Client from 'fhirclient/lib/Client';
-import { Questionnaire, QuestionnaireResponse, QuestionnaireResponseItem, QuestionnaireItem, Coding, Observation } from './fhir-types/fhir-r4';
+import { Questionnaire, QuestionnaireResponse, QuestionnaireResponseItem, QuestionnaireResponseItemAnswer, QuestionnaireItem, Coding, Observation } from './fhir-types/fhir-r4';
 import { getSupplementalDataClient } from '../data-services/fhirService'
+import { QuestionnaireMetadata, QuestionnaireBundle } from './models/fhirResources';
 
 // The list of questionnaires and metadata. Note that resource_id, url, and code will overwrite whatever is in the resource in public/content to be sure they match expectations for scoring.
 // The environment variable REACT_APP_AVAILABLE_QUESTIONNAIRES can be used to filter which questionnaires are available.
-const questionnairesMetadata = [
+const questionnairesMetadata: QuestionnaireMetadata[] = [
     {
         "id": "PHQ-9",
         "label": "Depression Assessment",
         "resource_id": "44249-1",
         "url": "PHQ-9",
+        "isScored": true,
         "code":
         {
             "system": "http://loinc.org",
@@ -21,6 +23,7 @@ const questionnairesMetadata = [
         "label": "General Health Assessment",
         "resource_id": "62337-1",
         "url": "http://loinc.org/q/62337-1",
+        "isScored": false,
         "code":
         {
             "system": "http://loinc.org",
@@ -32,6 +35,7 @@ const questionnairesMetadata = [
         "label": "Health-Related Social Needs",
         "resource_id": "96777-8",
         "url": "http://loinc.org/q/96777-8",
+        "isScored": false,
         "code":
         {
             "system": "http://loinc.org",
@@ -43,6 +47,7 @@ const questionnairesMetadata = [
         "label": "Caregiver Strain Assessment",
         "resource_id": "questionnaire-caregiver-strain-index",
         "url": "http://hl7.org/fhir/us/mcc/Questionnaire/caregiver-strain-index",
+        "isScored": false,
         "code":
         {
             "system": "http://hl7.org",
@@ -51,43 +56,94 @@ const questionnairesMetadata = [
     },
 ];
 
-export function getLocalQuestionnaire(id: String) {
+export function getLocalQuestionnaire(id: String): Promise<Questionnaire> {
     let questionnaireMetadata = findQuestionnaireMetadataById(id);
     let publicPath = `${process.env.PUBLIC_URL}`;
     let resourcePath = publicPath + '/content/' + id + ".json";
     return fetch(resourcePath)
         .then((response) => {
+            if (!response.ok) {
+                throw new Error(`Failed to fetch questionnaire ${id}: ${response.statusText}`);
+            }
             return response.json();
         })
         .then((questionnaireJson) => {
-            let questionnaire = questionnaireJson as Questionnaire
+            if (!questionnaireMetadata) {
+                throw new Error(`Metadata not found for questionnaire id: ${id}`);
+            }
+
+            const questionnaire = questionnaireJson as Questionnaire;
             // Replace the questionnaire definition fields to make sure they match what's expected
-            questionnaire.id = questionnaireMetadata?.resource_id;
-            questionnaire.url = questionnaireMetadata?.url;
-            questionnaire.code = [questionnaireMetadata?.code as Coding]
+            questionnaire.id = questionnaireMetadata.resource_id;
+            questionnaire.url = questionnaireMetadata.url;
+            questionnaire.code = [questionnaireMetadata.code as Coding];
             return questionnaire;
-        }).catch(error => {
-            return error;
         });
 }
 
-export function getAvailableQuestionnaires() {
+export function getAvailableQuestionnaires(): QuestionnaireMetadata[] {
     const availableIds = process.env.REACT_APP_AVAILABLE_QUESTIONNAIRES?.split(',') || [];
     return questionnairesMetadata.filter(q => availableIds.includes(q.id));
 }
 
-function findQuestionnaireMetadataById(id: String) {
+function findQuestionnaireMetadataById(id: String): QuestionnaireMetadata | null {
     const questionnaireMetadata = questionnairesMetadata.find((q) => q.id === id);
     return questionnaireMetadata || null;
 }
 
-function findQuestionnaireMetadataByResourceId(resourceId: String) {
+function findQuestionnaireMetadataByResourceId(resourceId: String): QuestionnaireMetadata | null {
     const questionnaireMetadata = questionnairesMetadata.find((q) => q.resource_id === resourceId);
     return questionnaireMetadata || null;
 }
 
 export function isScoreQuestion(item: QuestionnaireItem) {
-    return !item.extension?.filter((ext: any) => ext.url === "http://hl7.org/fhir/StructureDefinition/questionnaire-unit").map((ext: any) => { return ext.valueCoding?.code}).includes('care-plan-score');
+    return item.extension?.some(
+    (ext) =>
+      ext.url === "http://hl7.org/fhir/StructureDefinition/questionnaire-unit" &&
+      ext.valueCoding?.code === "care-plan-score"
+  ) ?? false;
+}
+
+function findFirstScoreLinkId(items: QuestionnaireItem[]): string | undefined {
+  for (const item of items) {
+    if (isScoreQuestion(item)) {
+      return item.linkId;
+    }
+
+    // Recurse into nested items
+    if (item.item && item.item.length > 0) {
+      const found = findFirstScoreLinkId(item.item);
+      if (found) return found;
+    }
+  }
+
+  return undefined;
+}
+
+function findScoreValueByLinkId(items: QuestionnaireResponseItem[], targetLinkId: string): number | undefined {
+  for (const item of items) {
+    if (item.linkId === targetLinkId && item.answer && item.answer.length > 0) {
+      // Return the actual value (valueInteger, valueDecimal, etc.)
+      const answer = item.answer[0];
+      return extractAnswerValue(answer);
+    }
+
+    // Recurse into nested items
+    if (item.item && item.item.length > 0) {
+      const result = findScoreValueByLinkId(item.item, targetLinkId);
+      if (result !== undefined) {
+        return result;
+      }
+    }
+  }
+
+  return undefined;
+}
+
+function extractAnswerValue(answer: QuestionnaireResponseItemAnswer): number | undefined {
+  if ('valueInteger' in answer) return answer.valueInteger;
+  if ('valueDecimal' in answer) return answer.valueDecimal;
+  return undefined;
 }
 
 // This function assumes all questions are grouped under a single item (page)
@@ -213,50 +269,90 @@ function collectMatchingItems(questionnaireItems: QuestionnaireItem[], members: 
 }
 
 /**
- * Take survey observations corresponding to available questionnaires and convert them to compatible QuestionnaireResponses.
+ * Build bundles representing the available questionnaires and their responses if any. Questionnaire responses may be
+ * represented as a QuestionnaireResponse resource or a series of Observations with the category=survey in the
+ * originating FHIR server. Both will be converted to a QuestionnaiteResponse resource for use by the application.
+ * 
+ * All available questionnaires are returned, even if there are no responses for them.
+ * @param responses 
  * @param surveyObservations 
  * @returns 
  */
-export async function convertSurveyObservations(surveyObservations: Observation[]): Promise<QuestionnaireResponse[]> {
+export async function buildQuestionnaireBundles(responses: QuestionnaireResponse[], surveyObservations: Observation[]): Promise<QuestionnaireBundle[]> {
+    let bundles: QuestionnaireBundle[] = [];
+    const availableQuestionnaires: QuestionnaireMetadata[] = getAvailableQuestionnaires();
+    availableQuestionnaires.forEach(async (metadata: QuestionnaireMetadata) => {
+        const questionnaire = await getLocalQuestionnaire(metadata.id);
+        let allResponses: QuestionnaireResponse[] = [];
+        allResponses = allResponses.concat(responses.filter((response) => response.questionnaire === metadata.url));
+        allResponses = allResponses.concat(convertObservations(metadata.code, questionnaire, surveyObservations));
+        bundles.push({
+            questionnaireMetadata: metadata,
+            questionnaireDefinition: questionnaire,
+            questionnaireResponseBundles: allResponses
+        });
+    });
+    return bundles;
+}
+
+/**
+ * Given a top-level coding, a questionnaire definition, and a list of observations, find all the top-level observations
+ * relevant to the questionnaire and construct a QuestionnaireResponse for each top-level observation and its members. 
+ * @param topLevelCoding 
+ * @param questionnaireDef 
+ * @param surveyObservations 
+ * @returns An array of QuestionnaireResponse resources constructed from observations related to the questionnaire.
+ */
+function convertObservations(topLevelCoding: Coding, questionnaireDef: Questionnaire, surveyObservations: Observation[]): QuestionnaireResponse[] {
     const questionnaireResponses: QuestionnaireResponse[] = [];
-    const availableQuestionnaires = getAvailableQuestionnaires();
-
-    for (const q of availableQuestionnaires) {
-        const topLevelCode = q.code.code;
-        const topLevelObservations = surveyObservations.filter(o =>
+    const topLevelCode = topLevelCoding.code;    
+    const topLevelObservations = surveyObservations.filter(o =>
             o.code.coding?.some(e => e.code === topLevelCode)
-        );
+    );
 
-        if (topLevelObservations.length > 0) {
-            const questionnaireDef = await getLocalQuestionnaire(q.id);
+    if (topLevelObservations.length > 0) {
+        for (const obs of topLevelObservations) {
+            const members = (obs.hasMember ?? []).map((member) => {
+                const referenceId = member.reference?.split('/')[1];
+                return surveyObservations.find((o) => o.id === referenceId);
+            }).filter((o): o is Observation => o !== undefined); // remove undefineds
 
-            for (const obs of topLevelObservations) {
-                const members = (obs.hasMember ?? []).map((member) => {
-                    const referenceId = member.reference?.split('/')[1];
-                    return surveyObservations.find((o) => o.id === referenceId);
-                }).filter((o): o is Observation => o !== undefined); // remove undefineds
+            const questionnaireResponse: QuestionnaireResponse = {
+                resourceType: 'QuestionnaireResponse',
+                status: 'completed',
+                questionnaire: questionnaireDef.url,
+                authored: obs.effectiveDateTime,
+                item: []
+            };
 
-                const questionnaireResponse: QuestionnaireResponse = {
-                    resourceType: 'QuestionnaireResponse',
-                    status: 'completed',
-                    questionnaire: questionnaireDef.url,
-                    authored: obs.effectiveDateTime,
-                    item: []
-                };
+            const responseItems: QuestionnaireResponseItem[] = [];
 
-                const responseItems: QuestionnaireResponseItem[] = [];
+            // Recursively search questionnaire items
+            collectMatchingItems(questionnaireDef.item ?? [], members, responseItems);
 
-                // Recursively search questionnaire items
-                collectMatchingItems(questionnaireDef.item ?? [], members, responseItems);
+            questionnaireResponse.item = responseItems;
 
-                questionnaireResponse.item = responseItems;
-
-                questionnaireResponses.push(questionnaireResponse);    
-            }
+            questionnaireResponses.push(questionnaireResponse);    
         }
     }
 
     return questionnaireResponses;
+
+}
+
+export function extractResponseScore(
+    questionnaireMetadata: QuestionnaireMetadata,
+    questionnaireDefinition: Questionnaire,
+    questionnaireResponse: QuestionnaireResponse
+): number | undefined {
+    if (questionnaireMetadata.isScored) {
+        const definedScoreLinkId = findFirstScoreLinkId(questionnaireDefinition.item || []);
+        if (definedScoreLinkId) {
+            const scoreValue = findScoreValueByLinkId(questionnaireResponse.item || [], definedScoreLinkId);
+            return scoreValue;
+        }
+    }
+    return undefined;
 }
 
 export function submitQuestionnaireResponse(questionnaireId: String, questionnaireResponse: QuestionnaireResponse) {

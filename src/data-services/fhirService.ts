@@ -2,17 +2,17 @@ import FHIR from 'fhirclient'
 import {fhirclient} from 'fhirclient/lib/types'
 import {
     Resource, Patient, Practitioner, RelatedPerson, CarePlan, CareTeam, Encounter, Condition, DiagnosticReport, Goal,
-    Observation, Procedure, Immunization, MedicationRequest, ServiceRequest, Provenance, Reference,
+    Observation, Procedure, Immunization, MedicationRequest, ServiceRequest, Provenance, Reference, Questionnaire,
     QuestionnaireResponse
 } from './fhir-types/fhir-r4'
-import {FHIRData, hasScope} from './models/fhirResources'
+import {QuestionnaireBundle, FHIRData, hasScope} from './models/fhirResources'
 import {format} from 'date-fns'
 import Client from 'fhirclient/lib/Client'
 import {
     persistStateAsCurrent, getStateForEndpoint,
     persistStateAsLauncherData
 } from './persistenceService'
-import {convertSurveyObservations} from './questionnaireService'
+import {buildQuestionnaireBundles} from './questionnaireService'
 import {doLog} from '../log';
 
 const resourcesFrom = (response: fhirclient.JsonObject[]): Resource[] => {
@@ -855,13 +855,10 @@ const getFHIRQueries = async (client: Client, clientScope: string | undefined,
 
     const surveyObservations: Observation[] | undefined = await loadFHIRQuery<Observation>('Observation', 'Observation',
         surveyObservationsPath, true, client, clientScope, 99, setAndLogProgressState, setAndLogErrorMessageState)
-
     surveyObservations && setResourcesLoadedCountState(++resourcesLoadedCount)
     setAndLogProgressState('Found ' + (surveyObservations?.length ?? 0) + ' Survey Observations.', 99)
     console.log('getFHIRQueries: Found ' + (surveyObservations?.length ?? 0) + ' Survey Observations.')
-    const observationBasedQuestionnaireResponses: QuestionnaireResponse[] | undefined = await convertSurveyObservations(surveyObservations || []);
-    console.log((observationBasedQuestionnaireResponses?.length ?? 0) + ' Observation Based Questionnaire Responses.')
-    questionnaireResponses = questionnaireResponses ? questionnaireResponses.concat(observationBasedQuestionnaireResponses || []) : observationBasedQuestionnaireResponses || [];
+    const questionnaireBundles: QuestionnaireBundle[] = await buildQuestionnaireBundles(questionnaireResponses || [], surveyObservations || []);
 
     setAndLogProgressState('All FHIR requests finished: ' + new Date().toLocaleTimeString(), 100)
     console.timeEnd('FHIR queries')
@@ -954,7 +951,7 @@ const getFHIRQueries = async (client: Client, clientScope: string | undefined,
         surveyResults,
         provenanceMap,
         provenance,
-        questionnaireResponses,
+        questionnaireBundles,
     }
 }
 

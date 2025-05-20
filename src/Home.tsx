@@ -6,7 +6,7 @@ import {PatientSummary, ScreeningSummary} from './data-services/models/cqlSummar
 // import { Task } from './data-services/fhir-types/fhir-r4';
 // import { BusySpinner } from './components/busy-spinner/BusySpinner';
 //import { styled } from '@mui/material';
-import {Button, CircularProgress} from '@mui/material';
+import {CircularProgress} from '@mui/material';
 import {DeterminateProgress} from './components/determinate-progress/DeterminateProgress';
 import {ErrorMessage} from './components/error-message/ErrorMessage';
 import Modal from './components/modal/modal';
@@ -85,18 +85,20 @@ export default class Home extends React.Component<HomeProps, HomeState> {
         const availableQuestionnaires = getAvailableQuestionnaires();
         // Combine all data sources, keeping the latest response for each assessment
         const latestResponses = fhirDataCollection?.reduce<Record<string, QuestionnaireResponse>>((acc, item) => {
-            if (!item.questionnaireResponses) return acc;
+            if (!item.questionnaireBundles) return acc;
           
-            item.questionnaireResponses.forEach(response => {
-              if (!response.questionnaire || !response.authored) return;          
-              const existing = acc[response.questionnaire];          
-              if (!existing || (existing.authored && new Date(response.authored) > new Date(existing.authored))) {
-                acc[response.questionnaire] = response;
-              }
+            item.questionnaireBundles.forEach(bundle => {
+              bundle.questionnaireResponseBundles?.forEach(response => {
+                if (!response.questionnaire || !response.authored) return;          
+                const existing = acc[response.questionnaire];          
+                if (!existing || (existing.authored && new Date(response.authored) > new Date(existing.authored))) {
+                    acc[response.questionnaire] = response;
+                }
+                });
             });
           
             return acc;
-          }, {});
+        }, {});
 
         const hhsBanner = process.env.REACT_APP_HHS_BANNER === 'true';
 
@@ -145,7 +147,8 @@ export default class Home extends React.Component<HomeProps, HomeState> {
 
                                             if (!IS_DISPLAY_SDS_IN_ENDPOINT_CONNECTION_LIST && fhirDataAtIndex && isSDS) {
                                                 // Log SDS info with index for debugging
-                                                console.log(`SDS for ${curPatient?.fullName} ${fhirDataAtIndex.serverName} at index ${index}`)
+                                                // AEY
+                                                // console.log(`SDS for ${curPatient?.fullName} ${fhirDataAtIndex.serverName} at index ${index}`)
                                                 // Ensures no <li> is rendered for SDS when the flag is false
                                                 return null
                                             }
