@@ -25,11 +25,6 @@ import {
     TimingRepeat
 } from '../fhir-types/fhir-r4';
 
-export interface BundledQuestionnaireResponse {
-    questionnaireResponse: QuestionnaireResponse;
-    questionnaire: Questionnaire;
-}
-
 export interface QuestionnaireMetadata {
     id: string, // The id of the questionnaire which must match the filename in public/content to load the definition.
     label: string, // The label of the questionnaire to display to users.
@@ -39,15 +34,10 @@ export interface QuestionnaireMetadata {
     code: Coding // The code associated with the questionnaire. This will be the top-level code for questionnaire responses represented as observations.
 }
 
-export interface QuestionnaireResponseBundle {
-    questionnaireResponse: QuestionnaireResponse;
-    score?: number;
-}
-
 export interface QuestionnaireBundle {
     questionnaireMetadata: QuestionnaireMetadata;
     questionnaireDefinition: Questionnaire;
-    questionnaireResponseBundles?: QuestionnaireResponse[];
+    questionnaireResponses?: QuestionnaireResponse[];
 }
 
 export interface FHIRData {

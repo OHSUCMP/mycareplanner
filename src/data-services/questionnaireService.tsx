@@ -56,10 +56,12 @@ const questionnairesMetadata: QuestionnaireMetadata[] = [
     },
 ];
 
-export function getLocalQuestionnaire(id: String): Promise<Questionnaire> {
+export function getLocalQuestionnaire(id: string): Promise<Questionnaire> {
     let questionnaireMetadata = findQuestionnaireMetadataById(id);
-    let publicPath = `${process.env.PUBLIC_URL}`;
-    let resourcePath = publicPath + '/content/' + id + ".json";
+    if (!questionnaireMetadata) {
+        return Promise.reject(new Error(`Metadata not found for questionnaire id: ${id}`));
+    }
+    const resourcePath = `${process.env.PUBLIC_URL}/content/${id}.json`;
     return fetch(resourcePath)
         .then((response) => {
             if (!response.ok) {
@@ -78,6 +80,9 @@ export function getLocalQuestionnaire(id: String): Promise<Questionnaire> {
             questionnaire.url = questionnaireMetadata.url;
             questionnaire.code = [questionnaireMetadata.code as Coding];
             return questionnaire;
+        }).catch((error) => {
+            console.error("Error loading questionnaire:", error);
+            throw error;
         });
 }
 
@@ -308,7 +313,7 @@ export async function buildQuestionnaireBundles(responses: QuestionnaireResponse
         bundles.push({
             questionnaireMetadata: metadata,
             questionnaireDefinition: questionnaire,
-            questionnaireResponseBundles: allResponses
+            questionnaireResponses: allResponses
         });
     });
     return bundles;

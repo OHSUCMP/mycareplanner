@@ -35,8 +35,8 @@ function mergeQuestionnaireBundles(fhirDataCollection: FHIRData[]): Map<string, 
   fhirDataCollection.forEach((data) => {
     if (data.questionnaireBundles) {
         data.questionnaireBundles.forEach((bundle) => {
-            if (bundle.questionnaireResponseBundles && bundle.questionnaireResponseBundles.length > 0) {
-                const responsesWithSource = bundle.questionnaireResponseBundles
+            if (bundle.questionnaireResponses && bundle.questionnaireResponses.length > 0) {
+                const responsesWithSource = bundle.questionnaireResponses
                     .filter((resp) => !!resp.authored) // Filter out undefined/null authored dates
                     .map((resp) => { 
                         const score = extractResponseScore(bundle.questionnaireMetadata, bundle.questionnaireDefinition, resp);

@@ -68,7 +68,6 @@ export class QuestionnaireHandler extends React.Component<QuestionnaireHandlerPr
           return (p as Questionnaire)
         }
         let updatedQuestionnaire = processQuestionnaire(questionnaire);
-
         const patientID = this.props.supplementalDataClient?.getPatientId()
         let ptRef = patientID != null ? "Patient/" + patientID : undefined
         const ptDisplay: string | undefined = undefined   // TODO: find patient with matching ID from patientSummaries

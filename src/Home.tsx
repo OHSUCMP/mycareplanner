@@ -88,7 +88,7 @@ export default class Home extends React.Component<HomeProps, HomeState> {
             if (!item.questionnaireBundles) return acc;
           
             item.questionnaireBundles.forEach(bundle => {
-              bundle.questionnaireResponseBundles?.forEach(response => {
+              bundle.questionnaireResponses?.forEach(response => {
                 if (!response.questionnaire || !response.authored) return;          
                 const existing = acc[response.questionnaire];          
                 if (!existing || (existing.authored && new Date(response.authored) > new Date(existing.authored))) {
