@@ -6,7 +6,7 @@ import {CircularProgress} from "@mui/material";
 import { Summary } from './Summary';
 import { Line } from 'react-chartjs-2';
 import 'chart.js';
-import { extractResponseScore } from '../../data-services/questionnaireService';
+import { extractResponseScore, interpretScore } from '../../data-services/questionnaireService';
 
 interface AssessmentListProps {
     sharingData: boolean;
@@ -16,27 +16,11 @@ interface AssessmentListProps {
     progressMessage: string;
 }
 
-const data = {
-  labels: ['January', 'February', 'March', 'April', 'May'],
-  datasets: [
-    {
-      label: 'My Dataset',
-      data: [65, 59, 80, 81, 56],
-      borderColor: 'rgba(75,192,192,1)',
-      fill: false,
-    }
-  ]
-};
-
-const options = {
-  responsive: true,
-  maintainAspectRatio: false
-};
-
 interface ResponseBundle {
     qr: QuestionnaireResponse,
     authored: Date,
     score: number | undefined,
+    interpretation?: string,
     source: string
 }
 
@@ -54,12 +38,16 @@ function mergeQuestionnaireBundles(fhirDataCollection: FHIRData[]): Map<string, 
             if (bundle.questionnaireResponseBundles && bundle.questionnaireResponseBundles.length > 0) {
                 const responsesWithSource = bundle.questionnaireResponseBundles
                     .filter((resp) => !!resp.authored) // Filter out undefined/null authored dates
-                    .map((resp) => ({
-                        qr: resp,
-                        authored: new Date(resp.authored!),
-                        score: extractResponseScore(bundle.questionnaireMetadata, bundle.questionnaireDefinition, resp),
-                        source: data.serverName || "Unknown"
-                    }));
+                    .map((resp) => { 
+                        const score = extractResponseScore(bundle.questionnaireMetadata, bundle.questionnaireDefinition, resp);
+                        return {
+                            qr: resp,
+                            authored: new Date(resp.authored!),
+                            score: score,
+                            interpretation: score !== undefined ? interpretScore(bundle.questionnaireDefinition, score) : undefined,
+                            source: data.serverName || "Unknown"
+                        }
+                    });
 
                 if (bundleMap.has(bundle.questionnaireMetadata.label)) {                
                     const existing = bundleMap.get(bundle.questionnaireMetadata.label)!;
@@ -84,13 +72,47 @@ function mergeQuestionnaireBundles(fhirDataCollection: FHIRData[]): Map<string, 
   })
   return bundleMap;
 }
-  
+
+function getOptions(measure: string) {
+    return {
+        elements: {
+            line: {
+                tension: 0
+            }
+        },
+        title: {
+            display: true,
+            text: 'Total ' + measure + ' Scores'
+        },
+        legend: {
+            display: false
+        }
+    };
+
+}
+
+function getData(responses: ResponseBundle[]) {
+    return {
+        labels: responses.map((response) => response.authored.toLocaleDateString()),
+        datasets: [
+            {
+                data: responses.map((response) => response.score),
+                borderColor: 'rgb(48, 96, 128)',
+                fill: false
+            }
+        ]
+    };
+}  
 
 export const AssessmentList: FC<AssessmentListProps> = ({sharingData, fhirDataCollection,
                                                                 progressTitle, progressValue, progressMessage}) => {
     process.env.REACT_APP_DEBUG_LOG === "true" && console.log("AssessmentList component RENDERED!");
 
     const responses: Map<string, MergedBundle> = mergeQuestionnaireBundles(fhirDataCollection || []);
+
+    function displayGraph(isScored: boolean, length: number) {
+        return isScored && length > 2;
+    }
 
     return (
         <div className="home-view">
@@ -107,33 +129,36 @@ export const AssessmentList: FC<AssessmentListProps> = ({sharingData, fhirDataCo
 
                 <h4 className="title">Assessments</h4>
 
-                <Line options={options} data={data} />
-
                 {responses && responses.size < 1 ? (
                     <p>No records found.</p>
                 ) : (
                     Array.from(responses.entries()).map(([key, bundle], idx) => (
                         <div key={idx}>
                             <h6>{key}</h6>
+                            {displayGraph(bundle.qm.isScored, bundle.responses.length) && (
+                                <div className="pb-4">
+                                    <Line options={getOptions(bundle.qm.id)} data={getData(bundle.responses)} />
+                                </div>
+                            )}
                             {bundle.responses.map((response, rIdx) => (
-                                <Summary
-                                    key={rIdx}
-                                    id={rIdx}
-                                    rows={[
-                                        {
-                                            isHeader: true,
-                                            twoColumns: bundle.qm.isScored ? true : false,
-                                            data1: "Date: " + response.authored.toLocaleDateString(),
-                                            data2: "Score: " + response.score,
-                                        },
-                                        {
-                                            isHeader: false,
-                                            twoColumns: false,
-                                            data1: "Source: " + response.source,
-                                            data2: '',
-                                        },
-                                    ]}
-                                />
+                                    <Summary
+                                        key={rIdx}
+                                        id={rIdx}
+                                        rows={[
+                                            {
+                                                isHeader: true,
+                                                twoColumns: bundle.qm.isScored ? true : false,
+                                                data1: "Date: " + response.authored.toLocaleDateString(),
+                                                data2: "Score: " + response.score,
+                                            },
+                                            {
+                                                isHeader: false,
+                                                twoColumns: bundle.qm.isScored ? true : false,
+                                                data1: "Source: " + response.source,
+                                                data2: response.interpretation ? response.interpretation : "",
+                                            },
+                                        ]}
+                                    />
                             ))}
                         </div>
                     ))

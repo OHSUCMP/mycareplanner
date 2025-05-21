@@ -104,15 +104,20 @@ export function isScoreQuestion(item: QuestionnaireItem) {
   ) ?? false;
 }
 
-function findFirstScoreLinkId(items: QuestionnaireItem[]): string | undefined {
+/**
+ * 
+ * @param items Return the score question in the questionnaire definition
+ * @returns 
+ */
+function findScoreItem(items: QuestionnaireItem[]): QuestionnaireItem | undefined {
   for (const item of items) {
     if (isScoreQuestion(item)) {
-      return item.linkId;
+      return item;
     }
 
     // Recurse into nested items
     if (item.item && item.item.length > 0) {
-      const found = findFirstScoreLinkId(item.item);
+      const found = findScoreItem(item.item);
       if (found) return found;
     }
   }
@@ -120,6 +125,12 @@ function findFirstScoreLinkId(items: QuestionnaireItem[]): string | undefined {
   return undefined;
 }
 
+/**
+ * Return the value of the score question in the questionnaire response
+ * @param items 
+ * @param targetLinkId 
+ * @returns 
+ */
 function findScoreValueByLinkId(items: QuestionnaireResponseItem[], targetLinkId: string): number | undefined {
   for (const item of items) {
     if (item.linkId === targetLinkId && item.answer && item.answer.length > 0) {
@@ -143,6 +154,7 @@ function findScoreValueByLinkId(items: QuestionnaireResponseItem[], targetLinkId
 function extractAnswerValue(answer: QuestionnaireResponseItemAnswer): number | undefined {
   if ('valueInteger' in answer) return answer.valueInteger;
   if ('valueDecimal' in answer) return answer.valueDecimal;
+  if ('valueQuantity' in answer) return answer.valueQuantity?.value;
   return undefined;
 }
 
@@ -223,7 +235,12 @@ function requiredQuestionsComplete(
     return true;
   }
 
-// Flatten matching items into responseItems array
+/**
+ *  Flatten matching items into responseItems array. Only certain answer types are supported.
+ * @param questionnaireItems
+ * @param members 
+ * @param responseItems 
+ */
 function collectMatchingItems(questionnaireItems: QuestionnaireItem[], members: (Observation | undefined)[], responseItems: QuestionnaireResponseItem[]) {
     for (const item of questionnaireItems) {
         // Assuming the first code in the array is the one we want to match
@@ -256,6 +273,8 @@ function collectMatchingItems(questionnaireItems: QuestionnaireItem[], members: 
                         value: observation.valueQuantity.value
                     }
                 });
+            } else if (observation.valueInteger) {
+                responseItem.answer?.push({valueInteger: observation.valueInteger})
             }
 
             responseItems.push(responseItem); // ** push flat into the top-level array **
@@ -346,12 +365,29 @@ export function extractResponseScore(
     questionnaireResponse: QuestionnaireResponse
 ): number | undefined {
     if (questionnaireMetadata.isScored) {
-        const definedScoreLinkId = findFirstScoreLinkId(questionnaireDefinition.item || []);
-        if (definedScoreLinkId) {
-            const scoreValue = findScoreValueByLinkId(questionnaireResponse.item || [], definedScoreLinkId);
+        const scoreItem = findScoreItem(questionnaireDefinition.item || []);
+        if (scoreItem) {
+            const scoreValue = findScoreValueByLinkId(questionnaireResponse.item || [], scoreItem.linkId);
             return scoreValue;
         }
     }
+    return undefined;
+}
+
+export function interpretScore(questionnaireDefinition: Questionnaire, score: number): string | undefined {
+    const scoreItem = findScoreItem(questionnaireDefinition.item || []);
+    if (scoreItem) {
+        const rangeInterpretations = scoreItem.extension?.filter(ext => ext.url === 'range-score-interpretation');
+        if (rangeInterpretations) {
+            for (const rangeInterpretation of rangeInterpretations) {
+                const range = rangeInterpretation.extension?.find(e => e.url === 'range' && e.valueRange && e.valueRange.low && e.valueRange.high);
+                if (range && range?.valueRange?.low?.value != null && range.valueRange.low.value <= score && range?.valueRange?.high?.value != null && range.valueRange.high.value >= score) {
+                    return rangeInterpretation.extension?.find(e => e.url === 'interpretation')?.valueString;
+                }
+            }
+        }
+    }
+
     return undefined;
 }
 

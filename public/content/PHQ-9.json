@@ -938,6 +938,106 @@
                                 "code": "care-plan-score",
                                 "display": "{score}"
                             }
+                        },
+                        {
+                            "url": "range-score-interpretation",
+                            "extension": [
+                                {
+                                    "url": "range",
+                                    "valueRange": {
+                                        "low": {
+                                            "value": 0
+                                        },
+                                        "high": {
+                                            "value": 4
+                                        }
+                                    }
+                                },
+                                {
+                                    "url": "interpretation",
+                                    "valueString": "Minimal"
+                                }
+                            ]
+                        },
+                        {
+                            "url": "range-score-interpretation",
+                            "extension": [
+                                {
+                                    "url": "range",
+                                    "valueRange": {
+                                        "low": {
+                                            "value": 5
+                                        },
+                                        "high": {
+                                            "value": 9
+                                        }
+                                    }
+                                },
+                                {
+                                    "url": "interpretation",
+                                    "valueString": "Mild"
+                                }
+                            ]
+                        },
+                        {
+                            "url": "range-score-interpretation",
+                            "extension": [
+                                {
+                                    "url": "range",
+                                    "valueRange": {
+                                        "low": {
+                                            "value": 10
+                                        },
+                                        "high": {
+                                            "value": 14
+                                        }
+                                    }
+                                },
+                                {
+                                    "url": "interpretation",
+                                    "valueString": "Moderate"
+                                }
+                            ]
+                        },
+                        {
+                            "url": "range-score-interpretation",
+                            "extension": [
+                                {
+                                    "url": "range",
+                                    "valueRange": {
+                                        "low": {
+                                            "value": 15
+                                        },
+                                        "high": {
+                                            "value": 19
+                                        }
+                                    }
+                                },
+                                {
+                                    "url": "interpretation",
+                                    "valueString": "Moderately Severe"
+                                }
+                            ]
+                        },
+                        {
+                            "url": "range-score-interpretation",
+                            "extension": [
+                                {
+                                    "url": "range",
+                                    "valueRange": {
+                                        "low": {
+                                            "value": 20
+                                        },
+                                        "high": {
+                                            "value": 27
+                                        }
+                                    }
+                                },
+                                {
+                                    "url": "interpretation",
+                                    "valueString": "Severe"
+                                }
+                            ]
                         }
                     ],
                     "linkId": "/44261-6",
