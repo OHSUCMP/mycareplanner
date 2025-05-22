@@ -57,7 +57,7 @@ export default class QuestionnaireComponent extends React.Component<any, Questio
             {/* <div>{this.props.questionnaire.title}</div> */}
             {this.props.questionnaire.item.filter((item: QuestionnaireItem, key: any) => {
                 // Remove score questions from the display
-                return isScoreQuestion(item);
+                return !isScoreQuestion(item);
             }).map((item: QuestionnaireItem, key: any) => {
                 return <QuestionnaireItemComponent receivingCallback={this.receiveData} length={this.props.questionnaire.item?.length} QuestionnaireItem={item} key={key} onChange={this.props.onChange} />
             })}

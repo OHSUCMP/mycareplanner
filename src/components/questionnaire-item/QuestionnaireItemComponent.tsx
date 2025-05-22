@@ -278,7 +278,7 @@ export default class QuestionnaireItemComponent extends React.Component<any, Que
         {
           groupItem.item?.filter((item: QuestionnaireItem, key: any) => {
             // Remove score questions from the display
-            return isScoreQuestion(item)
+            return !isScoreQuestion(item)
           }).map((nestedItem: QuestionnaireItem) => {
             return (
               <div key={JSON.stringify(nestedItem)}>
