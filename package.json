@@ -23,7 +23,7 @@
         "@types/react-dom": "^16.9.6",
         "@types/react-youtube": "^7.6.2",
         "array.prototype.fill": "^1.0.2",
-        "axios": "^0.27.2",
+        "axios": "^0.30.0",
         "bootstrap": "^4.5.0",
         "chart.js": "2.9.4",
         "cql-exec-fhir": "^2.0.0",
