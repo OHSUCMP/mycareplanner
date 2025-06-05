@@ -147,7 +147,6 @@ export default class Home extends React.Component<HomeProps, HomeState> {
 
                                             if (!IS_DISPLAY_SDS_IN_ENDPOINT_CONNECTION_LIST && fhirDataAtIndex && isSDS) {
                                                 // Log SDS info with index for debugging
-                                                // AEY
                                                 // console.log(`SDS for ${curPatient?.fullName} ${fhirDataAtIndex.serverName} at index ${index}`)
                                                 // Ensures no <li> is rendered for SDS when the flag is false
                                                 return null

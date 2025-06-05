@@ -87,7 +87,7 @@ export function allShareableResources(fhirData: FHIRData|undefined): Resource[] 
         if (fhirData.labResults)        arr.push(...fhirData.labResults);
         if (fhirData.vitalSigns)        arr.push(...fhirData.vitalSigns);
         if (fhirData.socialHistory)     arr.push(...fhirData.socialHistory);
-        //TODO: Do I need to share these?
+        //TODO: AEY Do I need to share these?
         //if (fhirData.questionnaireResponses)     arr.push(...fhirData.questionnaireResponses);
     }
     return arr;
