@@ -125,6 +125,8 @@ interface AppState {
 type SummaryFunctionType = (fhirData?: FHIRData[]) =>
     GoalSummary[][] | ConditionSummary[][] | ObservationSummary[][] | MedicationSummary[][] | undefined
 
+const isAssessmentsTabEnabled = process.env.REACT_APP_ASSESSMENTS_TAB_ENABLED === 'true';
+
 const tabList = {
     1: "Home",
     2: "Care Plan",
@@ -137,6 +139,7 @@ const tabList = {
     9: "Tests",
     10: "Vitals",
     11: "Immunization",
+    12: "Assessments",
 }
 
 // TODO: Convert this to a hook based function component so it easier to profile for performance, analyze, and integrate
@@ -1277,7 +1280,7 @@ class App extends React.Component<AppProps, AppState> {
                                                      variant="fullWidth" centered>
                                                 <Tab label="Tests" value="9" wrapped/>
                                                 <Tab label="Vitals" value="10" wrapped/>
-                                                <Tab label="Assessments" value="12" wrapped/>
+                                                {isAssessmentsTabEnabled && <Tab label="Assessments" value="12" wrapped/>}
                                                 <Tab label="Immunization" value="11" wrapped/>
                                             </TabList>
                                             <TabPanel value="9" sx={{padding: '0px 15px'}}>
