@@ -2,15 +2,17 @@ import FHIR from 'fhirclient'
 import {fhirclient} from 'fhirclient/lib/types'
 import {
     Resource, Patient, Practitioner, RelatedPerson, CarePlan, CareTeam, Encounter, Condition, DiagnosticReport, Goal,
-    Observation, Procedure, Immunization, MedicationRequest, ServiceRequest, Provenance, Reference
+    Observation, Procedure, Immunization, MedicationRequest, ServiceRequest, Provenance, Reference, Questionnaire,
+    QuestionnaireResponse
 } from './fhir-types/fhir-r4'
-import {FHIRData, hasScope} from './models/fhirResources'
+import {QuestionnaireBundle, FHIRData, hasScope} from './models/fhirResources'
 import {format} from 'date-fns'
 import Client from 'fhirclient/lib/Client'
 import {
     persistStateAsCurrent, getStateForEndpoint,
     persistStateAsLauncherData
 } from './persistenceService'
+import {buildQuestionnaireBundles} from './questionnaireService'
 import {doLog} from '../log';
 
 const resourcesFrom = (response: fhirclient.JsonObject[]): Resource[] => {
@@ -70,6 +72,8 @@ const proceduresTimePath = 'Procedure?date=' + getGEDateParameter(threeYearsAgo)
 const proceduresCountPath = 'Procedure?_count=100' + provenanceSearch
 const diagnosticReportPath = 'DiagnosticReport?date=' + getGEDateParameter(threeYearsAgo) + provenanceSearch
 const socialHistoryPath = 'Observation?category=social-history' + provenanceSearch
+const questionnaireResponsePath = 'QuestionnaireResponse?status=completed' + provenanceSearch
+const surveyObservationsPath = 'Observation?category=survey' + provenanceSearch
 
 /// category=survey returns 400 error from Epic, so include another category recognized by Epic
 // const surveyResultsPath = 'Observation?category=survey,functional-mental-status' + provenanceSearch
@@ -237,7 +241,7 @@ export const getSupplementalDataClient = async (): Promise<Client | undefined> =
     let sdsClient: Client | undefined
     const authURL = process.env.REACT_APP_SHARED_DATA_AUTH_ENDPOINT
     const sdsURL = process.env.REACT_APP_SHARED_DATA_ENDPOINT
-    const sdsScope = 'patient/*.cruds patient/* user/*.cruds user/* goal/*.read '
+    const sdsScope = 'patient/*.cruds patient/* user/*.cruds user/* goal/*.read questionnaireresponse/*.read '
     const sdsClientId = process.env.REACT_APP_SHARED_DATA_CLIENT_ID
 
     console.log('getSupplementalDataClient: authURL: ', authURL)
@@ -589,6 +593,7 @@ const getFHIRResources = async (client: Client, clientScope: string | undefined,
         setAndLogProgressState("Retrieving FHIR queries", 35)
         fhirQueries = await getFHIRQueries(client, clientScope, supportsInclude, patientPCP,
             setAndLogProgressState, setResourcesLoadedCountState, setAndLogErrorMessageState)
+        console.log(fhirQueries);
     }
 
     return {
@@ -842,6 +847,19 @@ const getFHIRQueries = async (client: Client, clientScope: string | undefined,
         vitalSigns && setResourcesLoadedCountState(++resourcesLoadedCount)
     }
 
+    let questionnaireResponses: QuestionnaireResponse[] | undefined = await loadFHIRQuery<QuestionnaireResponse>('QuestionnaireResponse', 'QuestionnaireResponse',
+        questionnaireResponsePath, true, client, clientScope, 98, setAndLogProgressState, setAndLogErrorMessageState)
+    questionnaireResponses && setResourcesLoadedCountState(++resourcesLoadedCount)
+    setAndLogProgressState('Found ' + (questionnaireResponses?.length ?? 0) + ' Questionnaire Responses.', 98)
+    console.log('getFHIRQueries: Found ' + (questionnaireResponses?.length ?? 0) + ' Questionnaire Responses.')
+
+    const surveyObservations: Observation[] | undefined = await loadFHIRQuery<Observation>('Observation', 'Observation',
+        surveyObservationsPath, true, client, clientScope, 99, setAndLogProgressState, setAndLogErrorMessageState)
+    surveyObservations && setResourcesLoadedCountState(++resourcesLoadedCount)
+    setAndLogProgressState('Found ' + (surveyObservations?.length ?? 0) + ' Survey Observations.', 99)
+    console.log('getFHIRQueries: Found ' + (surveyObservations?.length ?? 0) + ' Survey Observations.')
+    const questionnaireBundles: QuestionnaireBundle[] = await buildQuestionnaireBundles(questionnaireResponses || [], surveyObservations || []);
+
     setAndLogProgressState('All FHIR requests finished: ' + new Date().toLocaleTimeString(), 100)
     console.timeEnd('FHIR queries')
 
@@ -933,6 +951,7 @@ const getFHIRQueries = async (client: Client, clientScope: string | undefined,
         surveyResults,
         provenanceMap,
         provenance,
+        questionnaireBundles,
     }
 }
 

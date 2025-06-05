@@ -3,6 +3,7 @@ import {
     Resource,
     CarePlan,
     CareTeam,
+    Coding,
     Encounter,
     Condition,
     DiagnosticReport,
@@ -15,12 +16,29 @@ import {
     Practitioner,
     Procedure,
     Provenance,
+    Questionnaire,
+    QuestionnaireResponse,
     RelatedPerson,
     CodeableConcept,
     Period,
     Timing,
     TimingRepeat
 } from '../fhir-types/fhir-r4';
+
+export interface QuestionnaireMetadata {
+    id: string, // The id of the questionnaire which must match the filename in public/content to load the definition.
+    label: string, // The label of the questionnaire to display to users.
+    resource_id: string, // The id of the FHIR resource representing the questionnaire. This is used by the QuestionnaireHandler to select the questionnaire and submit.
+    url: string, // The url of the questionnaire. This is what the QuestionnaireResponse will reference in the questionnaire field.
+    isScored: boolean, // Indicates whether the questionnaire has scores that can be plotted
+    code: Coding // The code associated with the questionnaire. This will be the top-level code for questionnaire responses represented as observations.
+}
+
+export interface QuestionnaireBundle {
+    questionnaireMetadata: QuestionnaireMetadata;
+    questionnaireDefinition: Questionnaire;
+    questionnaireResponses?: QuestionnaireResponse[];
+}
 
 export interface FHIRData {
     serverName?: string,
@@ -52,6 +70,7 @@ export interface FHIRData {
     // key = Resource.id, values = 0..* Provenance
     provenanceMap?: Map<string, Provenance[]>,
     provenance?: Provenance[],
+    questionnaireBundles?: QuestionnaireBundle[],
 }
 
 export function allShareableResources(fhirData: FHIRData|undefined): Resource[] {
@@ -68,6 +87,8 @@ export function allShareableResources(fhirData: FHIRData|undefined): Resource[] 
         if (fhirData.labResults)        arr.push(...fhirData.labResults);
         if (fhirData.vitalSigns)        arr.push(...fhirData.vitalSigns);
         if (fhirData.socialHistory)     arr.push(...fhirData.socialHistory);
+        //TODO: AEY Do I need to share these?
+        //if (fhirData.questionnaireResponses)     arr.push(...fhirData.questionnaireResponses);
     }
     return arr;
 }

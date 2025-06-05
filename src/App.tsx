@@ -62,6 +62,7 @@ import {LabResultList} from "./components/summaries/LabResultList";
 import {VitalsList} from "./components/summaries/VitalsList";
 
 import {CareTeamList} from "./components/summaries/CareTeamList";
+import {AssessmentList} from "./components/summaries/AssessmentList";
 import {ImmunizationList} from "./components/summaries/ImmunizationList";
 import {ServiceRequestList} from "./components/summaries/ServiceRequestList";
 
@@ -124,6 +125,8 @@ interface AppState {
 type SummaryFunctionType = (fhirData?: FHIRData[]) =>
     GoalSummary[][] | ConditionSummary[][] | ObservationSummary[][] | MedicationSummary[][] | undefined
 
+const isAssessmentsTabEnabled = process.env.REACT_APP_ASSESSMENTS_TAB_ENABLED === 'true';
+
 const tabList = {
     1: "Home",
     2: "Care Plan",
@@ -136,6 +139,7 @@ const tabList = {
     9: "Tests",
     10: "Vitals",
     11: "Immunization",
+    12: "Assessments",
 }
 
 // TODO: Convert this to a hook based function component so it easier to profile for performance, analyze, and integrate
@@ -1276,6 +1280,7 @@ class App extends React.Component<AppProps, AppState> {
                                                      variant="fullWidth" centered>
                                                 <Tab label="Tests" value="9" wrapped/>
                                                 <Tab label="Vitals" value="10" wrapped/>
+                                                {isAssessmentsTabEnabled && <Tab label="Assessments" value="12" wrapped/>}
                                                 <Tab label="Immunization" value="11" wrapped/>
                                             </TabList>
                                             <TabPanel value="9" sx={{padding: '0px 15px'}}>
@@ -1294,11 +1299,14 @@ class App extends React.Component<AppProps, AppState> {
                                                             progressMessage={this.state.progressMessage}
                                                             vitalSignSummaryMatrix={this.state.vitalSignSummaries}/>
                                             </TabPanel>
-                                            {/* <TabPanel>
-                                            <h4 className="title">Assessment Results</h4>
-                                            <p>Coming soon...</p>
-                                        </TabPanel> */}
-                                            <TabPanel value="11" sx={{padding: '0px 15px'}}>
+                                            <TabPanel value="12">
+                                                <AssessmentList sharingData={this.state.sharingData}
+                                                                  fhirDataCollection={this.state.fhirDataCollection}
+                                                                  progressTitle={this.state.progressTitle}
+                                                                  progressValue={this.state.progressValue}
+                                                                  progressMessage={this.state.progressMessage}/>
+                                            </TabPanel>
+                                            <TabPanel value="11">
                                                 <ImmunizationList sharingData={this.state.sharingData}
                                                                   fhirDataCollection={this.state.fhirDataCollection}
                                                                   progressTitle={this.state.progressTitle}

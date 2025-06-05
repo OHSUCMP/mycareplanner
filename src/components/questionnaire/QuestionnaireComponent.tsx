@@ -11,7 +11,7 @@ import { faArrowAltCircleLeft } from "@fortawesome/free-regular-svg-icons";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCheck } from '@fortawesome/free-solid-svg-icons';
 import { doLog, LogRequest } from '../../log';
-// import { ConfirmationPage } from '../confirmation-page/ConfirmationPage';
+import { isScoreQuestion } from '../../data-services/questionnaireService';
 
 interface QuestionnaireState {
     showConfirmation: boolean,
@@ -38,8 +38,8 @@ export default class QuestionnaireComponent extends React.Component<any, Questio
             message:'User has Visited Questionnaire Tab',
             }
 
-            doLog(request)
-      }
+        doLog(request)
+    }
 
     questionnaireResponse: QuestionnaireResponse = this.props.questionnaireResponse;
     receiveData = (showReview: boolean) => {
@@ -55,7 +55,10 @@ export default class QuestionnaireComponent extends React.Component<any, Questio
     render(): JSX.Element {
         return <div className="questionnaire">
             {/* <div>{this.props.questionnaire.title}</div> */}
-            {this.props.questionnaire.item.map((item: QuestionnaireItem, key: any) => {
+            {this.props.questionnaire.item.filter((item: QuestionnaireItem, key: any) => {
+                // Remove score questions from the display
+                return !isScoreQuestion(item);
+            }).map((item: QuestionnaireItem, key: any) => {
                 return <QuestionnaireItemComponent receivingCallback={this.receiveData} length={this.props.questionnaire.item?.length} QuestionnaireItem={item} key={key} onChange={this.props.onChange} />
             })}
             <div className={!this.state.showReviewInfo ? 'hidden' : ''}>

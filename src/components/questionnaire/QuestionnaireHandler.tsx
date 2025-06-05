@@ -60,7 +60,7 @@ export class QuestionnaireHandler extends React.Component<QuestionnaireHandlerPr
     getLocalQuestionnaire(this.state.questionnaireId!)
       .then(questionnaire => {
         if (questionnaire === undefined || questionnaire.resourceType !== 'Questionnaire') {
-          let message = 'Questionnarie not found: ' + this.state.questionnaireId
+          let message = 'Questionnaire not found: ' + this.state.questionnaireId
           throw Error(message)
         }
 
@@ -68,7 +68,6 @@ export class QuestionnaireHandler extends React.Component<QuestionnaireHandlerPr
           return (p as Questionnaire)
         }
         let updatedQuestionnaire = processQuestionnaire(questionnaire);
-
         const patientID = this.props.supplementalDataClient?.getPatientId()
         let ptRef = patientID != null ? "Patient/" + patientID : undefined
         const ptDisplay: string | undefined = undefined   // TODO: find patient with matching ID from patientSummaries
@@ -205,7 +204,7 @@ export class QuestionnaireHandler extends React.Component<QuestionnaireHandlerPr
         busy: true
       }
     }, () => {
-      submitQuestionnaireResponse(this.state.questionnaireResponse)
+      submitQuestionnaireResponse(this.state.selectedQuestionnaire?.id || "", this.state.questionnaireResponse)
         .then(res => {
           this.setState({ status: 'completed', busy: false })
           console.log("res: ", res);

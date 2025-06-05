@@ -14,7 +14,7 @@
             }
         ]
     },
-    "url": "http:/lforms-fhir.nlm.nih.gov/baseR4/Questionnaire/44249-1",
+    "url": "PHQ-9",
     "title": "PHQ-9 quick depression assessment panel [Reported.PHQ]",
     "status": "draft",
     "copyright": "Copyright © Pfizer Inc. All rights reserved. Developed by Drs. Robert L. Spitzer, Janet B.W. Williams, Kurt Kroenke and colleagues, with an educational grant from Pfizer Inc. No permission required to reproduce, translate, display or distribute.",
@@ -36,7 +36,6 @@
             ],
             "text": "Over the last 2 weeks, how often have you been bothered by any of the following problems?",
             "type": "group",
-            "required": true,
             "item": [
                 {
                     "extension": [
@@ -64,6 +63,7 @@
                     ],
                     "text": "Little interest or pleasure in doing things",
                     "type": "choice",
+                    "required": true,
                     "answerOption": [
                         {
                             "extension": [
@@ -161,6 +161,7 @@
                     ],
                     "text": "Feeling down, depressed, or hopeless",
                     "type": "choice",
+                    "required": true,
                     "answerOption": [
                         {
                             "extension": [
@@ -258,6 +259,7 @@
                     ],
                     "text": "Trouble falling or staying asleep, or sleeping too much",
                     "type": "choice",
+                    "required": true,
                     "answerOption": [
                         {
                             "extension": [
@@ -355,6 +357,7 @@
                     ],
                     "text": "Feeling tired or having little energy",
                     "type": "choice",
+                    "required": true,
                     "answerOption": [
                         {
                             "extension": [
@@ -452,6 +455,7 @@
                     ],
                     "text": "Poor appetite or overeating",
                     "type": "choice",
+                    "required": true,
                     "answerOption": [
                         {
                             "extension": [
@@ -549,6 +553,7 @@
                     ],
                     "text": "Feeling bad about yourself-or that you are a failure or have let yourself or your family down",
                     "type": "choice",
+                    "required": true,
                     "answerOption": [
                         {
                             "extension": [
@@ -646,6 +651,7 @@
                     ],
                     "text": "Trouble concentrating on things, such as reading the newspaper or watching television",
                     "type": "choice",
+                    "required": true,
                     "answerOption": [
                         {
                             "extension": [
@@ -743,6 +749,7 @@
                     ],
                     "text": "Moving or speaking so slowly that other people could have noticed. Or the opposite – being so fidgety or restless that you were moving around a lot more than usual",
                     "type": "choice",
+                    "required": true,
                     "answerOption": [
                         {
                             "extension": [
@@ -840,6 +847,7 @@
                     ],
                     "text": "Thoughts that you would be better off dead, or of hurting yourself in some way",
                     "type": "choice",
+                    "required": true,
                     "answerOption": [
                         {
                             "extension": [
@@ -914,6 +922,139 @@
                 {
                     "extension": [
                         {
+                            "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-displayCategory",
+                            "valueCodeableConcept": {
+                                "coding": [
+                                    {
+                                        "display": "The PHQ-9 is the standard (and most commonly used) depression measure, and it ranges from 0-27 Scoring: Add up all checked boxes on PHQ-9. For every check: Not at all = 0; Several days = 1; More than half the days = 2; Nearly every day = 3 (the scores are the codes that appear in the answer list for each of the PHQ-9 problem panel terms). Interpretation: 1-4 = Minimal depression; 5-9 = Mild depression; 10-14 = Moderate depression; 15-19 = Moderately severe depression; 20-27 = Severed depression."
+                                    }
+                                ],
+                                "text": "The PHQ-9 is the standard (and most commonly used) depression measure, and it ranges from 0-27 Scoring: Add up all checked boxes on PHQ-9. For every check: Not at all = 0; Several days = 1; More than half the days = 2; Nearly every day = 3 (the scores are the codes that appear in the answer list for each of the PHQ-9 problem panel terms). Interpretation: 1-4 = Minimal depression; 5-9 = Mild depression; 10-14 = Moderate depression; 15-19 = Moderately severe depression; 20-27 = Severed depression."
+                            }
+                        },
+                        {
+                            "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-unit",
+                            "valueCoding": {
+                                "code": "care-plan-score",
+                                "display": "{score}"
+                            }
+                        },
+                        {
+                            "url": "range-score-interpretation",
+                            "extension": [
+                                {
+                                    "url": "range",
+                                    "valueRange": {
+                                        "low": {
+                                            "value": 0
+                                        },
+                                        "high": {
+                                            "value": 4
+                                        }
+                                    }
+                                },
+                                {
+                                    "url": "interpretation",
+                                    "valueString": "Minimal"
+                                }
+                            ]
+                        },
+                        {
+                            "url": "range-score-interpretation",
+                            "extension": [
+                                {
+                                    "url": "range",
+                                    "valueRange": {
+                                        "low": {
+                                            "value": 5
+                                        },
+                                        "high": {
+                                            "value": 9
+                                        }
+                                    }
+                                },
+                                {
+                                    "url": "interpretation",
+                                    "valueString": "Mild"
+                                }
+                            ]
+                        },
+                        {
+                            "url": "range-score-interpretation",
+                            "extension": [
+                                {
+                                    "url": "range",
+                                    "valueRange": {
+                                        "low": {
+                                            "value": 10
+                                        },
+                                        "high": {
+                                            "value": 14
+                                        }
+                                    }
+                                },
+                                {
+                                    "url": "interpretation",
+                                    "valueString": "Moderate"
+                                }
+                            ]
+                        },
+                        {
+                            "url": "range-score-interpretation",
+                            "extension": [
+                                {
+                                    "url": "range",
+                                    "valueRange": {
+                                        "low": {
+                                            "value": 15
+                                        },
+                                        "high": {
+                                            "value": 19
+                                        }
+                                    }
+                                },
+                                {
+                                    "url": "interpretation",
+                                    "valueString": "Moderately Severe"
+                                }
+                            ]
+                        },
+                        {
+                            "url": "range-score-interpretation",
+                            "extension": [
+                                {
+                                    "url": "range",
+                                    "valueRange": {
+                                        "low": {
+                                            "value": 20
+                                        },
+                                        "high": {
+                                            "value": 27
+                                        }
+                                    }
+                                },
+                                {
+                                    "url": "interpretation",
+                                    "valueString": "Severe"
+                                }
+                            ]
+                        }
+                    ],
+                    "linkId": "/44261-6",
+                    "code": [
+                        {
+                            "system": "http://loinc.org",
+                            "code": "44261-6",
+                            "display": "Patient health questionnaire 9 item total score"
+                        }
+                    ],
+                    "text": "Patient health questionnaire 9 item total score",
+                    "type": "quantity",
+                    "required": false
+                },
+                {
+                    "extension": [
+                        {
                             "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-itemControl",
                             "valueCodeableConcept": {
                                 "coding": [
@@ -937,6 +1078,7 @@
                     ],
                     "text": "How difficult have these problems made it for you to do your work, take care of things at home, or get along with other people?",
                     "type": "choice",
+                    "required": false,
                     "answerOption": [
                         {
                             "valueCoding": {

@@ -100,7 +100,7 @@ export default class ChoiceDropDown extends React.Component<any, any> {
                     </DropdownButton>
                 }
                 </td>
-                <td colSpan={2} align="left">{this.state.display ?? ''}</td>
+                <td colSpan={2} align="left"><span className="text-danger"><strong>{this.state.display ?? ''}</strong></span></td>
                 </tr>
                 </tbody></table>
             </div>

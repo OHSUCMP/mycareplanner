@@ -14,7 +14,7 @@ export const SummaryRow: React.FC<SummaryRowProps> = (props: SummaryRowProps) =>
   if (!props.twoColumns) {
     return (
       <Grid item xs={12}>
-        <Typography variant={props.isHeader ? "h6" : "body2"} component={props.isHeader ? "h6" : "p"}>
+        <Typography variant={props.isHeader ? "h6" : "body2"} component={props.isHeader ? "h6" : "div"}>
           {props.data1}
         </Typography>
       </Grid>
@@ -23,12 +23,12 @@ export const SummaryRow: React.FC<SummaryRowProps> = (props: SummaryRowProps) =>
     return (
       <>
         <Grid item xs={6}>
-          <Typography variant={props.isHeader ? "h6" : "body2"} component={props.isHeader ? "h6" : "p"}>
+          <Typography variant={props.isHeader ? "h6" : "body2"} component={props.isHeader ? "h6" : "div"}>
             {typeof props.data1 === 'string' ? <span dangerouslySetInnerHTML={{ __html: props.data1 }} /> : props.data1}
           </Typography>
         </Grid>
         <Grid item xs={6}>
-          <Typography variant="body2" component="p" align="right">
+          <Typography variant="body2" component="div" align="right">
              {typeof props.data2 === 'string' ? <span dangerouslySetInnerHTML={{ __html: props.data2 }} /> : props.data2}
           </Typography>
         </Grid>
