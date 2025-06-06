@@ -28,6 +28,7 @@ import {
 export interface QuestionnaireMetadata {
     id: string, // The id of the questionnaire which must match the filename in public/content to load the definition.
     label: string, // The label of the questionnaire to display to users.
+    learnMore?: string, // The URL to the learn more page for this questionnaire. This is used by the QuestionnaireHandler to display a link to the learn more page.
     resource_id: string, // The id of the FHIR resource representing the questionnaire. This is used by the QuestionnaireHandler to select the questionnaire and submit.
     url: string, // The url of the questionnaire. This is what the QuestionnaireResponse will reference in the questionnaire field.
     isScored: boolean, // Indicates whether the questionnaire has scores that can be plotted

@@ -1,9 +1,11 @@
 import React, {FC} from 'react';
-import {FHIRData, QuestionnaireMetadata} from '../../data-services/models/fhirResources';
+import {Link} from 'react-router-dom';
+import {FHIRData, QuestionnaireMetadata, displayDate} from '../../data-services/models/fhirResources';
 import {Questionnaire, QuestionnaireResponse} from '../../data-services/fhir-types/fhir-r4';
 import {DeterminateProgress} from "../determinate-progress/DeterminateProgress";
-import {CircularProgress} from "@mui/material";
-import { Summary } from './Summary';
+import {Accordion, AccordionSummary, AccordionDetails, Typography, Grid, CircularProgress} from '@mui/material';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import { Summary, SummaryRowItems } from './Summary';
 import { Line } from 'react-chartjs-2';
 import 'chart.js';
 import { extractResponseScore, interpretScore } from '../../data-services/questionnaireService';
@@ -70,7 +72,9 @@ function mergeQuestionnaireBundles(fhirDataCollection: FHIRData[]): Map<string, 
   bundleMap.forEach((bundle) => {
     bundle.responses.sort((a, b) => a.authored.getTime() - b.authored.getTime());
   })
-  return bundleMap;
+  return new Map(
+    Array.from(bundleMap.entries()).sort((a, b) => a[0].localeCompare(b[0])) // Sort by key
+  );
 }
 
 function getOptions(measure: string) {
@@ -114,6 +118,47 @@ export const AssessmentList: FC<AssessmentListProps> = ({sharingData, fhirDataCo
         return isScored && length > 2;
     }
 
+    function buildRows(bundle: MergedBundle): SummaryRowItems {
+        const rows: SummaryRowItems = [];
+        const accordion = (
+            <Accordion key="history-accordion" style={{boxShadow: 'none', margin: '0', padding: '0'}}>
+                <AccordionSummary expandIcon={<ExpandMoreIcon/>}>
+                    <Typography variant="body2">History of {bundle.qm.label}</Typography>
+                </AccordionSummary>
+                <AccordionDetails>
+                    <Grid container spacing={2}>
+                        {bundle.responses.map((response, index) => (
+                            <React.Fragment key={index}>
+                                <Grid item xs={4}>
+                                    <Typography variant="body2">
+                                        {displayDate(response.authored.toISOString())}
+                                    </Typography>
+                                </Grid>
+                                <Grid item xs={2}>
+                                    <Typography variant="body2">
+                                        {response.score}
+                                    </Typography>
+                                </Grid>
+                                <Grid item xs={6}>
+                                    <Typography variant="body2">
+                                        {response.interpretation}
+                                    </Typography>
+                                </Grid>
+                            </React.Fragment>
+                        ))}
+                    </Grid>
+                </AccordionDetails>
+            </Accordion>
+        );
+        rows.push({
+            isHeader: false,
+            twoColumns: false,
+            data1: accordion,
+            data2: '',
+        });
+        return rows;
+    }
+
     return (
         <div className="home-view">
             <div className="welcome">
@@ -134,32 +179,23 @@ export const AssessmentList: FC<AssessmentListProps> = ({sharingData, fhirDataCo
                 ) : (
                     Array.from(responses.entries()).map(([key, bundle], idx) => (
                         <div key={idx}>
-                            <h6>{key}</h6>
+                            <h6>{key}{bundle.qm.learnMore && <span className="float-right">
+                                <Link to="route" target="_blank"
+                                                          onClick={
+                                                              (event) => {
+                                                                  event.preventDefault();
+                                                                  window.open(bundle.qm.learnMore);
+                                                              }
+                                                          }><i>Learn&nbsp;More</i>
+                                </Link>
+                                </span>}
+                            </h6>
                             {displayGraph(bundle.qm.isScored, bundle.responses.length) && (
                                 <div className="pb-4">
                                     <Line options={getOptions(bundle.qm.id)} data={getData(bundle.responses)} />
                                 </div>
                             )}
-                            {bundle.responses.map((response, rIdx) => (
-                                    <Summary
-                                        key={rIdx}
-                                        id={rIdx}
-                                        rows={[
-                                            {
-                                                isHeader: true,
-                                                twoColumns: bundle.qm.isScored ? true : false,
-                                                data1: "Date: " + response.authored.toLocaleDateString(),
-                                                data2: "Score: " + response.score,
-                                            },
-                                            {
-                                                isHeader: false,
-                                                twoColumns: bundle.qm.isScored ? true : false,
-                                                data1: "Source: " + response.source,
-                                                data2: response.interpretation ? response.interpretation : "",
-                                            },
-                                        ]}
-                                    />
-                            ))}
+                            <Summary key={idx} id={idx} rows={buildRows(bundle)}/>
                         </div>
                     ))
                 )}
