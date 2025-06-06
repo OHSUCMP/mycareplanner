@@ -8,7 +8,8 @@ import { QuestionnaireMetadata, QuestionnaireBundle } from './models/fhirResourc
 const questionnairesMetadata: QuestionnaireMetadata[] = [
     {
         "id": "PHQ-9",
-        "label": "Depression Assessment",
+        "label": "Depression Screening",
+        "learnMore": "https://medlineplus.gov/lab-tests/depression-screening/",
         "resource_id": "44249-1",
         "url": "PHQ-9",
         "isScored": true,
