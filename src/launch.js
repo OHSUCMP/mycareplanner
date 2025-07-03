@@ -20,15 +20,22 @@ const meldmatch = "https://gw.interop.community/"+process.env.REACT_APP_MELD_SAN
 
 const availableEndpoints = [
     {
+        // Partners.org for BWH integration
+        issMatch: /\bwebapi\.partners\.org\/\b/i,
+        redirectUri: "./index.html",
+        clientId: process.env.REACT_APP_CLIENT_ID_partners,
+        scope: epicPilotScope
+    },
+    {
         // OHSU FHIR dev
-        issMatch: /\bepicmobile.ohsu.edu\/FHIRDEV\b/i,
+        issMatch: /\bepicmobile\.ohsu\.edu\/FHIRDEV\b/i,
         redirectUri: "./index.html",
         clientId: process.env.REACT_APP_CLIENT_ID_ohsu_fhirdev,
         scope: epicPilotScope
     },
     {
         // OHSU FHIR production
-        issMatch: /\bepicmobile.ohsu.edu\/FHIRPRD\b/i,
+        issMatch: /\bepicmobile\.ohsu\.edu\/FHIRPRD\b/i,
         redirectUri: "./index.html",
         clientId: process.env.REACT_APP_CLIENT_ID_ohsu_fhirprd,
         scope: epicPilotScope
@@ -85,7 +92,7 @@ const availableEndpoints = [
     },
     {
         // Cerner production client for USCDI patient app
-        issMatch: /\bfhir-myrecord.cerner.com\/r4\b/i,
+        issMatch: /\bfhir-myrecord\.cerner\.com\/r4\b/i,
         redirectUri: "./index.html",
         clientId: process.env.REACT_APP_CLIENT_ID_cerner,
         scope: cernerScopeUSCDI
@@ -116,7 +123,7 @@ const availableEndpoints = [
         pkceMode: "unsafeV1"
     },
     {
-        // For any other enpoints, try using Epic (not all contain string 'epic')
+        // For any other endpoints, try using Epic (not all contain string 'epic')
         issMatch: /\bR4\b/i,
         redirectUri: "./index.html",
         clientId: process.env.REACT_APP_CLIENT_ID_epic,
