@@ -21,7 +21,7 @@ const meldmatch = "https://gw.interop.community/"+process.env.REACT_APP_MELD_SAN
 const availableEndpoints = [
     {
         // Partners.org for BWH integration
-        issMatch: /\bwebapi\.partners\.org\/\b/i,
+        issMatch: /\bpartners\.org\/\b/i,
         redirectUri: "./index.html",
         clientId: process.env.REACT_APP_CLIENT_ID_partners,
         scope: epicPilotScope
