@@ -1,5 +1,6 @@
 import Client from "fhirclient/lib/Client";
 import {fhirclient} from "fhirclient/lib/types";
+import {Patient} from "../fhir-types/fhir-r4";
 
 export class ClientProxy {
     useProxy: boolean;
@@ -8,65 +9,61 @@ export class ClientProxy {
     proxyToken: string | undefined;
 
     constructor(useProxy: boolean, proxyUrl: string | undefined, client: Client) {
+        console.log("creating client proxy");
+
         this.useProxy = useProxy;
         this.proxyUrl = proxyUrl;
         this.client = client;
 
         if (this.useProxy) {
-            this.register
-                .then(token => {
-                    console.log("received proxy token: ", token);
-                    this.proxyToken = token;
-
-                }).catch(error => {
-                    console.log("client proxy error:", error);
+            this.register(client)
+                .then(() => {
+                    console.log("client proxy registered");
+                })
+                .catch(error => {
+                    console.log('register error:', error)
                 });
         }
     }
 
-    register = new Promise<string> ((resolve, reject) => {
-        try {
-            console.log("registering client proxy");
-            let data = {
-                clientId: this.client.state.clientId,
-                serverUrl: this.client.state.serverUrl,
-                bearerToken: this.client.state.tokenResponse?.access_token,
-                patientId: this.client.patient.id,
-                userId: this.client.user.id
-            };
-            console.log("client data: %j", data);
+    async register(client: Client) : Promise<void> {
+        console.log("registering client proxy");
 
-            const headers = new Headers();
-            headers.set('Content-Type', 'application/json');
+        let data = {
+            clientId: this.client.state.clientId,
+            serverUrl: this.client.state.serverUrl,
+            bearerToken: this.client.state.tokenResponse?.access_token,
+            patientId: this.client.patient.id,
+            userId: this.client.user.id
+        };
+        console.log("client data: %j", data);
 
-            const requestOptions = {
-                method: 'POST',
-                headers: headers,
-                body: JSON.stringify(data)
-            }
+        const headers = new Headers();
+        headers.set('Content-Type', 'application/json');
 
-            let url = this.proxyUrl + "/register";
-
-            fetch(url, requestOptions)
-                .then(response => {
-                    if (response.ok) {
-                        return response.text();
-                    }
-                    throw new Error("register error: received " + response.status + " " + response.statusText);
-                })
-                .then(text => {
-                    console.log("register response: ", text);
-                    resolve(text);
-                })
-                .catch(error => {
-                    console.log('register error:', error)
-                    reject(error);
-                });
-
-        } catch (error) {
-            reject(error);
+        const requestOptions = {
+            method: 'POST',
+            headers: headers,
+            body: JSON.stringify(data)
         }
-    });
+
+        let url = this.proxyUrl + "/register";
+
+        await fetch(url, requestOptions)
+            .then(response => {
+                if (response.ok) {
+                    return response.text();
+                }
+                throw new Error("register error: received " + response.status + " " + response.statusText);
+            })
+            .then(text => {
+                this.proxyToken = text;
+            })
+            .catch(error => {
+                this.proxyToken = undefined;
+                throw error;
+            });
+    }
 
     patientRequest(path: string, fhirOptions?: fhirclient.FhirOptions) : Promise<fhirclient.JsonObject[]> {
         if (this.useProxy) {
@@ -89,13 +86,13 @@ export class ClientProxy {
         }
     }
 
-    request(path: string, fhirOptions?: fhirclient.FhirOptions) : Promise<fhirclient.JsonObject[]> {
+    request<T = any>(path: string, fhirOptions?: fhirclient.FhirOptions) : Promise<T> {
         if (this.useProxy) {
             if ( ! this.proxyToken ) {
                 throw new Error("proxy token not available");
             }
 
-            return new Promise<fhirclient.JsonObject[]> ((resolve, reject) => {
+            return new Promise<T> ((resolve, reject) => {
                 const headers = new Headers();
                 headers.set('Content-Type', 'application/json');
                 headers.set('Authorization', 'Bearer ' + this.proxyToken);
@@ -130,13 +127,13 @@ export class ClientProxy {
         }
     }
 
-    patientRead() : Promise<fhirclient.JsonObject> {
+    patientRead() : Promise<fhirclient.FHIR.Patient> {
         if (this.useProxy) {
             if ( ! this.proxyToken ) {
                 throw new Error("proxy token not available");
             }
 
-            return new Promise<fhirclient.JsonObject> ((resolve, reject) => {
+            return new Promise<fhirclient.FHIR.Patient> ((resolve, reject) => {
                 const headers = new Headers();
                 headers.set('Content-Type', 'application/json');
                 headers.set('Authorization', 'Bearer ' + this.proxyToken);
@@ -171,13 +168,13 @@ export class ClientProxy {
         }
     }
 
-    userRead() : Promise<fhirclient.JsonObject> {
+    userRead() : Promise<fhirclient.FHIR.Patient | fhirclient.FHIR.Practitioner | fhirclient.FHIR.RelatedPerson> {
         if (this.useProxy) {
             if ( ! this.proxyToken ) {
                 throw new Error("proxy token not available");
             }
 
-            return new Promise<fhirclient.JsonObject> ((resolve, reject) => {
+            return new Promise<fhirclient.FHIR.Patient | fhirclient.FHIR.Practitioner | fhirclient.FHIR.RelatedPerson> ((resolve, reject) => {
                 const headers = new Headers();
                 headers.set('Content-Type', 'application/json');
                 headers.set('Authorization', 'Bearer ' + this.proxyToken);
