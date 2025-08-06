@@ -30,6 +30,7 @@ const oneYearAgo = addPeriodToDate(today, {years: -1})
 const threeYearsAgo = addPeriodToDate(today, {years: -3})
 const fiveYearsAgo = addPeriodToDate(today, {years: -5})
 const eighteenMonthsAgo = addPeriodToDate(today, {months: -18})
+const twoYearsAgo = addPeriodToDate(today, {years: -2})
 const tenYearsAgo = addPeriodToDate(today, {years: -10})
 
 const provenanceSearch = '&_revinclude=Provenance:target'
@@ -47,7 +48,7 @@ const careTeamPath_include = 'CareTeam?_include=CareTeam:participant' + provenan
 
 const goalsPath = 'Goal?lifecycle-status=active,completed,cancelled' + provenanceSearch
 
-const encountersPath = 'Encounter?date=' + getGEDateParameter(eighteenMonthsAgo) + provenanceSearch
+const encountersPath = 'Encounter?date=' + getGEDateParameter(twoYearsAgo) + provenanceSearch
 
 /// Epic allows multiple category codes only >= Aug 2021 release
 // const conditionsPath = 'Condition?category=problem-list-item,health-concern,LG41762-2&clinical-status=active';
@@ -65,7 +66,7 @@ const medicationRequestActivePath = 'MedicationRequest?status=active' + provenan
 const medicationRequestInactivePath = 'MedicationRequest?status=on-hold,cancelled,completed,stopped&_count=10' + provenanceSearch
 const medicationRequesterInclude = '&_include=MedicationRequest:requester'
 
-const serviceRequestPath = 'ServiceRequest?status=active&authored=' + getGEDateParameter(eighteenMonthsAgo) + provenanceSearch
+const serviceRequestPath = 'ServiceRequest?status=active&authored=' + getGEDateParameter(twoYearsAgo) + provenanceSearch
 const serviceRequesterInclude = '&_include=ServiceRequest:requester'
 
 const proceduresTimePath = 'Procedure?date=' + getGEDateParameter(threeYearsAgo) + provenanceSearch
@@ -193,7 +194,7 @@ export async function getVitalSigns(client: Client): Promise<Observation[]> {
         // Issue: UCHealth returns 400 error if include both category and code.
         // return 'Observation?category=vital-signs&code=http://loinc.org|' + code + '&_sort:desc=date&_count=1'
         // return 'Observation?code=http://loinc.org|' + code + '&_sort:desc=date&_count=1' + provenanceSearch
-        return 'Observation?code=http://loinc.org|' + code + '&date=' + getGEDateParameter(eighteenMonthsAgo) + '&_count=10' + provenanceSearch
+        return 'Observation?code=http://loinc.org|' + code + '&date=' + getGEDateParameter(twoYearsAgo) + '&_count=10' + provenanceSearch
     })
 
     // await can be used only at top-level within a function, cannot use queryPaths.forEach()
@@ -207,12 +208,12 @@ export async function getVitalSigns(client: Client): Promise<Observation[]> {
     // resources = resources.concat( resourcesFrom(await client.patient.request(queryPaths[7], onePageLimit) as fhirclient.JsonObject[]) as Observation[] )
 
     // storer: issue1 - pull office BPs from 18 months ago
-    const officeBPPath = 'Observation?code=http://loinc.org|85354-9&date=' + getGEDateParameter(eighteenMonthsAgo) + provenanceSearch
+    const officeBPPath = 'Observation?code=http://loinc.org|85354-9&date=' + getGEDateParameter(twoYearsAgo) + provenanceSearch
     resources = resources.concat(resourcesFrom(await client.patient.request(officeBPPath, onePageLimit) as fhirclient.JsonObject[]) as Observation[])
 
     // storer: issue2 - pull home BPs from 18 months ago
     // One year of history for Home BP vitals, which are returned as separate systolic and diastolic Observation resources.
-    const homeBPPath = 'Observation?code=http://loinc.org|72076-3&date=' + getGEDateParameter(eighteenMonthsAgo) + provenanceSearch
+    const homeBPPath = 'Observation?code=http://loinc.org|72076-3&date=' + getGEDateParameter(twoYearsAgo) + provenanceSearch
     resources = resources.concat(resourcesFrom(await client.patient.request(homeBPPath, onePageLimit) as fhirclient.JsonObject[]) as Observation[])
 
     resources = resources.filter(v => v !== undefined)
