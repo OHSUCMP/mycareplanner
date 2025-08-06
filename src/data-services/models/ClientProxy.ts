@@ -1,6 +1,5 @@
 import Client from "fhirclient/lib/Client";
 import {fhirclient} from "fhirclient/lib/types";
-import {Patient} from "../fhir-types/fhir-r4";
 
 export class ClientProxy {
     useProxy: boolean;
@@ -15,6 +14,14 @@ export class ClientProxy {
     }
 
     async register() : Promise<void> {
+        if ( ! this.useProxy ) {
+            console.log("register() called with useProxy=false; skipping -");
+            return;
+        }
+        if ( ! this.proxyUrl ) {
+            throw new Error("proxyUrl not set");
+        }
+
         console.log("registering client proxy");
 
         let data = {
@@ -59,14 +66,42 @@ export class ClientProxy {
                 throw new Error("proxy token not available");
             }
 
-            // path in the form <resource>?<k1=v1>&<k2=v2>&...
-            let pathParts = new PathParts(path);
-            if ( ! pathParts.hasParam("subject") && ! pathParts.hasParam("patient") ) {
-                pathParts.setParam("subject", "Patient/" + this.client.patient.id);
-            }
-            let newPath = pathParts.resourceType + "?" + pathParts.getParamsString();
+            return new Promise<fhirclient.JsonObject[]> ((resolve, reject) => {
+                const headers = new Headers();
+                headers.set('Content-Type', 'application/fhir+json');
+                headers.set('Authorization', 'Bearer ' + this.proxyToken);
 
-            return this.request(newPath, fhirOptions);
+                const requestOptions = {
+                    method: 'GET',
+                    headers: headers
+                }
+
+                // path in the form <resource>?<k1=v1>&<k2=v2>&...
+                let pathParts = new PathParts(path);
+                pathParts.setParam("_format", "json");
+                let newPath = pathParts.resourceType + "?" + pathParts.getParamsString();
+
+                let url = this.proxyUrl + "/proxy/Patient/" + this.client.patient.id + "/" + newPath;
+
+                console.log("requesting: ", url);
+
+                fetch(url, requestOptions)
+                    .then(response => {
+                        if (response.ok) {
+                            return response.json();
+                        }
+                        throw new Error("request error: received " + response.status + " " + response.statusText);
+                    })
+                    .then(json => {
+                        let arr : fhirclient.JsonObject[] = new Array<fhirclient.JsonObject>();
+                        arr.push(json as fhirclient.JsonObject);
+                        resolve(arr);
+                    })
+                    .catch(error => {
+                        console.log('error:', error)
+                        reject(error);
+                    });
+            });
 
         } else {
             return this.client.patient.request(path, fhirOptions);
