@@ -8,7 +8,7 @@ import {
 import {QuestionnaireBundle, FHIRData, hasScope} from './models/fhirResources'
 import {format} from 'date-fns'
 import Client from 'fhirclient/lib/Client'
-import {ClientProxy} from "./models/ClientProxy"
+import {ClientProxy} from "./models/clientProxy"
 import {
     persistStateAsCurrent, getStateForEndpoint,
     persistStateAsLauncherData
