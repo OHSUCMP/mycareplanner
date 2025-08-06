@@ -9,24 +9,12 @@ export class ClientProxy {
     proxyToken: string | undefined;
 
     constructor(useProxy: boolean, proxyUrl: string | undefined, client: Client) {
-        console.log("creating client proxy");
-
         this.useProxy = useProxy;
         this.proxyUrl = proxyUrl;
         this.client = client;
-
-        if (this.useProxy) {
-            this.register(client)
-                .then(() => {
-                    console.log("client proxy registered");
-                })
-                .catch(error => {
-                    console.log('register error:', error)
-                });
-        }
     }
 
-    async register(client: Client) : Promise<void> {
+    async register() : Promise<void> {
         console.log("registering client proxy");
 
         let data = {
@@ -39,7 +27,7 @@ export class ClientProxy {
         console.log("client data: %j", data);
 
         const headers = new Headers();
-        headers.set('Content-Type', 'application/json');
+        headers.set('Content-Type', 'application/fhir+json');
 
         const requestOptions = {
             method: 'POST',
@@ -76,7 +64,6 @@ export class ClientProxy {
             if ( ! pathParts.hasParam("subject") && ! pathParts.hasParam("patient") ) {
                 pathParts.setParam("subject", "Patient/" + this.client.patient.id);
             }
-
             let newPath = pathParts.resourceType + "?" + pathParts.getParamsString();
 
             return this.request(newPath, fhirOptions);
@@ -94,7 +81,7 @@ export class ClientProxy {
 
             return new Promise<T> ((resolve, reject) => {
                 const headers = new Headers();
-                headers.set('Content-Type', 'application/json');
+                headers.set('Content-Type', 'application/fhir+json');
                 headers.set('Authorization', 'Bearer ' + this.proxyToken);
 
                 const requestOptions = {
@@ -102,7 +89,12 @@ export class ClientProxy {
                     headers: headers
                 }
 
-                let url = this.proxyUrl + "/proxy/" + path;
+                // path in the form <resource>?<k1=v1>&<k2=v2>&...
+                let pathParts = new PathParts(path);
+                pathParts.setParam("_format", "json");
+                let newPath = pathParts.resourceType + "?" + pathParts.getParamsString();
+
+                let url = this.proxyUrl + "/proxy/" + newPath;
 
                 console.log("requesting: ", url);
 
@@ -135,7 +127,7 @@ export class ClientProxy {
 
             return new Promise<fhirclient.FHIR.Patient> ((resolve, reject) => {
                 const headers = new Headers();
-                headers.set('Content-Type', 'application/json');
+                headers.set('Content-Type', 'application/fhir+json');
                 headers.set('Authorization', 'Bearer ' + this.proxyToken);
 
                 const requestOptions = {
@@ -143,7 +135,7 @@ export class ClientProxy {
                     headers: headers
                 }
 
-                let url = this.proxyUrl + "/proxy/Patient/" + this.client.patient.id;
+                let url = this.proxyUrl + "/proxy/Patient/" + this.client.patient.id + "?_format=json";
 
                 console.log("requesting: ", url);
 
@@ -176,7 +168,7 @@ export class ClientProxy {
 
             return new Promise<fhirclient.FHIR.Patient | fhirclient.FHIR.Practitioner | fhirclient.FHIR.RelatedPerson> ((resolve, reject) => {
                 const headers = new Headers();
-                headers.set('Content-Type', 'application/json');
+                headers.set('Content-Type', 'application/fhir+json');
                 headers.set('Authorization', 'Bearer ' + this.proxyToken);
 
                 const requestOptions = {
@@ -184,7 +176,7 @@ export class ClientProxy {
                     headers: headers
                 }
 
-                let url = this.proxyUrl + "/proxy/User/" + this.client.user.id;
+                let url = this.proxyUrl + "/proxy/User/" + this.client.user.id + "?_format=json";
 
                 console.log("requesting: ", url);
 
@@ -218,9 +210,12 @@ export class PathParts {
         let parts = path.split("?");
         this.resourceType = parts[0];
         this.params = new Map<string, string>();
-        for (let i = 1; i < parts.length; i++) {
-            let param = parts[i].split("=");
-            this.params.set(param[0], param[1]);
+        if (parts.length > 1) {
+            let paramParts = parts[1].split("&");
+            for (let i = 0; i < paramParts.length; i++) {
+                let param = paramParts[i].split("=");
+                this.params.set(param[0], param[1]);
+            }
         }
     }
 
