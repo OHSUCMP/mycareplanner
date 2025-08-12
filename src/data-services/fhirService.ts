@@ -80,7 +80,7 @@ const surveyObservationsPath = 'Observation?category=survey' + provenanceSearch
 /// category=survey returns 400 error from Epic, so include another category recognized by Epic
 // const surveyResultsPath = 'Observation?category=survey,functional-mental-status' + provenanceSearch
 
-const fhirOptions: fhirclient.FhirOptions = {
+const noPageLimit: fhirclient.FhirOptions = {
     // no page limit, fetch all pages and results.
     pageLimit: 0,
 }
@@ -138,7 +138,7 @@ export async function getEncounters(clientProxy: ClientProxy): Promise<Encounter
     })
     // workaround for Allscripts lack of support for both category and status args
     // Epic allows multiple category codes in one query only >= Aug 2021 release
-    resources = resources.concat(resourcesFrom(await clientProxy.patientRequest(encountersPath, fhirOptions) as fhirclient.JsonObject[]))
+    resources = resources.concat(resourcesFrom(await clientProxy.patientRequest(encountersPath, noPageLimit) as fhirclient.JsonObject[]))
 
     const encounters = resources.filter((item: any) => item?.resourceType === 'Encounter') as Encounter[]
     recordProvenance(resources)
@@ -159,12 +159,12 @@ export async function getConditions(clientProxy: ClientProxy): Promise<Condition
     const allowedHosts = ['allscripts.com'];
     if (allowedHosts.includes(url.host)) {
         const conditionsPath = 'Condition?category=problem-list-item,health-concern' + provenanceSearch
-        resources = resources.concat(resourcesFrom(await clientProxy.patientRequest(conditionsPath, fhirOptions) as fhirclient.JsonObject[]))
+        resources = resources.concat(resourcesFrom(await clientProxy.patientRequest(conditionsPath, noPageLimit) as fhirclient.JsonObject[]))
 
     } else {
         // Epic allows multiple category codes in one query only >= Aug 2021 release
-        resources = resources.concat(resourcesFrom(await clientProxy.patientRequest(problemListPath, fhirOptions) as fhirclient.JsonObject[]))
-        resources = resources.concat(resourcesFrom(await clientProxy.patientRequest(healthConcernPath, fhirOptions) as fhirclient.JsonObject[]))
+        resources = resources.concat(resourcesFrom(await clientProxy.patientRequest(problemListPath, noPageLimit) as fhirclient.JsonObject[]))
+        resources = resources.concat(resourcesFrom(await clientProxy.patientRequest(healthConcernPath, noPageLimit) as fhirclient.JsonObject[]))
     }
 
     const conditions = resources.filter((item: any) => item?.resourceType === 'Condition') as Condition[]
@@ -653,7 +653,7 @@ const getFHIRQueries = async (clientProxy: ClientProxy, clientScope: string | un
     try {
         const _careTeamPath = supportsInclude ? careTeamPath_include : careTeamPath
         let careTeamData: Resource[] | undefined = (hasScope(clientScope, 'CareTeam.read')
-            ? resourcesFrom(await clientProxy.patientRequest(_careTeamPath, fhirOptions) as fhirclient.JsonObject[])
+            ? resourcesFrom(await clientProxy.patientRequest(_careTeamPath, noPageLimit) as fhirclient.JsonObject[])
             : undefined)
         careTeams = careTeamData?.filter((item: any) => item.resourceType === 'CareTeam') as CareTeam[]
         const careTeamPractitioners =
@@ -711,7 +711,7 @@ const getFHIRQueries = async (clientProxy: ClientProxy, clientScope: string | un
     setAndLogProgressState(`${curResourceName} request: ` + new Date().toLocaleTimeString(), 60)
     try {
         let procedureData: Resource[] | undefined = (hasScope(clientScope, `${curResourceName}.read`)
-            ? resourcesFrom(await clientProxy.patientRequest(proceduresTimePath, fhirOptions) as fhirclient.JsonObject[])
+            ? resourcesFrom(await clientProxy.patientRequest(proceduresTimePath, noPageLimit) as fhirclient.JsonObject[])
             : undefined)
         // if no procedures found in past 3 years, get _count=100
         if (procedureData === undefined || procedureData.entries?.length === 0) {
@@ -768,7 +768,7 @@ const getFHIRQueries = async (clientProxy: ClientProxy, clientScope: string | un
             // fetch all active meds
             const _medicationRequestActivePath = medicationRequestActivePath + (supportsInclude ? medicationRequesterInclude : '')
             let medicationRequestData: Resource[] | undefined =
-                resourcesFrom(await clientProxy.patientRequest(_medicationRequestActivePath, fhirOptions) as fhirclient.JsonObject[])
+                resourcesFrom(await clientProxy.patientRequest(_medicationRequestActivePath, noPageLimit) as fhirclient.JsonObject[])
             const medPractitioners =
                 medicationRequestData?.filter((item: any) => item.resourceType === 'Practitioner') as Practitioner[]
             medPractitioners?.forEach((pract: Practitioner) => {
@@ -814,7 +814,7 @@ const getFHIRQueries = async (clientProxy: ClientProxy, clientScope: string | un
         if (hasScope(clientScope, 'ServiceRequest.read')) {
             const _serviceRequestPath = serviceRequestPath + (supportsInclude ? serviceRequesterInclude : '')
             let serviceRequestData: Resource[] | undefined =
-                resourcesFrom(await clientProxy.patientRequest(_serviceRequestPath, fhirOptions) as fhirclient.JsonObject[])
+                resourcesFrom(await clientProxy.patientRequest(_serviceRequestPath, noPageLimit) as fhirclient.JsonObject[])
             serviceRequests = serviceRequestData?.filter((item: any) => item.resourceType === 'ServiceRequest') as ServiceRequest[]
             recordProvenance(serviceRequestData)
             const serviceRequestPractitioners =
@@ -983,7 +983,7 @@ const loadFHIRQuery = async <T extends Resource>(
 
     try {
         resourceData = (hasScope(clientScope, `${resourceSrcCodeName}.read`)
-            ? resourcesFrom(await clientProxy.patientRequest(resourcePath, fhirOptions) as fhirclient.JsonObject[])
+            ? resourcesFrom(await clientProxy.patientRequest(resourcePath, noPageLimit) as fhirclient.JsonObject[])
             : undefined)
         resources = resourceData?.filter((item: any) => item.resourceType === resourceSrcCodeName) as T[]
         console.log("loadFHIRQuery: resources:", resources)
