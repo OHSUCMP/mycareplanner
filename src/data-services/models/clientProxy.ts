@@ -71,6 +71,10 @@ export class ClientProxy {
                 headers.set('Content-Type', 'application/fhir+json');
                 headers.set('Authorization', 'Bearer ' + this.proxyToken);
 
+                if (fhirOptions && fhirOptions.pageLimit && fhirOptions.pageLimit > 0) {
+                    headers.set('X-Page-Limit', fhirOptions.pageLimit.toString());
+                }
+
                 const requestOptions = {
                     method: 'GET',
                     headers: headers
@@ -79,9 +83,16 @@ export class ClientProxy {
                 // path in the form <resource>?<k1=v1>&<k2=v2>&...
                 let pathParts = new PathParts(path);
                 pathParts.setParam("_format", "json");
+
+                if (this.client.patient && this.client.patient.id) {
+                    pathParts.setParam("patient", this.client.patient.id);
+                } else {
+                    throw new Error("patient not available");
+                }
+
                 let newPath = pathParts.resourceType + "?" + pathParts.getParamsString();
 
-                let url = this.proxyUrl + "/proxy/Patient/" + this.client.patient.id + "/" + newPath;
+                let url = this.proxyUrl + "/proxy/" + newPath;
 
                 console.log("requesting: ", url);
 
@@ -93,9 +104,7 @@ export class ClientProxy {
                         throw new Error("request error: received " + response.status + " " + response.statusText);
                     })
                     .then(json => {
-                        let arr : fhirclient.JsonObject[] = new Array<fhirclient.JsonObject>();
-                        arr.push(json as fhirclient.JsonObject);
-                        resolve(arr);
+                        resolve(json);
                     })
                     .catch(error => {
                         console.log('error:', error)

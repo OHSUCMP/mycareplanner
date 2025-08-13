@@ -16,10 +16,31 @@ import {
 import {buildQuestionnaireBundles} from './questionnaireService'
 import {doLog} from '../log';
 
-const resourcesFrom = (response: fhirclient.JsonObject[]): Resource[] => {
-    const entries = response.flatMap(r => (r as fhirclient.JsonObject)?.entry as fhirclient.JsonObject[] || []);
-    return entries?.map((entry: fhirclient.JsonObject) => entry.resource as any)
-        .filter((resource: Resource) => resource.resourceType !== 'OperationOutcome');
+const resourcesFrom = (response: any): Resource[] => {
+    // sometimes response isn't an array at all, but just an Object of type Bundle.
+    // In this case, we do not want to flatMap it, as that breaks downstream operation.
+
+    try {
+        let entries : fhirclient.JsonObject[];
+        if (response instanceof Array) {
+            entries = response.flatMap(r => (r as fhirclient.JsonObject)?.entry as fhirclient.JsonObject[] || []);
+
+        } else if (response.resourceType === 'Bundle') {
+            entries = (response as fhirclient.JsonObject)?.entry as fhirclient.JsonObject[] || [];
+
+        } else {
+            throw new Error('response is not an array or a Bundle');
+        }
+
+        let arr : Resource[] = entries?.map((entry: fhirclient.JsonObject) => entry.resource as any)
+            .filter((resource: Resource) => resource.resourceType !== 'OperationOutcome');
+
+        return arr;
+
+    } catch (error) {
+        console.log('resourcesFrom: caught error: ', error)
+        throw error;
+    }
 };
 
 // TODO full date argument does not work correctly in Logica?  Use only yyyy-MM for now.
@@ -82,12 +103,16 @@ const surveyObservationsPath = 'Observation?category=survey' + provenanceSearch
 
 const noPageLimit: fhirclient.FhirOptions = {
     // no page limit, fetch all pages and results.
-    pageLimit: 0,
+    pageLimit: 0
 }
 
 const onePageLimit: fhirclient.FhirOptions = {
     // setting pageLimit=1 always returns zero results, limit=2 appears to return only one page with _count limit.
-    pageLimit: 2,
+
+    // storer: the comment above does not track with my testing.  pageLimit=1 does return results if results exist
+    //         to be found.  reverting pageLimit to 1
+
+    pageLimit: 1
 }
 
 /// key = Resource.id  value = Provenance[]
