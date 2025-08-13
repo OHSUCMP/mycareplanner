@@ -17,8 +17,9 @@ import {buildQuestionnaireBundles} from './questionnaireService'
 import {doLog} from '../log';
 
 const resourcesFrom = (response: any): Resource[] => {
-    // sometimes response isn't an array at all, but just an Object of type Bundle.
-    // In this case, we do not want to flatMap it, as that breaks downstream operation.
+    // sometimes response is an Array, but other times it's an Object with resourceType='Bundle'.
+    // We only want to flatMap the response if it comes in as an Array.  But if it comes in as
+    // an Object with resourceType='Bundle', we just want to grab its entries.
 
     try {
         let entries : fhirclient.JsonObject[];
@@ -32,10 +33,8 @@ const resourcesFrom = (response: any): Resource[] => {
             throw new Error('response is not an array or a Bundle');
         }
 
-        let arr : Resource[] = entries?.map((entry: fhirclient.JsonObject) => entry.resource as any)
+        return entries?.map((entry: fhirclient.JsonObject) => entry.resource as any)
             .filter((resource: Resource) => resource.resourceType !== 'OperationOutcome');
-
-        return arr;
 
     } catch (error) {
         console.log('resourcesFrom: caught error: ', error)
