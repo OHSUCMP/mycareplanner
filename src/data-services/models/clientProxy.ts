@@ -8,6 +8,10 @@ export class ClientProxy {
     proxyAccessToken: string | undefined;
 
     constructor(useProxy: boolean, proxyUrl: string | undefined, client: Client) {
+        if (useProxy && ! proxyUrl) {
+            throw new Error("proxy specified for use but proxyUrl not set");
+        }
+
         this.useProxy = useProxy;
         this.proxyUrl = proxyUrl;
         this.client = client;
