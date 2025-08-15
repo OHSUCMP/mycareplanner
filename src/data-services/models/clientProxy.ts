@@ -5,7 +5,7 @@ export class ClientProxy {
     useProxy: boolean;
     proxyUrl: string | undefined;
     client: Client;
-    proxyToken: string | undefined;
+    proxyAccessToken: string | undefined;
 
     constructor(useProxy: boolean, proxyUrl: string | undefined, client: Client) {
         this.useProxy = useProxy;
@@ -47,29 +47,29 @@ export class ClientProxy {
         await fetch(url, requestOptions)
             .then(response => {
                 if (response.ok) {
-                    return response.text();
+                    return response.json();
                 }
                 throw new Error("register error: received " + response.status + " " + response.statusText);
             })
-            .then(text => {
-                this.proxyToken = text;
+            .then(json => {
+                this.proxyAccessToken = json.accessToken;
             })
             .catch(error => {
-                this.proxyToken = undefined;
+                this.proxyAccessToken = undefined;
                 throw error;
             });
     }
 
     patientRequest(path: string, fhirOptions?: fhirclient.FhirOptions) : Promise<fhirclient.JsonObject[]> {
         if (this.useProxy) {
-            if ( ! this.proxyToken ) {
+            if ( ! this.proxyAccessToken ) {
                 throw new Error("proxy token not available");
             }
 
             return new Promise<fhirclient.JsonObject[]> ((resolve, reject) => {
                 const headers = new Headers();
                 headers.set('Content-Type', 'application/fhir+json');
-                headers.set('Authorization', 'Bearer ' + this.proxyToken);
+                headers.set('Authorization', 'Bearer ' + this.proxyAccessToken);
 
                 if (fhirOptions && fhirOptions.pageLimit && fhirOptions.pageLimit > 0) {
                     headers.set('X-Page-Limit', fhirOptions.pageLimit.toString());
@@ -119,14 +119,14 @@ export class ClientProxy {
 
     request<T = any>(path: string, fhirOptions?: fhirclient.FhirOptions) : Promise<T> {
         if (this.useProxy) {
-            if ( ! this.proxyToken ) {
+            if ( ! this.proxyAccessToken ) {
                 throw new Error("proxy token not available");
             }
 
             return new Promise<T> ((resolve, reject) => {
                 const headers = new Headers();
                 headers.set('Content-Type', 'application/fhir+json');
-                headers.set('Authorization', 'Bearer ' + this.proxyToken);
+                headers.set('Authorization', 'Bearer ' + this.proxyAccessToken);
 
                 const requestOptions = {
                     method: 'GET',
@@ -165,14 +165,14 @@ export class ClientProxy {
 
     patientRead() : Promise<fhirclient.FHIR.Patient> {
         if (this.useProxy) {
-            if ( ! this.proxyToken ) {
+            if ( ! this.proxyAccessToken ) {
                 throw new Error("proxy token not available");
             }
 
             return new Promise<fhirclient.FHIR.Patient> ((resolve, reject) => {
                 const headers = new Headers();
                 headers.set('Content-Type', 'application/fhir+json');
-                headers.set('Authorization', 'Bearer ' + this.proxyToken);
+                headers.set('Authorization', 'Bearer ' + this.proxyAccessToken);
 
                 const requestOptions = {
                     method: 'GET',
@@ -206,14 +206,14 @@ export class ClientProxy {
 
     userRead() : Promise<fhirclient.FHIR.Patient | fhirclient.FHIR.Practitioner | fhirclient.FHIR.RelatedPerson> {
         if (this.useProxy) {
-            if ( ! this.proxyToken ) {
+            if ( ! this.proxyAccessToken ) {
                 throw new Error("proxy token not available");
             }
 
             return new Promise<fhirclient.FHIR.Patient | fhirclient.FHIR.Practitioner | fhirclient.FHIR.RelatedPerson> ((resolve, reject) => {
                 const headers = new Headers();
                 headers.set('Content-Type', 'application/fhir+json');
-                headers.set('Authorization', 'Bearer ' + this.proxyToken);
+                headers.set('Authorization', 'Bearer ' + this.proxyAccessToken);
 
                 const requestOptions = {
                     method: 'GET',
