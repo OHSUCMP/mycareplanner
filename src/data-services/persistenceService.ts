@@ -1,8 +1,7 @@
 import localForage from 'localforage'
 import { fhirclient } from 'fhirclient/lib/types'
 import {
-  LauncherData, getLauncherDataForState,
-  buildLauncherDataArray
+  LauncherData, getLauncherDataForState
 } from './providerEndpointService'
 
 // It's best practice to use a suffix to ensure a unique key so we don't load data for another website
@@ -437,8 +436,7 @@ export const getLauncherData = async (): Promise<LauncherData | null | undefined
 
 export const persistStateAsLauncherData = async (state: fhirclient.ClientState) => {
   // Convert clientState to ProviderEndpoint
-  const stateLauncherData: LauncherData | undefined =
-    await getLauncherDataForState(buildLauncherDataArray(), state)
+  const stateLauncherData: LauncherData | undefined = await getLauncherDataForState(state)
 
   // Use convertedProviderEndpoint if it's truthy/in our list of available endpoints
   // Otherwise, it's not defined, and we need to create it
@@ -448,6 +446,7 @@ export const persistStateAsLauncherData = async (state: fhirclient.ClientState) 
   // TODO: Set name dynamically using get org name from capability resource, Dave knows the logic
   const launcherDataToSave: LauncherData = stateLauncherData ?? {
     name: 'Original provider',
+    useProxy: false,
     config: {
       iss: state.serverUrl,
       redirectUri: "./index.html",

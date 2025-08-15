@@ -3,10 +3,12 @@ import Providers from './endpoints/providers.json'
 
 export class LauncherData {
   name: string
+  useProxy: boolean
   config?: fhirclient.AuthorizeParams
 
-  constructor(name: string, config?: fhirclient.AuthorizeParams) {
+  constructor(name: string, useProxy: boolean, config?: fhirclient.AuthorizeParams) {
     this.name = name
+    this.useProxy = useProxy
     this.config = config
   }
 }
@@ -21,6 +23,7 @@ export const buildLauncherDataArray = (endpointsToAdd?: LauncherData[]): Launche
   const providers: LauncherData[] = jsonArray.map((item: any) => {
     return {
         name: item.name,
+        useProxy: item.useProxy,
         config: item.config
     }
   })
@@ -44,6 +47,7 @@ export const buildLauncherDataArray = (endpointsToAdd?: LauncherData[]): Launche
      launcherDataArray = launcherDataArray.concat(
       {
         "name": "SDS: eCare Shared Data",
+        "useProxy": false,
         "config": {
           "iss": process.env.REACT_APP_SHARED_DATA_ENDPOINT,
           "redirectUri": "./index.html",
@@ -67,6 +71,7 @@ export const buildLauncherDataArray = (endpointsToAdd?: LauncherData[]): Launche
     launcherDataArray = launcherDataArray.concat(
       {
         "name": "SDS: eCare Shared Data",
+        "useProxy": false,
         "config": {
           "iss": process.env.REACT_APP_SHARED_DATA_ENDPOINT,
           "redirectUri": "./index.html",
@@ -118,8 +123,9 @@ export const getLauncherDataArrayForEndpoints = async (availableLauncherDataArra
 // Given a pre-populated ProviderEndpoint[], typically populated with data from providerEndpointService.buildAvailableEndpoints,
 // and given a fhirclient.ClientState,
 // returns a ProviderEndpoint populated with the full matching data
-export const getLauncherDataForState = async (launcherDataArray: LauncherData[],
-                                              state: fhirclient.ClientState): Promise<LauncherData | undefined> => {
+export const getLauncherDataForState = async (state: fhirclient.ClientState): Promise<LauncherData | undefined> => {
+  let launcherDataArray: LauncherData[] = buildLauncherDataArray();
+
   if (state) {
     const iss: string = state?.serverUrl
     // TODO: consider beefing up the security of this by checking for another matching prop as well: clientId

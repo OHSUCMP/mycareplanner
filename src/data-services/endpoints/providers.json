@@ -1,6 +1,7 @@
  [
     {
       "name": "MCC Develop Sandbox",
+      "useProxy": false,
       "config": {
         "iss": "https://gw.interop.community/MCCDevelopment/data",
         "redirectUri": "./index.html",
@@ -10,6 +11,7 @@
     },
     {
       "name": "MCC Testing Sandbox",
+      "useProxy": false,
       "config": {
         "iss": "https://gw.interop.community/MCCTesting/data",
         "redirectUri": "./index.html",
@@ -19,6 +21,7 @@
     },
     {
       "name": "MCC Staging Sandbox",
+      "useProxy": false,
       "config": {
         "iss": "https://gw.interop.community/MCCStaging/data",
         "redirectUri": "./index.html",
@@ -28,6 +31,7 @@
     },
     {
       "name": "SDS: eCare Shared Data",
+      "useProxy": false,
       "config": {
         "iss": "https://gw.interop.community/eCareSharedData/open/",
         "redirectUri": "./index.html",

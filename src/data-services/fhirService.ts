@@ -15,6 +15,7 @@ import {
 } from './persistenceService'
 import {buildQuestionnaireBundles} from './questionnaireService'
 import {doLog} from '../log';
+import {getLauncherDataForState, LauncherData} from "./providerEndpointService";
 
 const resourcesFrom = (response: any): Resource[] => {
     // sometimes response is an Array, but other times it's an Object with resourceType='Bundle'.
@@ -418,9 +419,11 @@ export const getSupplementalDataClient = async (): Promise<Client | undefined> =
 // }
 
 export async function buildClientProxy(client: Client) : Promise<ClientProxy> {
-    let useProxy: boolean = process.env.REACT_APP_USE_FHIR_PROXY == 'true';
     let proxyUrl: string | undefined = process.env.REACT_APP_FHIR_PROXY_URL;
+    let launcherData: LauncherData | undefined = await getLauncherDataForState(client?.state);
+    let useProxy: boolean = launcherData?.useProxy ?? false;
     let clientProxy : ClientProxy = new ClientProxy(useProxy, proxyUrl, client);
+    console.log("buildClientProxy: endpoint: " + client.state.serverUrl + ", useProxy: " + useProxy);
     if (useProxy) {
         await clientProxy.register();
     }
