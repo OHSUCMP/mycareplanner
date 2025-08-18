@@ -371,7 +371,7 @@ export default function ProviderLogin(props: Props) {
                                     // But, if not using env vars, we could make a function that creates a name based on the client id
                                     // or other identifying information within the sdsClient
                                     name: 'SDS',
-                                    useProxy: false,
+                                    // useProxy: false,
                                     config: {
                                         iss: process.env.REACT_APP_SHARED_DATA_ENDPOINT,
                                         redirectUri: "./index.html",

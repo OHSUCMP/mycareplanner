@@ -3,7 +3,7 @@ import Providers from './endpoints/providers.json'
 
 export class LauncherData {
   name: string
-  useProxy: boolean
+  useProxy?: boolean
   config?: fhirclient.AuthorizeParams
 
   constructor(name: string, useProxy: boolean, config?: fhirclient.AuthorizeParams) {

@@ -446,7 +446,7 @@ export const persistStateAsLauncherData = async (state: fhirclient.ClientState) 
   // TODO: Set name dynamically using get org name from capability resource, Dave knows the logic
   const launcherDataToSave: LauncherData = stateLauncherData ?? {
     name: 'Original provider',
-    useProxy: false,
+    // useProxy: false,
     config: {
       iss: state.serverUrl,
       redirectUri: "./index.html",
