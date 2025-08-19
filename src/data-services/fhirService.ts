@@ -15,7 +15,7 @@ import {
 } from './persistenceService'
 import {buildQuestionnaireBundles} from './questionnaireService'
 import {doLog} from '../log';
-import {getLauncherDataForState, LauncherData} from "./providerEndpointService";
+import {FhirQueryConfig, getLauncherDataForState, LauncherData} from "./providerEndpointService";
 
 const resourcesFrom = (response: any): Resource[] => {
     // sometimes response is an Array, but other times it's an Object with resourceType='Bundle'.
@@ -55,51 +55,49 @@ const eighteenMonthsAgo = addPeriodToDate(today, {months: -18})
 const twoYearsAgo = addPeriodToDate(today, {years: -2})
 const tenYearsAgo = addPeriodToDate(today, {years: -10})
 
-const provenanceSearch = '&_revinclude=Provenance:target'
-
 /// Epic category codes
-// const carePlanPath = 'CarePlan?status=active&category=38717003,736271009,assess-plan' + provenanceSearch
+// const carePlanPath = 'CarePlan?status=active&category=38717003,736271009,assess-plan'
 
 // 'assess-plan' returns Longitudinal Care Plan in both Cerner and Epic.
 // Cerner throws an error when including other category codes
-const carePlanPath = 'CarePlan?status=active&category=assess-plan' + provenanceSearch
+const carePlanPath = 'CarePlan?status=active&category=assess-plan'
 
 // Allscripts and Cerner throws error with _include arg for participants.
-const careTeamPath = 'CareTeam?category=longitudinal' + provenanceSearch
-const careTeamPath_include = 'CareTeam?_include=CareTeam:participant' + provenanceSearch
+const careTeamPath = 'CareTeam?category=longitudinal'
+const careTeamPath_include = 'CareTeam?_include=CareTeam:participant'
 
-const goalsPath = 'Goal?lifecycle-status=active,completed,cancelled' + provenanceSearch
+const goalsPath = 'Goal?lifecycle-status=active,completed,cancelled'
 
-const encountersPath = 'Encounter?date=' + getGEDateParameter(twoYearsAgo) + provenanceSearch
+const encountersPath = 'Encounter?date=' + getGEDateParameter(twoYearsAgo)
 
 /// Epic allows multiple category codes only >= Aug 2021 release
 // const conditionsPath = 'Condition?category=problem-list-item,health-concern,LG41762-2&clinical-status=active';
-const problemListPath = 'Condition?category=problem-list-item&clinical-status=active' + provenanceSearch
-const healthConcernPath = 'Condition?category=health-concern&clinical-status=active' + provenanceSearch
+const problemListPath = 'Condition?category=problem-list-item&clinical-status=active'
+const healthConcernPath = 'Condition?category=health-concern&clinical-status=active'
 
-const immunizationsPath = 'Immunization?status=completed' + provenanceSearch
+const immunizationsPath = 'Immunization?status=completed'
 // storer: lab results now pulling from 3 years back, was 5, for #4
-const labResultsPath = 'Observation?category=laboratory&date=' + getGEDateParameter(threeYearsAgo) + provenanceSearch
-const eGFRExtraResultsPath = 'Observation?code=http://loinc.org|45066-8,http://loinc.org|48642-3,http://loinc.org|48643-1,http://loinc.org|50044-7,http://loinc.org|50210-4,http://loinc.org|50384-7,http://loinc.org|62238-1,http://loinc.org|69405-9,http://loinc.org|70969-1,http://loinc.org|77147-7,http://loinc.org|88293-6,http://loinc.org|88294-4,http://loinc.org|94677-2,http://loinc.org|98979-8,http://loinc.org|98980-6&date=' + getGEDateParameter(tenYearsAgo) + '&date=' + getLTDateParameter(threeYearsAgo) + provenanceSearch
+const labResultsPath = 'Observation?category=laboratory&date=' + getGEDateParameter(threeYearsAgo)
+const eGFRExtraResultsPath = 'Observation?code=http://loinc.org|45066-8,http://loinc.org|48642-3,http://loinc.org|48643-1,http://loinc.org|50044-7,http://loinc.org|50210-4,http://loinc.org|50384-7,http://loinc.org|62238-1,http://loinc.org|69405-9,http://loinc.org|70969-1,http://loinc.org|77147-7,http://loinc.org|88293-6,http://loinc.org|88294-4,http://loinc.org|94677-2,http://loinc.org|98979-8,http://loinc.org|98980-6&date=' + getGEDateParameter(tenYearsAgo) + '&date=' + getLTDateParameter(threeYearsAgo)
 
 // Allscripts does not support both status and authoredon args
-// const medicationRequestPath = 'MedicationRequest?status=active&authoredon=' + getDateParameter(threeYearsAgo) + provenanceSearch
-const medicationRequestActivePath = 'MedicationRequest?status=active' + provenanceSearch
-const medicationRequestInactivePath = 'MedicationRequest?status=on-hold,cancelled,completed,stopped&_count=10' + provenanceSearch
+// const medicationRequestPath = 'MedicationRequest?status=active&authoredon=' + getDateParameter(threeYearsAgo)
+const medicationRequestActivePath = 'MedicationRequest?status=active'
+const medicationRequestInactivePath = 'MedicationRequest?status=on-hold,cancelled,completed,stopped&_count=10'
 const medicationRequesterInclude = '&_include=MedicationRequest:requester'
 
-const serviceRequestPath = 'ServiceRequest?status=active&authored=' + getGEDateParameter(twoYearsAgo) + provenanceSearch
+const serviceRequestPath = 'ServiceRequest?status=active&authored=' + getGEDateParameter(twoYearsAgo)
 const serviceRequesterInclude = '&_include=ServiceRequest:requester'
 
-const proceduresTimePath = 'Procedure?date=' + getGEDateParameter(threeYearsAgo) + provenanceSearch
-const proceduresCountPath = 'Procedure?_count=100' + provenanceSearch
-const diagnosticReportPath = 'DiagnosticReport?date=' + getGEDateParameter(threeYearsAgo) + provenanceSearch
-const socialHistoryPath = 'Observation?category=social-history' + provenanceSearch
-const questionnaireResponsePath = 'QuestionnaireResponse?status=completed' + provenanceSearch
-const surveyObservationsPath = 'Observation?category=survey' + provenanceSearch
+const proceduresTimePath = 'Procedure?date=' + getGEDateParameter(threeYearsAgo)
+const proceduresCountPath = 'Procedure?_count=100'
+const diagnosticReportPath = 'DiagnosticReport?date=' + getGEDateParameter(threeYearsAgo)
+const socialHistoryPath = 'Observation?category=social-history'
+const questionnaireResponsePath = 'QuestionnaireResponse?status=completed'
+const surveyObservationsPath = 'Observation?category=survey'
 
 /// category=survey returns 400 error from Epic, so include another category recognized by Epic
-// const surveyResultsPath = 'Observation?category=survey,functional-mental-status' + provenanceSearch
+// const surveyResultsPath = 'Observation?category=survey,functional-mental-status'
 
 const noPageLimit: fhirclient.FhirOptions = {
     // no page limit, fetch all pages and results.
@@ -163,7 +161,7 @@ export async function getEncounters(clientProxy: ClientProxy): Promise<Encounter
     })
     // workaround for Allscripts lack of support for both category and status args
     // Epic allows multiple category codes in one query only >= Aug 2021 release
-    resources = resources.concat(resourcesFrom(await clientProxy.patientRequest(encountersPath, noPageLimit) as fhirclient.JsonObject[]))
+    resources = resources.concat(resourcesFrom(await clientProxy.patientSearch(encountersPath, noPageLimit) as fhirclient.JsonObject[]))
 
     const encounters = resources.filter((item: any) => item?.resourceType === 'Encounter') as Encounter[]
     recordProvenance(resources)
@@ -183,13 +181,13 @@ export async function getConditions(clientProxy: ClientProxy): Promise<Condition
     const url = new URL(clientProxy.client.state.serverUrl);
     const allowedHosts = ['allscripts.com'];
     if (allowedHosts.includes(url.host)) {
-        const conditionsPath = 'Condition?category=problem-list-item,health-concern' + provenanceSearch
-        resources = resources.concat(resourcesFrom(await clientProxy.patientRequest(conditionsPath, noPageLimit) as fhirclient.JsonObject[]))
+        const conditionsPath = 'Condition?category=problem-list-item,health-concern'
+        resources = resources.concat(resourcesFrom(await clientProxy.patientSearch(conditionsPath, noPageLimit) as fhirclient.JsonObject[]))
 
     } else {
         // Epic allows multiple category codes in one query only >= Aug 2021 release
-        resources = resources.concat(resourcesFrom(await clientProxy.patientRequest(problemListPath, noPageLimit) as fhirclient.JsonObject[]))
-        resources = resources.concat(resourcesFrom(await clientProxy.patientRequest(healthConcernPath, noPageLimit) as fhirclient.JsonObject[]))
+        resources = resources.concat(resourcesFrom(await clientProxy.patientSearch(problemListPath, noPageLimit) as fhirclient.JsonObject[]))
+        resources = resources.concat(resourcesFrom(await clientProxy.patientSearch(healthConcernPath, noPageLimit) as fhirclient.JsonObject[]))
     }
 
     const conditions = resources.filter((item: any) => item?.resourceType === 'Condition') as Condition[]
@@ -220,27 +218,27 @@ export async function getVitalSigns(clientProxy: ClientProxy): Promise<Observati
         // Issue: UCHealth returns 400 error if include both category and code.
         // return 'Observation?category=vital-signs&code=http://loinc.org|' + code + '&_sort:desc=date&_count=1'
         // return 'Observation?code=http://loinc.org|' + code + '&_sort:desc=date&_count=1' + provenanceSearch
-        return 'Observation?code=http://loinc.org|' + code + '&date=' + getGEDateParameter(twoYearsAgo) + '&_count=10' + provenanceSearch
+        return 'Observation?code=http://loinc.org|' + code + '&date=' + getGEDateParameter(twoYearsAgo) + '&_count=10'
     })
 
     // await can be used only at top-level within a function, cannot use queryPaths.forEach()
-    resources = resources.concat(resourcesFrom(await clientProxy.patientRequest(queryPaths[0], onePageLimit) as fhirclient.JsonObject[]) as Observation[])
-    resources = resources.concat(resourcesFrom(await clientProxy.patientRequest(queryPaths[1], onePageLimit) as fhirclient.JsonObject[]) as Observation[])
-    resources = resources.concat(resourcesFrom(await clientProxy.patientRequest(queryPaths[2], onePageLimit) as fhirclient.JsonObject[]) as Observation[])
-    resources = resources.concat(resourcesFrom(await clientProxy.patientRequest(queryPaths[3], onePageLimit) as fhirclient.JsonObject[]) as Observation[])
-    resources = resources.concat(resourcesFrom(await clientProxy.patientRequest(queryPaths[4], onePageLimit) as fhirclient.JsonObject[]) as Observation[])
-    resources = resources.concat(resourcesFrom(await clientProxy.patientRequest(queryPaths[5], onePageLimit) as fhirclient.JsonObject[]) as Observation[])
+    resources = resources.concat(resourcesFrom(await clientProxy.patientSearch(queryPaths[0], onePageLimit) as fhirclient.JsonObject[]) as Observation[])
+    resources = resources.concat(resourcesFrom(await clientProxy.patientSearch(queryPaths[1], onePageLimit) as fhirclient.JsonObject[]) as Observation[])
+    resources = resources.concat(resourcesFrom(await clientProxy.patientSearch(queryPaths[2], onePageLimit) as fhirclient.JsonObject[]) as Observation[])
+    resources = resources.concat(resourcesFrom(await clientProxy.patientSearch(queryPaths[3], onePageLimit) as fhirclient.JsonObject[]) as Observation[])
+    resources = resources.concat(resourcesFrom(await clientProxy.patientSearch(queryPaths[4], onePageLimit) as fhirclient.JsonObject[]) as Observation[])
+    resources = resources.concat(resourcesFrom(await clientProxy.patientSearch(queryPaths[5], onePageLimit) as fhirclient.JsonObject[]) as Observation[])
     // resources = resources.concat( resourcesFrom(await client.patient.request(queryPaths[6], onePageLimit) as fhirclient.JsonObject[]) as Observation[] )
     // resources = resources.concat( resourcesFrom(await client.patient.request(queryPaths[7], onePageLimit) as fhirclient.JsonObject[]) as Observation[] )
 
     // storer: issue1 - pull office BPs from 18 months ago
-    const officeBPPath = 'Observation?code=http://loinc.org|85354-9&date=' + getGEDateParameter(twoYearsAgo) + provenanceSearch
-    resources = resources.concat(resourcesFrom(await clientProxy.patientRequest(officeBPPath, onePageLimit) as fhirclient.JsonObject[]) as Observation[])
+    const officeBPPath = 'Observation?code=http://loinc.org|85354-9&date=' + getGEDateParameter(twoYearsAgo)
+    resources = resources.concat(resourcesFrom(await clientProxy.patientSearch(officeBPPath, onePageLimit) as fhirclient.JsonObject[]) as Observation[])
 
     // storer: issue2 - pull home BPs from 18 months ago
     // One year of history for Home BP vitals, which are returned as separate systolic and diastolic Observation resources.
-    const homeBPPath = 'Observation?code=http://loinc.org|72076-3&date=' + getGEDateParameter(twoYearsAgo) + provenanceSearch
-    resources = resources.concat(resourcesFrom(await clientProxy.patientRequest(homeBPPath, onePageLimit) as fhirclient.JsonObject[]) as Observation[])
+    const homeBPPath = 'Observation?code=http://loinc.org|72076-3&date=' + getGEDateParameter(twoYearsAgo)
+    resources = resources.concat(resourcesFrom(await clientProxy.patientSearch(homeBPPath, onePageLimit) as fhirclient.JsonObject[]) as Observation[])
 
     resources = resources.filter(v => v !== undefined)
     const vitals = resources.filter((item: any) => item?.resourceType === 'Observation') as Observation[]
@@ -422,7 +420,8 @@ export async function buildClientProxy(client: Client) : Promise<ClientProxy> {
     let proxyUrl: string | undefined = process.env.REACT_APP_FHIR_PROXY_URL;
     let launcherData: LauncherData | undefined = await getLauncherDataForState(client?.state);
     let useProxy: boolean = launcherData?.useProxy ?? false;
-    let clientProxy : ClientProxy = new ClientProxy(useProxy, proxyUrl, client);
+    let fhirQueryConfig: FhirQueryConfig | undefined = launcherData?.fhirQueryConfig;
+    let clientProxy : ClientProxy = new ClientProxy(useProxy, fhirQueryConfig, proxyUrl, client);
     console.log("buildClientProxy: endpoint: " + client.state.serverUrl + ", useProxy: " + useProxy);
     if (useProxy) {
         await clientProxy.register();
@@ -605,7 +604,7 @@ const getFHIRResources = async (client: Client, clientScope: string | undefined,
     // workaround for Allscripts bug
     pcpPath = pcpPath?.replace('R4/fhir', 'R4/open')
     // console.log('PCP path = ' + pcpPath)
-    const patientPCP: Practitioner | undefined = pcpPath ? await clientProxy.request(pcpPath) : undefined;
+    const patientPCP: Practitioner | undefined = pcpPath ? await clientProxy.read(pcpPath) : undefined;
 
     setAndLogProgressState("Reading User data", 30)
     const patientPath = 'Patient/' + client.getPatientId();
@@ -615,7 +614,7 @@ const getFHIRResources = async (client: Client, clientScope: string | undefined,
 
     let fhirUser: Practitioner | Patient | RelatedPerson | undefined
     try {
-        fhirUser = fhirUserPath ? await clientProxy.request(fhirUserPath) : undefined
+        fhirUser = fhirUserPath ? await clientProxy.read(fhirUserPath) : undefined
     } catch (error) {
         // console.error(error)
         // Assume this is SDS
@@ -680,7 +679,7 @@ const getFHIRQueries = async (clientProxy: ClientProxy, clientScope: string | un
     try {
         const _careTeamPath = supportsInclude ? careTeamPath_include : careTeamPath
         let careTeamData: Resource[] | undefined = (hasScope(clientScope, 'CareTeam.read')
-            ? resourcesFrom(await clientProxy.patientRequest(_careTeamPath, noPageLimit) as fhirclient.JsonObject[])
+            ? resourcesFrom(await clientProxy.patientSearch(_careTeamPath, noPageLimit) as fhirclient.JsonObject[])
             : undefined)
         careTeams = careTeamData?.filter((item: any) => item.resourceType === 'CareTeam') as CareTeam[]
         const careTeamPractitioners =
@@ -738,12 +737,12 @@ const getFHIRQueries = async (clientProxy: ClientProxy, clientScope: string | un
     setAndLogProgressState(`${curResourceName} request: ` + new Date().toLocaleTimeString(), 60)
     try {
         let procedureData: Resource[] | undefined = (hasScope(clientScope, `${curResourceName}.read`)
-            ? resourcesFrom(await clientProxy.patientRequest(proceduresTimePath, noPageLimit) as fhirclient.JsonObject[])
+            ? resourcesFrom(await clientProxy.patientSearch(proceduresTimePath, noPageLimit) as fhirclient.JsonObject[])
             : undefined)
         // if no procedures found in past 3 years, get _count=100
         if (procedureData === undefined || procedureData.entries?.length === 0) {
             procedureData = (hasScope(clientScope, `${curResourceName}.read`)
-                ? resourcesFrom(await clientProxy.patientRequest(proceduresCountPath, onePageLimit) as fhirclient.JsonObject[])
+                ? resourcesFrom(await clientProxy.patientSearch(proceduresCountPath, onePageLimit) as fhirclient.JsonObject[])
                 : undefined)
         }
         procedures = procedureData?.filter((item: any) => item.resourceType === curResourceName) as Procedure[]
@@ -795,7 +794,7 @@ const getFHIRQueries = async (clientProxy: ClientProxy, clientScope: string | un
             // fetch all active meds
             const _medicationRequestActivePath = medicationRequestActivePath + (supportsInclude ? medicationRequesterInclude : '')
             let medicationRequestData: Resource[] | undefined =
-                resourcesFrom(await clientProxy.patientRequest(_medicationRequestActivePath, noPageLimit) as fhirclient.JsonObject[])
+                resourcesFrom(await clientProxy.patientSearch(_medicationRequestActivePath, noPageLimit) as fhirclient.JsonObject[])
             const medPractitioners =
                 medicationRequestData?.filter((item: any) => item.resourceType === 'Practitioner') as Practitioner[]
             medPractitioners?.forEach((pract: Practitioner) => {
@@ -808,7 +807,7 @@ const getFHIRQueries = async (clientProxy: ClientProxy, clientScope: string | un
             // medicationRequestData && setResourcesLoadedCountState(++resourcesLoadedCount)
 
             // also fetch the last 10 inactive meds
-            let inactiveMeds = resourcesFrom(await clientProxy.patientRequest(medicationRequestInactivePath, onePageLimit) as fhirclient.JsonObject[])
+            let inactiveMeds = resourcesFrom(await clientProxy.patientSearch(medicationRequestInactivePath, onePageLimit) as fhirclient.JsonObject[])
             // remove any inactive meds also in the active list (VA does not support the status parameter)
             setAndLogProgressState('Found ' + (inactiveMeds?.length ?? 0) + ' inactive medication requests (before filtering).', 82)
             inactiveMeds = inactiveMeds?.filter((item: any) => medicationRequestData?.find((resource: Resource) => resource.id === item.id) === undefined)
@@ -841,7 +840,7 @@ const getFHIRQueries = async (clientProxy: ClientProxy, clientScope: string | un
         if (hasScope(clientScope, 'ServiceRequest.read')) {
             const _serviceRequestPath = serviceRequestPath + (supportsInclude ? serviceRequesterInclude : '')
             let serviceRequestData: Resource[] | undefined =
-                resourcesFrom(await clientProxy.patientRequest(_serviceRequestPath, noPageLimit) as fhirclient.JsonObject[])
+                resourcesFrom(await clientProxy.patientSearch(_serviceRequestPath, noPageLimit) as fhirclient.JsonObject[])
             serviceRequests = serviceRequestData?.filter((item: any) => item.resourceType === 'ServiceRequest') as ServiceRequest[]
             recordProvenance(serviceRequestData)
             const serviceRequestPractitioners =
@@ -1010,7 +1009,7 @@ const loadFHIRQuery = async <T extends Resource>(
 
     try {
         resourceData = (hasScope(clientScope, `${resourceSrcCodeName}.read`)
-            ? resourcesFrom(await clientProxy.patientRequest(resourcePath, noPageLimit) as fhirclient.JsonObject[])
+            ? resourcesFrom(await clientProxy.patientSearch(resourcePath, noPageLimit) as fhirclient.JsonObject[])
             : undefined)
         resources = resourceData?.filter((item: any) => item.resourceType === resourceSrcCodeName) as T[]
         console.log("loadFHIRQuery: resources:", resources)

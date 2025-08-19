@@ -1,18 +1,28 @@
 import Client from "fhirclient/lib/Client";
 import {fhirclient} from "fhirclient/lib/types";
+import {FhirQueryConfig} from "../providerEndpointService";
+
+const defaultFhirQueryConfig: FhirQueryConfig = {
+    includeProvenance: true
+};
 
 export class ClientProxy {
     useProxy: boolean;
+    fhirQueryConfig: FhirQueryConfig | undefined;
     proxyUrl: string | undefined;
     client: Client;
     proxyAccessToken: string | undefined;
 
-    constructor(useProxy: boolean, proxyUrl: string | undefined, client: Client) {
+    constructor(useProxy: boolean,
+                fhirQueryConfig: FhirQueryConfig | undefined,
+                proxyUrl: string | undefined,
+                client: Client) {
         if (useProxy && ! proxyUrl) {
             throw new Error("proxy specified for use but proxyUrl not set");
         }
 
         this.useProxy = useProxy;
+        this.fhirQueryConfig = fhirQueryConfig ?? defaultFhirQueryConfig;
         this.proxyUrl = proxyUrl;
         this.client = client;
     }
@@ -64,7 +74,9 @@ export class ClientProxy {
             });
     }
 
-    patientRequest(path: string, fhirOptions?: fhirclient.FhirOptions) : Promise<fhirclient.JsonObject[]> {
+    patientSearch(path: string, fhirOptions?: fhirclient.FhirOptions) : Promise<fhirclient.JsonObject[]> {
+        path = this.applyFhirQueryConfig(path);
+
         if (this.useProxy) {
             if ( ! this.proxyAccessToken ) {
                 throw new Error("proxy token not available");
@@ -121,7 +133,7 @@ export class ClientProxy {
         }
     }
 
-    request<T = any>(path: string, fhirOptions?: fhirclient.FhirOptions) : Promise<T> {
+    read<T = any>(reference: string, fhirOptions?: fhirclient.FhirOptions) : Promise<T> {
         if (this.useProxy) {
             if ( ! this.proxyAccessToken ) {
                 throw new Error("proxy token not available");
@@ -138,13 +150,13 @@ export class ClientProxy {
                 }
 
                 // path in the form <resource>?<k1=v1>&<k2=v2>&...
-                let pathParts = new PathParts(path);
+                let pathParts = new PathParts(reference);
                 pathParts.setParam("_format", "json");
                 let newPath = pathParts.resourceType + "?" + pathParts.getParamsString();
 
                 let url = this.proxyUrl + "/proxy/" + newPath;
 
-                console.log("requesting: ", url);
+                console.log("read: ", url);
 
                 fetch(url, requestOptions)
                     .then(response => {
@@ -163,7 +175,7 @@ export class ClientProxy {
             });
 
         } else {
-            return this.client.request(path, fhirOptions);
+            return this.client.request(reference, fhirOptions);
         }
     }
 
@@ -246,6 +258,21 @@ export class ClientProxy {
 
         } else {
             return this.client.user.read();
+        }
+    }
+
+    applyFhirQueryConfig(path: string) : string {
+        if (this.fhirQueryConfig) {
+            let pathParts = new PathParts(path);
+
+            if (this.fhirQueryConfig.includeProvenance) {
+                pathParts.setParam("_revinclude", "Provenance:target");
+            }
+
+            return pathParts.resourceType + "?" + pathParts.getParamsString();
+
+        } else {
+            return path;
         }
     }
 }

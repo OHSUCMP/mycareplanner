@@ -1,14 +1,28 @@
 import { fhirclient } from 'fhirclient/lib/types'
 import Providers from './endpoints/providers.json'
 
+
+export class FhirQueryConfig {
+  includeProvenance?: boolean
+
+  constructor(includeProvenance: boolean) {
+    this.includeProvenance = includeProvenance
+  }
+}
+
 export class LauncherData {
   name: string
   useProxy?: boolean
+  fhirQueryConfig?: FhirQueryConfig
   config?: fhirclient.AuthorizeParams
 
-  constructor(name: string, useProxy: boolean, config?: fhirclient.AuthorizeParams) {
+  constructor(name: string,
+              useProxy: boolean,
+              fhirQueryConfig: FhirQueryConfig,
+              config?: fhirclient.AuthorizeParams) {
     this.name = name
     this.useProxy = useProxy
+    this.fhirQueryConfig = fhirQueryConfig
     this.config = config
   }
 }
@@ -22,9 +36,10 @@ export const buildLauncherDataArray = (endpointsToAdd?: LauncherData[]): Launche
   let jsonArray = JSON.parse(JSON.stringify(Providers).toString())
   const providers: LauncherData[] = jsonArray.map((item: any) => {
     return {
-        name: item.name,
-        useProxy: item.useProxy,
-        config: item.config
+      name: item.name,
+      useProxy: item.useProxy,
+      fhirQueryConfig: item.fhirQueryConfig,
+      config: item.config
     }
   })
   launcherDataArray = launcherDataArray.concat(providers);
@@ -47,7 +62,7 @@ export const buildLauncherDataArray = (endpointsToAdd?: LauncherData[]): Launche
      launcherDataArray = launcherDataArray.concat(
       {
         "name": "SDS: eCare Shared Data",
-        "useProxy": false,
+        // "useProxy": false,
         "config": {
           "iss": process.env.REACT_APP_SHARED_DATA_ENDPOINT,
           "redirectUri": "./index.html",
@@ -71,7 +86,7 @@ export const buildLauncherDataArray = (endpointsToAdd?: LauncherData[]): Launche
     launcherDataArray = launcherDataArray.concat(
       {
         "name": "SDS: eCare Shared Data",
-        "useProxy": false,
+        // "useProxy": false,
         "config": {
           "iss": process.env.REACT_APP_SHARED_DATA_ENDPOINT,
           "redirectUri": "./index.html",
