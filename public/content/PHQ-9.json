@@ -14,7 +14,7 @@
             }
         ]
     },
-    "url": "PHQ-9",
+    "url": "http://ohsu.edu/fhir/Questionnaire/PHQ-9",
     "title": "PHQ-9 quick depression assessment panel [Reported.PHQ]",
     "status": "draft",
     "copyright": "Copyright © Pfizer Inc. All rights reserved. Developed by Drs. Robert L. Spitzer, Janet B.W. Williams, Kurt Kroenke and colleagues, with an educational grant from Pfizer Inc. No permission required to reproduce, translate, display or distribute.",

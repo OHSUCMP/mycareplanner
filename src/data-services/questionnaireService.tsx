@@ -11,7 +11,7 @@ const questionnairesMetadata: QuestionnaireMetadata[] = [
         "label": "Depression Screening",
         "learnMore": "https://medlineplus.gov/lab-tests/depression-screening/",
         "resource_id": "44249-1",
-        "url": "PHQ-9",
+        "url": "http://ohsu.edu/fhir/Questionnaire/PHQ-9",
         "isScored": true,
         "code":
         {
