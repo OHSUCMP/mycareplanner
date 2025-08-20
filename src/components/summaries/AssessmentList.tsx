@@ -90,14 +90,40 @@ function getOptions(measure: string) {
         },
         legend: {
             display: false
-        }
+        },
+              scales: {
+        xAxes: [{
+          type: 'time',
+          distribution: 'linear',
+          time: {
+            unit: 'month',
+            format: 'dateFormat',
+            displayFormats: {
+              millisecond: 'D MMM, h:mm a',
+              second: 'D MMM, h:mm a',
+              minute: 'D MMM, h:mm a',
+              hour: 'D MMM, h:mm a',
+              day: 'D MMM',
+              week: 'll',
+              month: 'M/D/YY',
+              quarter: 'll',
+              year: 'll'
+            },
+            tooltipFormat: 'MM-DD-YYYY',
+          },
+          ticks: {
+            autoSkip: true,
+            maxTicksLimit: 7
+          }
+        }]
+      }
     };
 
 }
 
 function getData(responses: ResponseBundle[]) {
     return {
-        labels: responses.map((response) => response.authored.toLocaleDateString()),
+        labels: responses.map((response) => response.authored),
         datasets: [
             {
                 data: responses.map((response) => response.score),
@@ -127,7 +153,10 @@ export const AssessmentList: FC<AssessmentListProps> = ({sharingData, fhirDataCo
                 </AccordionSummary>
                 <AccordionDetails>
                     <Grid container spacing={2}>
-                        {bundle.responses.map((response, index) => (
+                        {bundle.responses
+                            .slice() // make a copy so you don’t mutate the original
+                            .sort((a, b) => new Date(b.authored).getTime() - new Date(a.authored).getTime())
+                            .map((response, index) => (
                             <React.Fragment key={index}>
                                 <Grid item xs={4}>
                                     <Typography variant="body2">
