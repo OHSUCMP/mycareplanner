@@ -1,20 +1,17 @@
 import Client from "fhirclient/lib/Client";
 import {fhirclient} from "fhirclient/lib/types";
 import {FhirQueryConfig} from "../providerEndpointService";
-
-const defaultFhirQueryConfig: FhirQueryConfig = {
-    includeProvenance: true
-};
+import {Resource} from "../fhir-types/fhir-r4";
 
 export class ClientProxy {
     useProxy: boolean;
-    fhirQueryConfig: FhirQueryConfig | undefined;
+    fhirQueryConfigMap: Map<String, FhirQueryConfig> | undefined;
     proxyUrl: string | undefined;
     client: Client;
     proxyAccessToken: string | undefined;
 
     constructor(useProxy: boolean,
-                fhirQueryConfig: FhirQueryConfig | undefined,
+                fhirQueryConfigMap: Map<String, FhirQueryConfig> | undefined,
                 proxyUrl: string | undefined,
                 client: Client) {
         if (useProxy && ! proxyUrl) {
@@ -22,7 +19,7 @@ export class ClientProxy {
         }
 
         this.useProxy = useProxy;
-        this.fhirQueryConfig = fhirQueryConfig ?? defaultFhirQueryConfig;
+        this.fhirQueryConfigMap = fhirQueryConfigMap;
         this.proxyUrl = proxyUrl;
         this.client = client;
     }
@@ -74,9 +71,61 @@ export class ClientProxy {
             });
     }
 
-    patientSearch(path: string, fhirOptions?: fhirclient.FhirOptions) : Promise<fhirclient.JsonObject[]> {
-        path = this.applyFhirQueryConfig(path);
+    fhirQueryConfig(key: string) : FhirQueryConfig | undefined {
+        if (this.fhirQueryConfigMap) {
+            return this.fhirQueryConfigMap.get(key);
+        } else {
+            return undefined;
+        }
+    }
 
+    async patientSearchByKey(key: string) : Promise<Resource[]> {
+        let resources: Resource[] = []
+        let fqc: FhirQueryConfig | undefined = this.fhirQueryConfig(key)
+        if (fqc === undefined) {
+            throw new Error("patientSearchByKey: FhirQueryConfig not found for '" + key + "'");
+        }
+
+        for (let path of fqc.path) {
+            try {
+                console.debug("patientSearchByKey: " + key + " / " + path)
+                resources = resources.concat(
+                    this.resourcesFrom(
+                        await this.patientSearch(this.doTokenReplacements(path), fqc.fhirOptions) as fhirclient.JsonObject[]
+                    )
+                )
+            } catch (error) {
+                console.log("error: ", error)
+            }
+        }
+
+        return resources;
+    }
+
+    doTokenReplacements(path: string) : string {
+        // quick and dirty, can make this more flexible later
+        if (path.includes("{TWO_YEARS_AGO}")) {
+            path = path.replaceAll("{TWO_YEARS_AGO}", this.buildRelativeDate(2));
+        }
+
+        if (path.includes("{THREE_YEARS_AGO}")) {
+            path = path.replaceAll("{THREE_YEARS_AGO}", this.buildRelativeDate(3));
+        }
+
+        if (path.includes("{TEN_YEARS_AGO}")) {
+            path = path.replaceAll("{TEN_YEARS_AGO}", this.buildRelativeDate(10));
+        }
+
+        return path;
+    }
+
+    buildRelativeDate(yearsToSubtract: number) : string {
+        let now = new Date();
+        let date = new Date(now.getFullYear() - yearsToSubtract, now.getMonth(), now.getDate());
+        return date.toISOString().split("T")[0];
+    }
+
+    patientSearch(path: string, fhirOptions?: fhirclient.FhirOptions) : Promise<fhirclient.JsonObject[]> {
         if (this.useProxy) {
             if ( ! this.proxyAccessToken ) {
                 throw new Error("proxy token not available");
@@ -261,20 +310,31 @@ export class ClientProxy {
         }
     }
 
-    applyFhirQueryConfig(path: string) : string {
-        if (this.fhirQueryConfig) {
-            let pathParts = new PathParts(path);
+    resourcesFrom = (response: any): Resource[] => {
+        // sometimes response is an Array, but other times it's an Object with resourceType='Bundle'.
+        // We only want to flatMap the response if it comes in as an Array.  But if it comes in as
+        // an Object with resourceType='Bundle', we just want to grab its entries.
 
-            if (this.fhirQueryConfig.includeProvenance) {
-                pathParts.setParam("_revinclude", "Provenance:target");
+        try {
+            let entries : fhirclient.JsonObject[];
+            if (response instanceof Array) {
+                entries = response.flatMap(r => (r as fhirclient.JsonObject)?.entry as fhirclient.JsonObject[] || []);
+
+            } else if (response.resourceType === 'Bundle') {
+                entries = (response as fhirclient.JsonObject)?.entry as fhirclient.JsonObject[] || [];
+
+            } else {
+                throw new Error('response is not an array or a Bundle');
             }
 
-            return pathParts.resourceType + "?" + pathParts.getParamsString();
+            return entries?.map((entry: fhirclient.JsonObject) => entry.resource as any)
+                .filter((resource: Resource) => resource.resourceType !== 'OperationOutcome');
 
-        } else {
-            return path;
+        } catch (error) {
+            console.log('resourcesFrom: caught error: ', error)
+            throw error;
         }
-    }
+    };
 }
 
 export class PathParts {

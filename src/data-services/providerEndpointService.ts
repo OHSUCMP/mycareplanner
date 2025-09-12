@@ -1,24 +1,25 @@
 import { fhirclient } from 'fhirclient/lib/types'
 import Providers from './endpoints/providers.json'
 
-
 export class FhirQueryConfig {
-  includeProvenance?: boolean
+  path: []
+  fhirOptions?: fhirclient.FhirOptions
 
-  constructor(includeProvenance: boolean) {
-    this.includeProvenance = includeProvenance
+  constructor(path: [], fhirOptions: fhirclient.FhirOptions) {
+    this.path = path
+    this.fhirOptions = fhirOptions
   }
 }
 
 export class LauncherData {
   name: string
   useProxy?: boolean
-  fhirQueryConfig?: FhirQueryConfig
+  fhirQueryConfig?: Map<String, FhirQueryConfig>
   config?: fhirclient.AuthorizeParams
 
   constructor(name: string,
               useProxy: boolean,
-              fhirQueryConfig: FhirQueryConfig,
+              fhirQueryConfig: Map<String, FhirQueryConfig>,
               config?: fhirclient.AuthorizeParams) {
     this.name = name
     this.useProxy = useProxy
@@ -27,7 +28,7 @@ export class LauncherData {
   }
 }
 
-export const buildLauncherDataArray = (endpointsToAdd?: LauncherData[]): LauncherData[] => {
+export const buildLauncherDataArray = (): LauncherData[] => {
   console.log("in buildLauncherDataArray()")
   let launcherDataArray: LauncherData[] = []
 
@@ -35,10 +36,13 @@ export const buildLauncherDataArray = (endpointsToAdd?: LauncherData[]): Launche
   // available to be overridden by host filesystem
   let jsonArray = JSON.parse(JSON.stringify(Providers).toString())
   const providers: LauncherData[] = jsonArray.map((item: any) => {
+    const fhirQueryConfig: Map<String, FhirQueryConfig> | undefined = item.fhirQueryConfig ?
+        new Map<String, FhirQueryConfig>(Object.entries(item.fhirQueryConfig)) :
+        undefined;
     return {
       name: item.name,
       useProxy: item.useProxy,
-      fhirQueryConfig: item.fhirQueryConfig,
+      fhirQueryConfig: fhirQueryConfig,
       config: item.config
     }
   })
