@@ -434,9 +434,6 @@ export async function buildClientProxy(client: Client) : Promise<ClientProxy> {
 
     let clientProxy : ClientProxy = new ClientProxy(useProxy, fhirQueryConfigMap, proxyUrl, client);
     console.log("buildClientProxy: endpoint: " + client.state.serverUrl + ", useProxy: " + useProxy);
-    if (useProxy) {
-        await clientProxy.register();
-    }
     return clientProxy;
 }
 
