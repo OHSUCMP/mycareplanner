@@ -2,13 +2,19 @@
   "encounters": {
     "path": [
       "Encounter?date=ge{TWO_YEARS_AGO}&_revinclude=Provenance:target"
-    ]
+    ],
+    "fhirOptions": {
+      "pageLimit": 0
+    }
   },
   "conditions": {
     "path": [
       "Condition?category=problem-list-item&clinical-status=active&_revinclude=Provenance:target",
       "Condition?category=health-concern&clinical-status=active&_revinclude=Provenance:target"
-    ]
+    ],
+    "fhirOptions": {
+      "pageLimit": 0
+    }
   },
   "vitals": {
     "path": [
@@ -28,12 +34,18 @@
   "careTeam": {
     "path": [
       "CareTeam?_include=CareTeam:participant&_revinclude=Provenance:target"
-    ]
+    ],
+    "fhirOptions": {
+      "pageLimit": 0
+    }
   },
   "proceduresTime": {
     "path": [
       "Procedure?date=ge{THREE_YEARS_AGO}&_revinclude=Provenance:target"
-    ]
+    ],
+    "fhirOptions": {
+      "pageLimit": 0
+    }
   },
   "proceduresCount": {
     "path": [
@@ -46,7 +58,10 @@
   "medicationRequestActive": {
     "path": [
       "MedicationRequest?status=active&_include=MedicationRequest:requester&_revinclude=Provenance:target"
-    ]
+    ],
+    "fhirOptions": {
+      "pageLimit": 0
+    }
   },
   "medicationRequestInactive": {
     "path": [
@@ -59,51 +74,81 @@
   "serviceRequest": {
     "path": [
       "ServiceRequest?status=active&authored=ge{TWO_YEARS_AGO}&_include=ServiceRequest:requester&_revinclude=Provenance:target"
-    ]
+    ],
+    "fhirOptions": {
+      "pageLimit": 0
+    }
   },
   "carePlan": {
     "path": [
       "CarePlan?status=active&category=assess-plan&_revinclude=Provenance:target"
-    ]
+    ],
+    "fhirOptions": {
+      "pageLimit": 0
+    }
   },
   "goal": {
     "path": [
       "Goal?lifecycle-status=active,completed,cancelled&_revinclude=Provenance:target"
-    ]
+    ],
+    "fhirOptions": {
+      "pageLimit": 0
+    }
   },
   "diagnosticReport": {
     "path": [
       "DiagnosticReport?date=ge{THREE_YEARS_AGO}&_revinclude=Provenance:target"
-    ]
+    ],
+    "fhirOptions": {
+      "pageLimit": 0
+    }
   },
   "immunization": {
     "path": [
       "Immunization?status=completed&_revinclude=Provenance:target"
-    ]
+    ],
+    "fhirOptions": {
+      "pageLimit": 0
+    }
   },
   "labResults": {
     "path": [
       "Observation?category=laboratory&date=ge{THREE_YEARS_AGO}&_revinclude=Provenance:target"
-    ]
+    ],
+    "fhirOptions": {
+      "pageLimit": 0
+    }
   },
   "egfrExtraLabResults": {
     "path": [
       "Observation?code=http://loinc.org|45066-8,http://loinc.org|48642-3,http://loinc.org|48643-1,http://loinc.org|50044-7,http://loinc.org|50210-4,http://loinc.org|50384-7,http://loinc.org|62238-1,http://loinc.org|69405-9,http://loinc.org|70969-1,http://loinc.org|77147-7,http://loinc.org|88293-6,http://loinc.org|88294-4,http://loinc.org|94677-2,http://loinc.org|98979-8,http://loinc.org|98980-6&date=ge{TEN_YEARS_AGO}&date=lt{THREE_YEARS_AGO}&_revinclude=Provenance:target"
-    ]
+    ],
+    "fhirOptions": {
+      "pageLimit": 0
+    }
   },
   "socialHistory": {
     "path": [
       "Observation?category=social-history&_revinclude=Provenance:target"
-    ]
+    ],
+    "fhirOptions": {
+      "pageLimit": 0
+    }
   },
   "questionnaireResponse": {
     "path": [
       "QuestionnaireResponse?status=completed&_revinclude=Provenance:target"
-    ]
+    ],
+    "fhirOptions": {
+      "pageLimit": 0
+    }
   },
   "surveyObservations": {
     "path": [
       "Observation?category=survey&_revinclude=Provenance:target"
-    ]
+    ],
+    "fhirOptions": {
+      "pageLimit": 0
+    }
   }
 }
