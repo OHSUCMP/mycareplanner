@@ -1076,19 +1076,43 @@ export function createSharedDataResource(resource: Resource) {
 export async function updateSharedDataResource(component:React.Component, client: Client | undefined, resource: Resource, serverUrl?: string,
                                                callback?: (c:React.Component, isSuccess:boolean) => any) {
     try {
+        const fhirOptions = {
+            'includeResponse': true
+        } as fhirclient.RequestOptions;
+
         if (serverUrl) {
-            const fhirHeaderRequestOption = {} as fhirclient.RequestOptions;
             const fhirHeaders = {
                 'X-Partition-Name': serverUrl
             };
-            fhirHeaderRequestOption.headers = fhirHeaders;
-            await client?.update(resource as fhirclient.FHIR.Resource, fhirHeaderRequestOption)
-
-        } else {
-            await client?.update(resource as fhirclient.FHIR.Resource)
+            fhirOptions.headers = fhirHeaders;
         }
 
-        if (callback) callback(component, true);
+        let rval: any = await client?.update(resource as fhirclient.FHIR.Resource, fhirOptions)
+
+        let success = rval.response.status >= 200 && rval.response.status < 300;
+        if ( ! success ) {
+            // did not post resource correctly
+            console.error("Error posting resource: " + resource.id + " (status: " + rval.response.status + ")")
+
+            const maxAttempts = 10;
+            const waitMS = 1000;
+            for (let i = 1; i <= maxAttempts; i++) {
+                await new Promise(resolve => setTimeout(resolve, waitMS));
+                console.info("Executing re-attempt " + i + " of " + maxAttempts + " to post resource: " + resource.id + " -")
+                rval = await client?.update(resource as fhirclient.FHIR.Resource, fhirOptions)
+                success = rval.response.status >= 200 && rval.response.status < 300;
+                if (success) {
+                    break;
+                }
+            }
+            if (success) {
+                console.info("Successfully posted resource: " + resource.id)
+            } else {
+                console.error("Failed to post resource: " + resource.id + " (status: " + rval.response.status + ")")
+            }
+        }
+
+        if (callback) callback(component, success);
 
     } catch (err) {
         console.error("Error updating shared data resource: " + JSON.stringify(err))
