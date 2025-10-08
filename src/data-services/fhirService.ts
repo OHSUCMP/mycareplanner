@@ -1087,29 +1087,38 @@ export async function updateSharedDataResource(component:React.Component, client
             fhirOptions.headers = fhirHeaders;
         }
 
-        let rval: any = await client?.update(resource as fhirclient.FHIR.Resource, fhirOptions)
-
-        let success = rval.response.status >= 200 && rval.response.status < 300;
-        if ( ! success ) {
-            // did not post resource correctly
-            console.error("Error posting resource: " + resource.id + " (status: " + rval.response.status + ")")
-
-            const maxAttempts = 10;
-            const waitMS = 1000;
-            for (let i = 1; i <= maxAttempts; i++) {
-                await new Promise(resolve => setTimeout(resolve, waitMS));
-                console.info("Executing re-attempt " + i + " of " + maxAttempts + " to post resource: " + resource.id + " -")
-                rval = await client?.update(resource as fhirclient.FHIR.Resource, fhirOptions)
-                success = rval.response.status >= 200 && rval.response.status < 300;
-                if (success) {
-                    break;
+        const maxAttempts = 10;
+        const waitMS = 1000;
+        let success: boolean = false;
+        for (let i = 1; i <= maxAttempts; i ++) {
+            try {
+                if (i >= 2) {
+                    console.info("Re-attempting post of resource: " + resource.id + "(" + i + "/" + maxAttempts + ") -")
                 }
+
+                let rval: any = await client?.update(resource as fhirclient.FHIR.Resource, fhirOptions)
+
+                success = rval.response.status >= 200 && rval.response.status < 300;
+                if ( ! success ) {
+                    console.error("Error posting resource: " + resource.id + " (status: " + rval.response.status + ")")
+                }
+
+            } catch (err) {
+                console.error("Error posting resource: " + resource.id + " - " + JSON.stringify(err))
+                success = false;
             }
+
             if (success) {
-                console.info("Successfully posted resource: " + resource.id)
+                break;
             } else {
-                console.error("Failed to post resource: " + resource.id + " (status: " + rval.response.status + ")")
+                await new Promise(resolve => setTimeout(resolve, waitMS));
             }
+        }
+
+        if (success) {
+            console.info("Successfully posted resource: " + resource.id)
+        } else {
+            console.error("Failed to post resource: " + resource.id)
         }
 
         if (callback) callback(component, success);
