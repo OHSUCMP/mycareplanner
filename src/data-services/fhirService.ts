@@ -661,7 +661,9 @@ const getFHIRQueries = async (clientProxy: ClientProxy, clientScope: string | un
                               setResourcesLoadedCountState: (count: number) => void,
                               setAndLogErrorMessageState: (errorType: string, userErrorMessage: string,
                                                            developerErrorMessage: string, errorCaught: Error | string | unknown) => void): Promise<FHIRData> => {
-    console.time('FHIR queries')
+    const timeLabel = 'FHIR queries for endpoint: ' + clientProxy.client.state.serverUrl
+    console.time(timeLabel)
+    console.log('executing FHIR queries for endpoint: ' + clientProxy.client.state.serverUrl)
 
     let resourcesLoadedCount: number = 0
     let curResourceName: string = "Unknown"
@@ -770,15 +772,15 @@ const getFHIRQueries = async (clientProxy: ClientProxy, clientScope: string | un
     }
     setAndLogProgressState('Found ' + (procedures?.length ?? 0) + ' Procedures.', 60)
 
-    const diagnosticReports: DiagnosticReport[] | undefined = await loadFHIRQuery<DiagnosticReport>('DiagnosticReport', 'DiagnosticReport',
+    const diagnosticReports: DiagnosticReport[] | undefined = await loadFHIRQuery<DiagnosticReport>('Diagnostic Reports', 'DiagnosticReport',
         "diagnosticReport", true, clientProxy, clientScope, 65, setAndLogProgressState, setAndLogErrorMessageState)
     diagnosticReports && setResourcesLoadedCountState(++resourcesLoadedCount)
-    setAndLogProgressState('Found ' + (diagnosticReports?.length ?? 0) + ' DiagnosticReport.', 65)
+    setAndLogProgressState('Found ' + (diagnosticReports?.length ?? 0) + ' Diagnostic Reports.', 65)
 
     const immunizations: Immunization[] | undefined = await loadFHIRQuery<Immunization>('Immunizations', 'Immunization',
         "immunization", true, clientProxy, clientScope, 70, setAndLogProgressState, setAndLogErrorMessageState)
     immunizations && setResourcesLoadedCountState(++resourcesLoadedCount)
-    setAndLogProgressState('Found ' + (immunizations?.length ?? 0) + ' immunization.', 70)
+    setAndLogProgressState('Found ' + (immunizations?.length ?? 0) + ' Immunizations.', 70)
 
     const standardLabResults: Observation[] | undefined = await loadFHIRQuery<Observation>('Lab Results', 'Observation',
         "labResults", true, clientProxy, clientScope, 75, setAndLogProgressState, setAndLogErrorMessageState)
@@ -871,7 +873,7 @@ const getFHIRQueries = async (clientProxy: ClientProxy, clientScope: string | un
                     resourceRequesters.set(pract.id!, pract)
                 }
             })
-            setAndLogProgressState('Found ' + (serviceRequests?.length ?? 0) + ' ServiceRequests.', 85)
+            setAndLogProgressState('Found ' + (serviceRequests?.length ?? 0) + ' Service Requests.', 85)
         } else {
             serviceRequests = undefined
         }
@@ -881,10 +883,10 @@ const getFHIRQueries = async (clientProxy: ClientProxy, clientScope: string | un
         serviceRequests && setResourcesLoadedCountState(++resourcesLoadedCount)
     }
 
-    const socialHistory: Observation[] | undefined = await loadFHIRQuery<Observation>('SocialHistory', 'Observation',
+    const socialHistory: Observation[] | undefined = await loadFHIRQuery<Observation>('Social History', 'Observation',
         "socialHistory", true, clientProxy, clientScope, 90, setAndLogProgressState, setAndLogErrorMessageState)
     socialHistory && setResourcesLoadedCountState(++resourcesLoadedCount)
-    setAndLogProgressState('Found ' + (socialHistory?.length ?? 0) + ' social history observations.', 90)
+    setAndLogProgressState('Found ' + (socialHistory?.length ?? 0) + ' Social History observations.', 90)
 
     // Commented out because survey is not supported by any EHRs at this time, and throws error in app for Cerner.
     // const surveyResults: Observation[] | undefined = await loadFHIRQuery<Observation>('Obs Survey', 'Observation',
@@ -908,13 +910,13 @@ const getFHIRQueries = async (clientProxy: ClientProxy, clientScope: string | un
         vitalSigns && setResourcesLoadedCountState(++resourcesLoadedCount)
     }
 
-    let questionnaireResponses: QuestionnaireResponse[] | undefined = await loadFHIRQuery<QuestionnaireResponse>('QuestionnaireResponse', 'QuestionnaireResponse',
+    let questionnaireResponses: QuestionnaireResponse[] | undefined = await loadFHIRQuery<QuestionnaireResponse>('Questionnaire Responses', 'QuestionnaireResponse',
         "questionnaireResponse", true, clientProxy, clientScope, 98, setAndLogProgressState, setAndLogErrorMessageState)
     questionnaireResponses && setResourcesLoadedCountState(++resourcesLoadedCount)
     setAndLogProgressState('Found ' + (questionnaireResponses?.length ?? 0) + ' Questionnaire Responses.', 98)
     console.log('getFHIRQueries: Found ' + (questionnaireResponses?.length ?? 0) + ' Questionnaire Responses.')
 
-    const surveyObservations: Observation[] | undefined = await loadFHIRQuery<Observation>('Observation', 'Observation',
+    const surveyObservations: Observation[] | undefined = await loadFHIRQuery<Observation>('Survey Observations', 'Observation',
         "surveyObservations", true, clientProxy, clientScope, 99, setAndLogProgressState, setAndLogErrorMessageState)
     surveyObservations && setResourcesLoadedCountState(++resourcesLoadedCount)
     setAndLogProgressState('Found ' + (surveyObservations?.length ?? 0) + ' Survey Observations.', 99)
@@ -922,7 +924,7 @@ const getFHIRQueries = async (clientProxy: ClientProxy, clientScope: string | un
     const questionnaireBundles: QuestionnaireBundle[] = await buildQuestionnaireBundles(questionnaireResponses || [], surveyObservations || []);
 
     setAndLogProgressState('All FHIR requests finished: ' + new Date().toLocaleTimeString(), 100)
-    console.timeEnd('FHIR queries')
+    console.timeEnd(timeLabel)
 
     console.log("Provenance resources: " + (provenance?.length ?? 0))
     // provenance?.forEach((resource) => {
@@ -1040,6 +1042,7 @@ const loadFHIRQuery = async <T extends Resource>(
         isRecordProvenance && recordProvenance(resourceData)
 
     } catch (err) {
+        console.log("caught " + err + " loading " + resourceCommonName)
         await setAndLogNonTerminatingErrorMessageStateForResource(resourceCommonName, err, setAndLogErrorMessageState)
     }
 
