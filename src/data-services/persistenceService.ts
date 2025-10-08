@@ -445,7 +445,7 @@ export const persistStateAsLauncherData = async (state: fhirclient.ClientState) 
   // (as is typical in the real world).
   // TODO: Set name dynamically using get org name from capability resource, Dave knows the logic
   const launcherDataToSave: LauncherData = stateLauncherData ?? {
-    name: 'Original provider',
+    name: 'Original Provider',
     // useProxy: false,
     config: {
       iss: state.serverUrl,
@@ -457,7 +457,7 @@ export const persistStateAsLauncherData = async (state: fhirclient.ClientState) 
   console.log('persistLauncherData: launcherDataToSave=', launcherDataToSave)
 
   if (stateLauncherData === undefined) {
-    console.log('persistLauncherData: stateLauncherData === undefined, will save a dynamic launcher (as "Original provider") as is typical in real-world use cases')
+    console.log('persistLauncherData: stateLauncherData === undefined, will save a dynamic launcher (as "Original Provider") as is typical in real-world use cases')
   }
 
   // Persist converted data
