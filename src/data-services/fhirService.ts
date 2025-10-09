@@ -1110,14 +1110,10 @@ export async function updateSharedDataResource(component:React.Component, client
 
             if (success) {
                 break;
-            } else {
-                await new Promise(resolve => setTimeout(resolve, waitMS));
             }
         }
 
-        if (success) {
-            console.info("Successfully posted resource: " + resource.id)
-        } else {
+        if ( ! success ) {
             console.error("Failed to post resource: " + resource.id)
         }
 
