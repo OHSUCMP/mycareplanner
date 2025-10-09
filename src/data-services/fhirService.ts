@@ -1093,7 +1093,7 @@ export async function updateSharedDataResource(component:React.Component, client
         for (let i = 1; i <= maxAttempts; i ++) {
             try {
                 if (i >= 2) {
-                    console.info("Re-attempting post of resource: " + resource.id + "(" + i + "/" + maxAttempts + ") -")
+                    console.info("Re-attempting post of resource: " + resource.id + " (attempt " + i + " of " + maxAttempts + ") -")
                 }
 
                 let rval: any = await client?.update(resource as fhirclient.FHIR.Resource, fhirOptions)
