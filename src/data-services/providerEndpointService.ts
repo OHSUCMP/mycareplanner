@@ -1,17 +1,34 @@
 import { fhirclient } from 'fhirclient/lib/types'
 import Providers from './endpoints/providers.json'
 
+export class FhirQueryConfig {
+  path: []
+  fhirOptions?: fhirclient.FhirOptions
+
+  constructor(path: [], fhirOptions: fhirclient.FhirOptions) {
+    this.path = path
+    this.fhirOptions = fhirOptions
+  }
+}
+
 export class LauncherData {
   name: string
+  useProxy?: boolean
+  fhirQueryConfig?: Map<String, FhirQueryConfig>
   config?: fhirclient.AuthorizeParams
 
-  constructor(name: string, config?: fhirclient.AuthorizeParams) {
+  constructor(name: string,
+              useProxy: boolean,
+              fhirQueryConfig: Map<String, FhirQueryConfig>,
+              config?: fhirclient.AuthorizeParams) {
     this.name = name
+    this.useProxy = useProxy
+    this.fhirQueryConfig = fhirQueryConfig
     this.config = config
   }
 }
 
-export const buildLauncherDataArray = (endpointsToAdd?: LauncherData[]): LauncherData[] => {
+export const buildLauncherDataArray = (): LauncherData[] => {
   console.log("in buildLauncherDataArray()")
   let launcherDataArray: LauncherData[] = []
 
@@ -19,9 +36,14 @@ export const buildLauncherDataArray = (endpointsToAdd?: LauncherData[]): Launche
   // available to be overridden by host filesystem
   let jsonArray = JSON.parse(JSON.stringify(Providers).toString())
   const providers: LauncherData[] = jsonArray.map((item: any) => {
+    const fhirQueryConfig: Map<String, FhirQueryConfig> | undefined = item.fhirQueryConfig ?
+        new Map<String, FhirQueryConfig>(Object.entries(item.fhirQueryConfig)) :
+        undefined;
     return {
-        name: item.name,
-        config: item.config
+      name: item.name,
+      useProxy: item.useProxy,
+      fhirQueryConfig: fhirQueryConfig,
+      config: item.config
     }
   })
   launcherDataArray = launcherDataArray.concat(providers);
@@ -44,6 +66,7 @@ export const buildLauncherDataArray = (endpointsToAdd?: LauncherData[]): Launche
      launcherDataArray = launcherDataArray.concat(
       {
         "name": "SDS: eCare Shared Data",
+        // "useProxy": false,
         "config": {
           "iss": process.env.REACT_APP_SHARED_DATA_ENDPOINT,
           "redirectUri": "./index.html",
@@ -67,6 +90,7 @@ export const buildLauncherDataArray = (endpointsToAdd?: LauncherData[]): Launche
     launcherDataArray = launcherDataArray.concat(
       {
         "name": "SDS: eCare Shared Data",
+        // "useProxy": false,
         "config": {
           "iss": process.env.REACT_APP_SHARED_DATA_ENDPOINT,
           "redirectUri": "./index.html",
@@ -118,8 +142,9 @@ export const getLauncherDataArrayForEndpoints = async (availableLauncherDataArra
 // Given a pre-populated ProviderEndpoint[], typically populated with data from providerEndpointService.buildAvailableEndpoints,
 // and given a fhirclient.ClientState,
 // returns a ProviderEndpoint populated with the full matching data
-export const getLauncherDataForState = async (launcherDataArray: LauncherData[],
-                                              state: fhirclient.ClientState): Promise<LauncherData | undefined> => {
+export const getLauncherDataForState = async (state: fhirclient.ClientState): Promise<LauncherData | undefined> => {
+  let launcherDataArray: LauncherData[] = buildLauncherDataArray();
+
   if (state) {
     const iss: string = state?.serverUrl
     // TODO: consider beefing up the security of this by checking for another matching prop as well: clientId
