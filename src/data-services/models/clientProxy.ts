@@ -2,6 +2,7 @@ import Client from "fhirclient/lib/Client";
 import {fhirclient} from "fhirclient/lib/types";
 import {FhirQueryConfig} from "../providerEndpointService";
 import {Resource} from "../fhir-types/fhir-r4";
+import {doLog} from '../../log/log-service';
 
 export class ClientProxy {
     useProxy: boolean;
@@ -125,12 +126,28 @@ export class ClientProxy {
                     })
                     .catch(error => {
                         console.log('error:', error)
+                        doLog({
+                            level: 'error',
+                            event: 'patientSearch-proxy',
+                            page: 'n/a',
+                            message: `caught error='${error}' executing query for path='${path}' against endpoint='${this.client.state.serverUrl}'`
+                        })
                         reject(error);
                     });
             });
 
         } else {
-            return this.client.patient.request(path, fhirOptions);
+            try {
+                return this.client.patient.request(path, fhirOptions);
+            } catch (err) {
+                doLog({
+                    level: 'error',
+                    event: 'patientSearch-native',
+                    page: 'n/a',
+                    message: `caught error='${err}' executing query for path='${path}' against endpoint='${this.client.state.serverUrl}'`
+                })
+                throw err;
+            }
         }
     }
 
@@ -171,12 +188,28 @@ export class ClientProxy {
                     })
                     .catch(error => {
                         console.log('error:', error)
+                        doLog({
+                            level: 'error',
+                            event: 'read-proxy',
+                            page: 'n/a',
+                            message: `caught error='${error}' reading reference='${reference}' against endpoint='${this.client.state.serverUrl}'`
+                        })
                         reject(error);
                     });
             });
 
         } else {
-            return this.client.request(reference, fhirOptions);
+            try {
+                return this.client.request(reference, fhirOptions);
+            } catch (err) {
+                doLog({
+                    level: 'error',
+                    event: 'read-native',
+                    page: 'n/a',
+                    message: `caught error='${err}' reading reference='${reference}' against endpoint='${this.client.state.serverUrl}'`
+                })
+                throw err;
+            }
         }
     }
 
@@ -212,12 +245,28 @@ export class ClientProxy {
                     })
                     .catch(error => {
                         console.log('error:', error)
+                        doLog({
+                            level: 'error',
+                            event: 'patientRead-proxy',
+                            page: 'n/a',
+                            message: `caught error='${error}' reading patient='${this.client.patient.id}' against endpoint='${this.client.state.serverUrl}'`
+                        })
                         reject(error);
                     });
             });
 
         } else {
-            return this.client.patient.read();
+            try {
+                return this.client.patient.read();
+            } catch (err) {
+                doLog({
+                    level: 'error',
+                    event: 'patientRead-native',
+                    page: 'n/a',
+                    message: `caught error='${err}' reading patient='${this.client.patient.id}' against endpoint='${this.client.state.serverUrl}'`
+                })
+                throw err;
+            }
         }
     }
 
@@ -253,12 +302,28 @@ export class ClientProxy {
                     })
                     .catch(error => {
                         console.log('error:', error)
+                        doLog({
+                            level: 'error',
+                            event: 'userRead-proxy',
+                            page: 'n/a',
+                            message: `caught error='${error}' reading user='${this.client.user.id}' against endpoint='${this.client.state.serverUrl}'`
+                        })
                         reject(error);
                     });
             });
 
         } else {
-            return this.client.user.read();
+            try {
+                return this.client.user.read();
+            } catch (err) {
+                doLog({
+                    level: 'error',
+                    event: 'userRead-native',
+                    page: 'n/a',
+                    message: `caught error='${err}' reading user='${this.client.user.id}' against endpoint='${this.client.state.serverUrl}'`
+                })
+                throw err;
+            }
         }
     }
 
@@ -284,6 +349,12 @@ export class ClientProxy {
 
         } catch (error) {
             console.log('resourcesFrom: caught error: ', error)
+            doLog({
+                level: 'error',
+                event: 'resourcesFrom',
+                page: 'n/a',
+                message: `caught error='${error}' processing resources`
+            })
             throw error;
         }
     };
