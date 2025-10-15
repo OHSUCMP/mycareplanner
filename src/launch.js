@@ -15,7 +15,7 @@ const cernerScopePilot = process.env.REACT_APP_CERNER_SANDBOX_ENDPOINT_SCOPE
 const nextgenScope = "launch launch/patient openid fhirUser offline_access patient/Patient.read patient/Practitioner.read patient/RelatedPerson.read patient/Condition.read patient/DiagnosticReport.read patient/Observation.read patient/Procedure.read patient/CarePlan.read patient/CareTeam.read patient/Goal.read patient/Immunization.read patient/MedicationRequest.read patient/Medication.read patient/Provenance.read patient/Organization.read patient/Encounter.read"
 const meldScope = "patient/Goal.write patient/Practitioner.read patient/CareTeam.read launch/patient patient/QuestionnaireResponse.read patient/Questionnaire.read openid patient/Goal.read patient/Immunization.read launch patient/ServiceRequest.read patient/Procedure.read fhirUser patient/RelatedPerson.read patient/Provenance.read patient/MedicationRequest.read patient/Task.read patient/Patient.read patient/DiagnosticReport.read patient/Condition.write patient/Condition.read patient/QuestionnaireResponse.write patient/MedicationRequest.write patient/Observation.read patient/CarePlan.read patient/Encounter.read"
 
-const meldmatch = "https://gw.interop.community/"+process.env.REACT_APP_MELD_SANDBOX_NAME+"/data"
+const meldMatch = "https://gw.interop.community/"+process.env.REACT_APP_MELD_SANDBOX_NAME+"/data"
 
 
 const availableEndpoints = [
@@ -43,7 +43,7 @@ const availableEndpoints = [
     {
         // Meld Synthea test data sandbox
         // Replace REACT_APP_MELD_SANDBOX_NAME and REACT_APP_MELD_SANDBOX_CLIENT_ID with the MELD launcher you want to use
-        issMatch: iss => iss.startsWith(meldmatch),
+        issMatch: meldMatch,
         redirectUri: "./index.html",
         clientId: process.env.REACT_APP_MELD_SANDBOX_CLIENT_ID,
         scope:meldScope
