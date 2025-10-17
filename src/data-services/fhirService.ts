@@ -611,7 +611,12 @@ const getFHIRResources = async (client: Client, clientScope: string | undefined,
     // workaround for Allscripts bug
     pcpPath = pcpPath?.replace('R4/fhir', 'R4/open')
     // console.log('PCP path = ' + pcpPath)
-    const patientPCP: Practitioner | undefined = pcpPath ? await clientProxy.read(pcpPath) : undefined;
+    let patientPCP: Practitioner | undefined;
+    try {
+        patientPCP = pcpPath ? await clientProxy.read(pcpPath) : undefined;
+    } catch (err) {
+        console.log('getFHIRResources: Error reading PCP: ' + err)
+    }
 
     setAndLogProgressState("Reading User data", 30)
     const patientPath = 'Patient/' + client.getPatientId();
