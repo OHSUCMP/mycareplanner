@@ -426,10 +426,15 @@ export async function buildClientProxy(client: Client) : Promise<ClientProxy> {
     let launcherData: LauncherData | undefined = await getLauncherDataForState(client?.state);
     let useProxy: boolean = launcherData?.useProxy ?? false;
 
-    let fhirQueryConfigMap: Map<String, FhirQueryConfig> | undefined = launcherData?.fhirQueryConfig;
-    if (fhirQueryConfigMap === undefined) {
-        const mapdata = JSON.parse(JSON.stringify(DefaultFhirQueryConfig).toString())
-        fhirQueryConfigMap = new Map<String, FhirQueryConfig>(Object.entries(mapdata))
+    let fhirQueryConfigMap = new Map<String, FhirQueryConfig>(Object.entries(
+        JSON.parse(JSON.stringify(DefaultFhirQueryConfig).toString())
+    ))
+
+    let providerOverrideMap: Map<String, FhirQueryConfig> | undefined = launcherData?.fhirQueryConfig;
+    if (providerOverrideMap !== undefined) {
+        providerOverrideMap.forEach((value: FhirQueryConfig, key: String) => {
+            fhirQueryConfigMap.set(key, value);
+        })
     }
 
     let clientProxy : ClientProxy = new ClientProxy(useProxy, fhirQueryConfigMap, proxyUrl, client);
