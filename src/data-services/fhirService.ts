@@ -426,10 +426,15 @@ export async function buildClientProxy(client: Client) : Promise<ClientProxy> {
     let launcherData: LauncherData | undefined = await getLauncherDataForState(client?.state);
     let useProxy: boolean = launcherData?.useProxy ?? false;
 
-    let fhirQueryConfigMap: Map<String, FhirQueryConfig> | undefined = launcherData?.fhirQueryConfig;
-    if (fhirQueryConfigMap === undefined) {
-        const mapdata = JSON.parse(JSON.stringify(DefaultFhirQueryConfig).toString())
-        fhirQueryConfigMap = new Map<String, FhirQueryConfig>(Object.entries(mapdata))
+    let fhirQueryConfigMap = new Map<String, FhirQueryConfig>(Object.entries(
+        JSON.parse(JSON.stringify(DefaultFhirQueryConfig).toString())
+    ))
+
+    let providerOverrideMap: Map<String, FhirQueryConfig> | undefined = launcherData?.fhirQueryConfig;
+    if (providerOverrideMap !== undefined) {
+        providerOverrideMap.forEach((value: FhirQueryConfig, key: String) => {
+            fhirQueryConfigMap.set(key, value);
+        })
     }
 
     let clientProxy : ClientProxy = new ClientProxy(useProxy, fhirQueryConfigMap, proxyUrl, client);
@@ -611,7 +616,12 @@ const getFHIRResources = async (client: Client, clientScope: string | undefined,
     // workaround for Allscripts bug
     pcpPath = pcpPath?.replace('R4/fhir', 'R4/open')
     // console.log('PCP path = ' + pcpPath)
-    const patientPCP: Practitioner | undefined = pcpPath ? await clientProxy.read(pcpPath) : undefined;
+    let patientPCP: Practitioner | undefined;
+    try {
+        patientPCP = pcpPath ? await clientProxy.read(pcpPath) : undefined;
+    } catch (err) {
+        console.log('getFHIRResources: Error reading PCP: ' + err)
+    }
 
     setAndLogProgressState("Reading User data", 30)
     const patientPath = 'Patient/' + client.getPatientId();
