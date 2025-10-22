@@ -18,15 +18,14 @@ interface ScreeningDecisionState {
 export class ScreeningDecision extends React.Component<ScreeningDecisionProps, ScreeningDecisionState> {
 
   componentDidMount(): void {
-
     let request : LogRequest={
-        level:"info",
-        event:'Clicked',
+        level: 'info',
+        event: 'Clicked',
         page: 'Screening Decision',
-        message:'User has Visited Screening Decision tab',
-        }
+        message: 'User visited Screening Decision tab'
+    }
 
-        doLog(request)
+    doLog(request)
   }
 
   constructor(props: ScreeningDecisionProps) {
@@ -78,5 +77,4 @@ export class ScreeningDecision extends React.Component<ScreeningDecisionProps, S
       </div>
     )
   }
-
 }
