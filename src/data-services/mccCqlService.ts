@@ -61,12 +61,6 @@ export const getConditionSummaries = (fhirDataCollection?: FHIRData[]): Conditio
 }
 
 const extractGoalSummary = (fhirData?: FHIRData): GoalSummary[] | undefined => {
-  doLog({
-    level: 'debug',
-    event: 'getGoals',
-    page: 'get Goals',
-    message: `getGoals: success`
-  })
   if (fhirData === undefined) { return undefined }
   const patientSource = getPatientSource(fhirData!)
   const extractedSummary = executeLibrary(mccGoalsLibrary, mccCodeService, patientSource)

@@ -762,14 +762,14 @@ class App extends React.Component<AppProps, AppState> {
             await this.setSummaries('getMedicationSummaries()', 'medicationSummaries', getMedicationSummaries)
             await this.setSummaries('getLabResultSummaries()', 'labResultSummaries', getLabResultSummaries)
             await this.setSummaries('getVitalSignSummaries()', 'vitalSignSummaries', getVitalSignSummaries)
+
+            await this.updateLogSummariesCount(this.state.fhirDataCollection) // Logging the count for the patient details bundle.
         }
     }
 
     setSummaries = async (message: string, propertyName: keyof AppState, summariesProcessor: SummaryFunctionType): Promise<void> => {
         console.time(message);
         const Summaries = summariesProcessor(this.state.fhirDataCollection)
-
-        await this.updateLogSummariesCount(this.state.fhirDataCollection) // Logging the count for the patient details bundle.
 
         // Timeout set to 0 makes async and defers processing until after the event loop so it doesn't block UI
         // TODO: Consider updating to a worker instead when time for a more complete solution
@@ -951,13 +951,14 @@ class App extends React.Component<AppProps, AppState> {
 
     // callback function to update progressMessage and progressValue state, and log message to console (passed to fhirService functions as arg and ProviderLogin as prop)
     setAndLogProgressState = (message: string, value: number) => {
+        if (message.trim() === '') return;
+
         console.log(`ProgressMessage: ${message}`)
-        let logMessage = `ProgressMessage: ${message}`
         let request: LogRequest = {
             level: 'info',
             event: 'Patient information loading',
             page: 'Home',
-            message: logMessage
+            message: message
         }
         doLog(request)
         this.setState({progressTitle: "Reading your clinical records:"})
