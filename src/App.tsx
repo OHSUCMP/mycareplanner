@@ -690,10 +690,10 @@ class App extends React.Component<AppProps, AppState> {
 
                         let request: LogRequest = {
                             level: 'info',
-                            event: 'Sharing data',
+                            event: 'Shared data to SDS',
                             page: 'Home',
-                            message: resources.length + ' resources from ' + fhirData.serverName + ', took ' + exectime + 'ms.',
-                            sessionId: this.state.sessionId
+                            message: 'Shared ' + resources.length + ' resources from ' + fhirData.serverName + ', took ' + exectime + 'ms.  ' +
+                                successCount + ' succeeded, ' + failCount + ' failed.'
                         }
                         doLog(request);
 
@@ -762,14 +762,14 @@ class App extends React.Component<AppProps, AppState> {
             await this.setSummaries('getMedicationSummaries()', 'medicationSummaries', getMedicationSummaries)
             await this.setSummaries('getLabResultSummaries()', 'labResultSummaries', getLabResultSummaries)
             await this.setSummaries('getVitalSignSummaries()', 'vitalSignSummaries', getVitalSignSummaries)
+
+            await this.updateLogSummariesCount(this.state.fhirDataCollection) // Logging the count for the patient details bundle.
         }
     }
 
     setSummaries = async (message: string, propertyName: keyof AppState, summariesProcessor: SummaryFunctionType): Promise<void> => {
         console.time(message);
         const Summaries = summariesProcessor(this.state.fhirDataCollection)
-
-        await this.updateLogSummariesCount(this.state.fhirDataCollection) // Logging the count for the patient details bundle.
 
         // Timeout set to 0 makes async and defers processing until after the event loop so it doesn't block UI
         // TODO: Consider updating to a worker instead when time for a more complete solution
@@ -796,10 +796,9 @@ class App extends React.Component<AppProps, AppState> {
                         const length = values.length;
                         const request: LogRequest = {
                             level: 'info',
-                            event: 'Summaries Loading',
-                            message: `Resource Count for ${key}: ${length}`,
-                            resourceCount: length,
-                            sessionId: this.state.sessionId,
+                            event: 'Loaded Summaries',
+                            page: 'Home',
+                            message: `Resource Count for ${key}: ${length}`
                         };
                         doLog(request)
                     }
@@ -952,14 +951,14 @@ class App extends React.Component<AppProps, AppState> {
 
     // callback function to update progressMessage and progressValue state, and log message to console (passed to fhirService functions as arg and ProviderLogin as prop)
     setAndLogProgressState = (message: string, value: number) => {
+        if (message.trim() === '') return;
+
         console.log(`ProgressMessage: ${message}`)
-        let logMessage = `ProgressMessage: ${message}`
         let request: LogRequest = {
             level: 'info',
             event: 'Patient information loading',
             page: 'Home',
-            message: logMessage,
-            sessionId: this.state.sessionId,
+            message: message
         }
         doLog(request)
         this.setState({progressTitle: "Reading your clinical records:"})
@@ -1019,14 +1018,13 @@ class App extends React.Component<AppProps, AppState> {
 
         const key: keyof typeof tabList = value;
         const tab = tabList[key]; // No error
-        let message = `User has visted ${tab}`;
+        let message = `User visited ${tab} tab`;
 
         let request: LogRequest = {
             level: 'info',
             event: 'Clicked',
             page: tab,
-            message,
-            sessionId: this.state.sessionId,
+            message: message
         }
         doLog(request)
     }
@@ -1037,14 +1035,13 @@ class App extends React.Component<AppProps, AppState> {
         const key: keyof typeof tabList = value;
         const tab = tabList[key]; // No error
 
-        let message = `User has visted ${tab}`;
+        let message = `User visited ${tab} tab`;
 
         let request: LogRequest = {
             level: "info",
             event: 'Clicked',
             page: tab,
-            message,
-            sessionId: this.state.sessionId,
+            message: message
         }
 
         doLog(request)
@@ -1055,14 +1052,13 @@ class App extends React.Component<AppProps, AppState> {
 
         const key: keyof typeof tabList = value;
         const tab = tabList[key]; // No error
-        let message = `user has visited ${tab}`;
+        let message = `User visited ${tab} tab`;
 
         let request: LogRequest = {
             level: "info",
             event: 'Clicked',
             page: tab,
-            message,
-            sessionId: this.state.sessionId,
+            message: message
         }
         doLog(request)
 

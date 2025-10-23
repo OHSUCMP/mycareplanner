@@ -32,11 +32,11 @@ export default class QuestionnaireComponent extends React.Component<any, Questio
     componentDidMount(): void {
 
         let request : LogRequest={
-            level:"info",
-            event:'Clicked',
+            level: 'info',
+            event: 'Clicked',
             page: 'Questionnaire',
-            message:'User has Visited Questionnaire Tab',
-            }
+            message: 'User visited Questionnaire Tab',
+        }
 
         doLog(request)
     }

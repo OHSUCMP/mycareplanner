@@ -154,12 +154,12 @@ function recordProvenance(resources: Resource[] | undefined) {
 // storer: get Encounters for #5
 export async function getEncounters(clientProxy: ClientProxy): Promise<Encounter[]> {
     // let resources: Resource[] = []
-    await doLog({
-        level: 'debug',
-        event: 'getEncounters',
-        page: 'get Encounters',
-        message: `getEncounters: success`
-    })
+    // await doLog({
+    //     level: 'info',
+    //     event: 'getEncounters',
+    //     page: 'get Encounters',
+    //     message: `getEncounters: success`
+    // })
     // workaround for Allscripts lack of support for both category and status args
     // Epic allows multiple category codes in one query only >= Aug 2021 release
     let resources: Resource[] = await clientProxy.patientSearchByKey("encounters")
@@ -173,12 +173,12 @@ export async function getEncounters(clientProxy: ClientProxy): Promise<Encounter
 
 export async function getConditions(clientProxy: ClientProxy): Promise<Condition[]> {
     // let resources: Resource[] = []
-    await doLog({
-        level: 'debug',
-        event: 'getConditions',
-        page: 'get Conditions',
-        message: `getConditions: success`
-    })
+    // await doLog({
+    //     level: 'debug',
+    //     event: 'getConditions',
+    //     page: 'Conditions',
+    //     message: `getConditions: success`
+    // })
     // workaround for Allscripts lack of support for both category and status args
     // const url = new URL(clientProxy.client.state.serverUrl);
     // const allowedHosts = ['allscripts.com'];
@@ -201,12 +201,12 @@ export async function getConditions(clientProxy: ClientProxy): Promise<Condition
 
 export async function getVitalSigns(clientProxy: ClientProxy): Promise<Observation[]> {
     // Workaround for Cerner and Epic Sandbox that takes many minutes to request vital-signs, or times out completely
-    await doLog({
-        level: 'debug',
-        event: 'getVitalSigns',
-        page: 'get Vital Signs',
-        message: `getVitalSigns: success`
-    })
+    // await doLog({
+    //     level: 'debug',
+    //     event: 'getVitalSigns',
+    //     page: 'get Vital Signs',
+    //     message: `getVitalSigns: success`
+    // })
     // if (client.state.endpoint === 'https://fhir.epic.com/interconnect-fhir-oauth/api/FHIR/R4'
     //   || client.state.endpoint.includes('cerner.com')) {
     //   return []
@@ -1098,7 +1098,6 @@ export async function updateSharedDataResource(component:React.Component, client
         }
 
         const maxAttempts = 10;
-        const waitMS = 1000;
         let success: boolean = false;
         for (let i = 1; i <= maxAttempts; i ++) {
             try {
@@ -1111,10 +1110,22 @@ export async function updateSharedDataResource(component:React.Component, client
                 success = rval.response.status >= 200 && rval.response.status < 300;
                 if ( ! success ) {
                     console.error("Error posting resource: " + resource.id + " (status: " + rval.response.status + ")")
+                    doLog({
+                        level: 'warn',
+                        event: 'updateSharedDataResource',
+                        page: 'n/a',
+                        message: `caught HTTP ${rval.response.status} attempting to write ${resource.resourceType} resource from endpoint='${serverUrl}' to SDS (attempt ${i} of ${maxAttempts})`
+                    })
                 }
 
             } catch (err) {
                 console.error("Error posting resource: " + resource.id + " - " + JSON.stringify(err))
+                doLog({
+                    level: 'warn',
+                    event: 'updateSharedDataResource',
+                    page: 'n/a',
+                    message: `caught error '${err}' attempting to write ${resource.resourceType} resource from endpoint='${serverUrl}' to SDS (attempt ${i} of ${maxAttempts})`
+                })
                 success = false;
             }
 
@@ -1125,12 +1136,24 @@ export async function updateSharedDataResource(component:React.Component, client
 
         if ( ! success ) {
             console.error("Failed to post resource: " + resource.id)
+            doLog({
+                level: 'error',
+                event: 'Failed to write resource to SDS',
+                page: 'n/a',
+                message: `Failed to write ${resource.resourceType} resource from endpoint='${serverUrl}' to SDS`
+            })
         }
 
         if (callback) callback(component, success);
 
     } catch (err) {
         console.error("Error updating shared data resource: " + JSON.stringify(err))
+        doLog({
+            level: 'error',
+            event: 'Failed to write resource to SDS',
+            page: 'n/a',
+            message: `caught error '${err}' attempting to write ${resource.resourceType} resource from endpoint='${serverUrl}' to SDS`
+        })
         if (callback) callback(component, false);
         return undefined
     }
