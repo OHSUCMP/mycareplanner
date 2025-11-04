@@ -418,6 +418,21 @@ export const getLauncherData = async (): Promise<LauncherData | null | undefined
   return undefined
 }
 
+
+export const getAuthorizedPatientId = async(): Promise<string | undefined> => {
+    let patientId: string | undefined = undefined;
+    try {
+        const launcherData = await getLauncherData();
+        let iss: string | undefined = launcherData!.config?.iss;
+        let state: fhirclient.ClientState | undefined = iss ? await getStateForEndpoint(iss) : undefined;
+        patientId = state?.tokenResponse?.patient;
+
+    } catch (err) {
+        console.error("getAuthorizedPatientId: caught exception: " + err);
+    }
+    return patientId;
+}
+
 // storer: commenting out this function as it's never called
 // // Written in case we need vs deleteAllDataFromLocalForage() on session timeout or logout but not yet tested
 // export const deleteLauncherData = async (): Promise<void> => {

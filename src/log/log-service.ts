@@ -1,5 +1,10 @@
 import axios from 'axios';
-import {getSessionId, sessionIdExistsInLocalForage, saveSessionId} from '../data-services/persistenceService';
+import {
+    getSessionId,
+    sessionIdExistsInLocalForage,
+    saveSessionId,
+    getAuthorizedPatientId
+} from '../data-services/persistenceService';
 
 const API_PATH = process.env.REACT_APP_LOG_ENDPOINT_URI;
 const BEARER_TOKEN = process.env.REACT_APP_LOG_API_KEY;
@@ -9,8 +14,6 @@ export type LogRequest = {
     event?: string;
     page?: string;
     message: string;
-    resourceCount?: number;
-    sessionId?: string;
 }
 
 // Variable to store the session ID
@@ -61,7 +64,9 @@ export const doLog = async (request: LogRequest): Promise<void> => {
         }
     };
 
-    const logRequest = {...request, sessionId};
+    const credentials: string | undefined = await getAuthorizedPatientId();
+
+    const logRequest = {...request, sessionId, credentials};
 
     axios.post(url, logRequest, config)
         .then(response => {
