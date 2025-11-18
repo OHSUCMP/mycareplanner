@@ -1,16 +1,20 @@
 import '../../Home.css';
 import React, {FC, useState, useEffect} from 'react';
-import {FHIRData, displayDate, displayConcept, displayTransmitter} from '../../data-services/models/fhirResources';
-//import { Provenance } from '../../data-services/fhir-types/fhir-r4';
-import {ServiceRequest} from '../../data-services/fhir-types/fhir-r4';
+import {
+    FHIRData,
+    displayDate,
+    displayConcept,
+    displayTransmitter,
+    displayPeriod, displayParticipant
+} from '../../data-services/models/fhirResources';
+import {Encounter} from '../../data-services/fhir-types/fhir-r4';
 import {Summary, SummaryRowItem, SummaryRowItems} from './Summary';
-import {BusySpinner} from '../busy-spinner/BusySpinner';
 import {SortModal} from '../sort-modal/sortModal';
 import {SortOnlyModal} from '../sort-only-modal/sortOnlyModal';
 import {DeterminateProgress} from "../determinate-progress/DeterminateProgress";
 import {CircularProgress} from "@mui/material";
 
-interface ServiceRequestListProps {
+interface EncounterListProps {
     sharingData: boolean;
     fhirDataCollection?: FHIRData[];
     progressTitle: string;
@@ -18,15 +22,15 @@ interface ServiceRequestListProps {
     progressMessage: string;
 }
 
-export const ServiceRequestList: FC<ServiceRequestListProps> = ({sharingData, fhirDataCollection,
-                                                                    progressTitle, progressValue, progressMessage}) => {
-    process.env.REACT_APP_DEBUG_LOG === "true" && console.log("ServiceRequestList component RENDERED!");
+export const EncounterList: FC<EncounterListProps> = ({sharingData, fhirDataCollection, 
+                                                          progressTitle, progressValue, progressMessage}) => {
+    process.env.REACT_APP_DEBUG_LOG === "true" && console.log("EncounterList component RENDERED!");
 
     const [showModal, setShowModal] = useState<boolean>(false);
     const [sortOption, setSortOption] = useState<string>('');
     const [filterOption, setFilterOption] = useState<string[]>([]);
-    const [sortedAndFilteredServiceRequests, setSortedAndFilteredServiceRequests] = useState<{
-        serviceRequest: ServiceRequest,
+    const [sortedAndFilteredEncounters, setSortedAndFilteredEncounters] = useState<{
+        encounter: Encounter,
         provider: string,
         provenance?: string
     }[]>([]);
@@ -68,8 +72,8 @@ export const ServiceRequestList: FC<ServiceRequestListProps> = ({sharingData, fh
     };
 
     const sortingOptions = [
-        {value: 'alphabetical-az', label: 'Alphabetical: A-Z'},
-        {value: 'alphabetical-za', label: 'Alphabetical: Z-A'},
+        // {value: 'alphabetical-az', label: 'Alphabetical: A-Z'},
+        // {value: 'alphabetical-za', label: 'Alphabetical: Z-A'},
         {value: 'newest', label: 'Date Created: Newest'},
         {value: 'oldest', label: 'Date Created: Oldest'},
     ];
@@ -77,14 +81,14 @@ export const ServiceRequestList: FC<ServiceRequestListProps> = ({sharingData, fh
     const applySortingAndFiltering = () => {
         if (!fhirDataCollection) return;
 
-        let combinedServiceRequests: { serviceRequest: ServiceRequest, provider: string, provenance?: string }[] = [];
+        let combinedEncounters: { encounter: Encounter, provider: string, provenance?: string }[] = [];
 
         fhirDataCollection.forEach((data, providerIndex) => {
             const providerName = data.serverName || 'Unknown';
-            (data.serviceRequests || []).forEach(serviceRequest => {
-                let provenance = data.provenanceMap?.get("ServiceRequest/" + (serviceRequest.id ?? 'missingId'))?.[0]
-                combinedServiceRequests.push({
-                    serviceRequest,
+            (data.encounters || []).forEach(encounter => {
+                let provenance = data.provenanceMap?.get("Encounter/" + (encounter.id ?? 'missingId'))?.[0]
+                combinedEncounters.push({
+                    encounter,
                     provider: providerName,
                     provenance: displayTransmitter(provenance)
                 });
@@ -93,7 +97,7 @@ export const ServiceRequestList: FC<ServiceRequestListProps> = ({sharingData, fh
 
         // Apply filtering
         if (filterOption.length > 0) {
-            combinedServiceRequests = combinedServiceRequests.filter(({provider}) => filterOption.includes(provider));
+            combinedEncounters = combinedEncounters.filter(({provider}) => filterOption.includes(provider));
         }
 
         function convertDateFormat(dateString: string): string | null {
@@ -109,19 +113,21 @@ export const ServiceRequestList: FC<ServiceRequestListProps> = ({sharingData, fh
 
         // Apply sorting
         switch (sortOption) {
-            case 'alphabetical-az':
-                combinedServiceRequests.sort((a, b) => (a.serviceRequest.code?.text || '').localeCompare(b.serviceRequest.code?.text || ''));
-                break;
-            case 'alphabetical-za':
-                combinedServiceRequests.sort((a, b) => (b.serviceRequest.code?.text || '').localeCompare(a.serviceRequest.code?.text || ''));
-                break;
+            // case 'alphabetical-az':
+            //     combinedEncounters.sort((a, b) => (a.encounter.code?.text || '').localeCompare(b.encounter.code?.text || ''));
+            //     break;
+            // case 'alphabetical-za':
+            //     combinedEncounters.sort((a, b) => (b.encounter.code?.text || '').localeCompare(a.encounter.code?.text || ''));
+            //     break;
             case 'newest':
-                combinedServiceRequests.sort((a, b) => {
+                combinedEncounters.sort((a, b) => {
                     let trimmedFinalDateA: string | null = null;
                     let trimmedFinalDateB: string | null = null;
 
-                    const dateA = a.serviceRequest.authoredOn ?? "";
-                    const dateB = b.serviceRequest.authoredOn ?? "";
+                    // const dateA = a.encounter.authoredOn ?? "";
+                    // const dateB = b.encounter.authoredOn ?? "";
+                    const dateA = a.encounter.period?.start ?? "";
+                    const dateB = b.encounter.period?.start ?? "";
 
                     if (dateA) {
                         const parsedDateA = displayDate(dateA);
@@ -153,12 +159,14 @@ export const ServiceRequestList: FC<ServiceRequestListProps> = ({sharingData, fh
                 });
                 break;
             case 'oldest':
-                combinedServiceRequests.sort((a, b) => {
+                combinedEncounters.sort((a, b) => {
                     let trimmedFinalDateA: string | null = null;
                     let trimmedFinalDateB: string | null = null;
 
-                    const dateA = a.serviceRequest.authoredOn ?? "";
-                    const dateB = b.serviceRequest.authoredOn ?? "";
+                    // const dateA = a.encounter.authoredOn ?? "";
+                    // const dateB = b.encounter.authoredOn ?? "";
+                    const dateA = a.encounter.period?.start ?? "";
+                    const dateB = b.encounter.period?.start ?? "";
 
                     if (dateA) {
                         const parsedDateA = displayDate(dateA);
@@ -193,23 +201,23 @@ export const ServiceRequestList: FC<ServiceRequestListProps> = ({sharingData, fh
                 break;
         }
 
-        setSortedAndFilteredServiceRequests(combinedServiceRequests);
+        setSortedAndFilteredEncounters(combinedEncounters);
     };
 
     return (
         <div className="home-view">
             <div className="welcome">
 
-                {/*{(fhirDataCollection === undefined || sharingData) && (*/}
-                {/*    <div>*/}
-                {/*        <h6>{progressTitle}</h6>*/}
-                {/*        <DeterminateProgress progressValue={progressValue}/>*/}
-                {/*        <p>{progressMessage}...<span style={{paddingLeft: '10px'}}><CircularProgress*/}
-                {/*            size="1rem"/></span></p>*/}
-                {/*    </div>*/}
-                {/*)}*/}
+                {(fhirDataCollection === undefined || sharingData) && (
+                    <div>
+                        <h6>{progressTitle}</h6>
+                        <DeterminateProgress progressValue={progressValue}/>
+                        <p>{progressMessage}...<span style={{paddingLeft: '10px'}}><CircularProgress
+                            size="1rem"/></span></p>
+                    </div>
+                )}
 
-                <h4 className="title">Upcoming Tests and Procedures</h4>
+                <h4 className="title">Visits</h4>
 
                 {fhirDataCollection && fhirDataCollection.length === 1 ? (
                     <a className="text-right" onClick={() => setShowModal(true)}>
@@ -240,11 +248,11 @@ export const ServiceRequestList: FC<ServiceRequestListProps> = ({sharingData, fh
                     )
                 )}
 
-                {sortedAndFilteredServiceRequests.length === 0 ? (
+                {sortedAndFilteredEncounters.length === 0 ? (
                     <p>No records found.</p>
                 ) : (
-                    sortedAndFilteredServiceRequests.map(({serviceRequest, provider, provenance}, index) => (
-                        <Summary key={index} id={index} rows={buildRows(serviceRequest, provider, provenance)}/>
+                    sortedAndFilteredEncounters.map(({encounter, provider, provenance}, index) => (
+                        <Summary key={index} id={index} rows={buildRows(encounter, provider, provenance)}/>
                     ))
                 )}
             </div>
@@ -252,75 +260,51 @@ export const ServiceRequestList: FC<ServiceRequestListProps> = ({sharingData, fh
     );
 };
 
-const buildRows = (service: ServiceRequest, theSource?: string, provenance?: string): SummaryRowItems => {
+const buildRows = (encounter: Encounter, theSource?: string, provenance?: string): SummaryRowItems => {
     let rows: SummaryRowItems = [
         {
             isHeader: true,
             twoColumns: false,
-            data1: displayConcept(service.code) ?? "No description",
-            data2: '',
+            data1: displayConcept(encounter?.type && encounter.type[0] ? encounter.type[0] : undefined) ?? '',
+            data2: ''
         }
     ];
 
-    if (service.requester?.display) {
-        const row: SummaryRowItem = {
-            isHeader: false,
-            twoColumns: false,
-            data1: 'Requested by: ' + service.requester?.display,
-            data2: '',
-        }
-        rows.push(row)
+    rows.push({
+        isHeader: false,
+        twoColumns: true,
+        data1: encounter.status,
+        data2: displayPeriod(encounter.period) ?? '',
+    })
+
+    let reason: string | undefined = undefined;
+    if (encounter.reasonCode && encounter.reasonCode[0]) {
+        reason = displayConcept(encounter.reasonCode[0])
+    } else if (encounter.reasonReference && encounter.reasonReference[0].display) {
+        reason = encounter.reasonReference[0].display
     }
 
-    if (service.authoredOn) {
-        const row: SummaryRowItem = {
-            isHeader: false,
-            twoColumns: false,
-            data1: 'Ordered On: ' + displayDate(service.authoredOn),
-            data2: '',
-        }
-        rows.push(row)
-    }
+    rows.push({
+        isHeader: false,
+        twoColumns: true,
+        data1: displayConcept(encounter.serviceType) ?? '',
+        data2: reason ?? ''
+    })
 
-    if (service.reasonCode && service.reasonCode[0]) {
-        const row: SummaryRowItem = {
-            isHeader: false,
-            twoColumns: false,
-            data1: 'Reason: ' + displayConcept(service.reasonCode[0]),
-            data2: '',
-        }
-        rows.push(row)
-    }
-
-    if (service.reasonReference && service.reasonReference[0].display) {
-        const row: SummaryRowItem = {
-            isHeader: false,
-            twoColumns: false,
-            data1: 'Reason: ' + (service.reasonReference?.[0].display ?? ''),
-            data2: '',
-        }
-        rows.push(row)
-    }
-
-    const notes: SummaryRowItems | undefined = service.note?.map((note, idx) => ({
+    rows.push({
         isHeader: false,
         twoColumns: false,
-        data1: note.text ? 'Note ' + (idx + 1) + ': ' + note.text : '',
-        data2: '',
-    }));
-
-    if (notes?.length) {
-        rows = rows.concat(notes);
-    }
+        data1: displayParticipant(encounter) ?? '',
+        data2: ''
+    })
 
     if (theSource || (provenance !== undefined)) {
-        const source: SummaryRowItem = {
+        rows.push({
             isHeader: false,
             twoColumns: false,
             data1: 'Source: ' + (provenance !== undefined ? provenance : theSource),
             data2: '',
-        };
-        rows.push(source);
+        });
     }
 
     return rows;
