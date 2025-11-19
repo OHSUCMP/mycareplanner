@@ -2,13 +2,12 @@ import '../../Home.css';
 import React, {FC, useState, useEffect} from 'react';
 import {
     FHIRData,
-    displayDate,
     displayConcept,
     displayTransmitter,
     displayPeriod, displayParticipant
 } from '../../data-services/models/fhirResources';
 import {Encounter} from '../../data-services/fhir-types/fhir-r4';
-import {Summary, SummaryRowItem, SummaryRowItems} from './Summary';
+import {Summary, SummaryRowItems} from './Summary';
 import {SortModal} from '../sort-modal/sortModal';
 import {SortOnlyModal} from '../sort-only-modal/sortOnlyModal';
 import {DeterminateProgress} from "../determinate-progress/DeterminateProgress";
@@ -100,104 +99,14 @@ export const EncounterList: FC<EncounterListProps> = ({sharingData, fhirDataColl
             combinedEncounters = combinedEncounters.filter(({provider}) => filterOption.includes(provider));
         }
 
-        function convertDateFormat(dateString: string): string | null {
-            const date = new Date(dateString);
-            if (isNaN(date.getTime())) {
-                return null;
-            }
-            const month = ('0' + (date.getMonth() + 1)).slice(-2);
-            const day = ('0' + date.getDate()).slice(-2);
-            const year = date.getFullYear();
-            return `${month}/${day}/${year}`;
-        }
-
         // Apply sorting
         switch (sortOption) {
-            // case 'alphabetical-az':
-            //     combinedEncounters.sort((a, b) => (a.encounter.code?.text || '').localeCompare(b.encounter.code?.text || ''));
-            //     break;
-            // case 'alphabetical-za':
-            //     combinedEncounters.sort((a, b) => (b.encounter.code?.text || '').localeCompare(a.encounter.code?.text || ''));
-            //     break;
-            case 'newest':
-                combinedEncounters.sort((a, b) => {
-                    let trimmedFinalDateA: string | null = null;
-                    let trimmedFinalDateB: string | null = null;
-
-                    // const dateA = a.encounter.authoredOn ?? "";
-                    // const dateB = b.encounter.authoredOn ?? "";
-                    const dateA = a.encounter.period?.start ?? "";
-                    const dateB = b.encounter.period?.start ?? "";
-
-                    if (dateA) {
-                        const parsedDateA = displayDate(dateA);
-                        const indexA = parsedDateA?.search('until');
-                        if (indexA !== -1 && parsedDateA) {
-                            trimmedFinalDateA = convertDateFormat(String(parsedDateA).slice(0, indexA));
-                            console.log("trimmedFinalDateA", trimmedFinalDateA);
-                        }
-                    }
-
-                    if (dateB) {
-                        const parsedDateB = displayDate(dateB);
-                        const indexB = parsedDateB?.search('until');
-                        if (indexB !== -1 && parsedDateB) {
-                            trimmedFinalDateB = convertDateFormat(String(parsedDateB).slice(0, indexB));
-                            console.log("trimmedFinalDateB", trimmedFinalDateB);
-                        }
-                    }
-
-                    if (trimmedFinalDateA && trimmedFinalDateB) {
-                        return trimmedFinalDateA.localeCompare(trimmedFinalDateB);
-                    } else if (trimmedFinalDateA) {
-                        return -1;
-                    } else if (trimmedFinalDateB) {
-                        return 1;
-                    } else {
-                        return 0;
-                    }
-                });
-                break;
             case 'oldest':
-                combinedEncounters.sort((a, b) => {
-                    let trimmedFinalDateA: string | null = null;
-                    let trimmedFinalDateB: string | null = null;
-
-                    // const dateA = a.encounter.authoredOn ?? "";
-                    // const dateB = b.encounter.authoredOn ?? "";
-                    const dateA = a.encounter.period?.start ?? "";
-                    const dateB = b.encounter.period?.start ?? "";
-
-                    if (dateA) {
-                        const parsedDateA = displayDate(dateA);
-                        const indexA = parsedDateA?.search('until');
-                        if (indexA !== -1 && parsedDateA) {
-                            trimmedFinalDateA = convertDateFormat(String(parsedDateA).slice(0, indexA));
-                            console.log("trimmedFinalDateA", trimmedFinalDateA);
-                        }
-                    }
-
-                    if (dateB) {
-                        const parsedDateB = displayDate(dateB);
-                        const indexB = parsedDateB?.search('until');
-                        if (indexB !== -1 && parsedDateB) {
-                            trimmedFinalDateB = convertDateFormat(String(parsedDateB).slice(0, indexB));
-                            console.log("trimmedFinalDateB", trimmedFinalDateB);
-                        }
-                    }
-
-                    if (trimmedFinalDateA && trimmedFinalDateB) {
-                        return trimmedFinalDateB.localeCompare(trimmedFinalDateA);
-                    } else if (trimmedFinalDateA) {
-                        return -1;
-                    } else if (trimmedFinalDateB) {
-                        return 1;
-                    } else {
-                        return 0;
-                    }
-                });
+                combinedEncounters.sort((a, b) => (a.encounter?.period?.start || '').localeCompare(b.encounter?.period?.start || ''));
                 break;
             default:
+            case 'newest':
+                combinedEncounters.sort((a, b) => (b.encounter?.period?.start || '').localeCompare(a.encounter?.period?.start || ''));
                 break;
         }
 
