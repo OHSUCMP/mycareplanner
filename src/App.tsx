@@ -64,8 +64,7 @@ import {VitalsList} from "./components/summaries/VitalsList";
 import {CareTeamList} from "./components/summaries/CareTeamList";
 import {AssessmentList} from "./components/summaries/AssessmentList";
 import {ImmunizationList} from "./components/summaries/ImmunizationList";
-import {ServiceRequestList} from "./components/summaries/ServiceRequestList";
-import {EncounterList} from "./components/summaries/EncounterList";
+import {InteractionList} from "./components/summaries/InteractionList";
 
 import {QuestionnaireHandler} from "./components/questionnaire/QuestionnaireHandler";
 import {ConfirmationPage} from './components/confirmation-page/ConfirmationPage'
@@ -81,7 +80,6 @@ import SessionProtected from './components/session-timeout/SessionProtected';
 import {SessionTimeoutPage} from './components/session-timeout/SessionTimeoutPage';
 import localforage from 'localforage';
 import AuthDialog from './components/modal/AuthDialog';
-import {InteractionList} from "./components/summaries/InteractionList";
 
 interface AppProps extends RouteComponentProps {
 }
