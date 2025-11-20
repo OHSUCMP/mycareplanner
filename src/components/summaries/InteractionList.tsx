@@ -381,21 +381,28 @@ const buildServiceRequestRows = (service: ServiceRequest, theSource?: string, pr
 };
 
 const buildEncounterRows = (encounter: Encounter, theSource?: string, provenance?: string): SummaryRowItems => {
-    let rows: SummaryRowItems = [
-        {
-            isHeader: true,
-            twoColumns: false,
-            data1: displayConcept(encounter?.type && encounter.type[0] ? encounter.type[0] : undefined) ?? '',
-            data2: ''
-        }
-    ];
+    let rows: SummaryRowItems = [];
 
+    let type: string | undefined = displayConcept(encounter?.type && encounter.type[0] ? encounter.type[0] : undefined) ?? '';
     rows.push({
-        isHeader: false,
-        twoColumns: true,
-        data1: encounter.status,
-        data2: displayPeriod(encounter.period) ?? '',
-    })
+        isHeader: true,
+        twoColumns: false,
+        data1: type ?? 'No description',
+        data2: ''
+    });
+
+    let status: string | undefined = encounter.status ?? '';
+    let period: string | undefined = displayPeriod(encounter.period) ?? '';
+    if (status !== '' || period !== '') {
+        rows.push({
+            isHeader: false,
+            twoColumns: true,
+            data1: status !== '' ? 'Status: ' + status : '',
+            data2: period !== '' ? 'Date (range): ' + period : ''
+        })
+    }
+
+    let serviceType: string | undefined = displayConcept(encounter.serviceType) ?? '';
 
     let reason: string | undefined = undefined;
     if (encounter.reasonCode && encounter.reasonCode[0]) {
@@ -404,19 +411,24 @@ const buildEncounterRows = (encounter: Encounter, theSource?: string, provenance
         reason = encounter.reasonReference[0].display
     }
 
-    rows.push({
-        isHeader: false,
-        twoColumns: true,
-        data1: displayConcept(encounter.serviceType) ?? '',
-        data2: reason ?? ''
-    })
+    if (serviceType !== '' || reason !== '') {
+        rows.push({
+            isHeader: false,
+            twoColumns: true,
+            data1: serviceType !== '' ? 'Service Type: ' + serviceType : '',
+            data2: reason !== '' ? 'Reason: ' + reason : ''
+        })
+    }
 
-    rows.push({
-        isHeader: false,
-        twoColumns: false,
-        data1: displayParticipant(encounter) ?? '',
-        data2: ''
-    })
+    let participant: string | undefined = displayParticipant(encounter) ?? '';
+    if (participant !== '') {
+        rows.push({
+            isHeader: false,
+            twoColumns: false,
+            data1: 'Participant: ' + participant,
+            data2: ''
+        })
+    }
 
     if (theSource || (provenance !== undefined)) {
         rows.push({
