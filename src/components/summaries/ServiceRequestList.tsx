@@ -96,17 +96,6 @@ export const ServiceRequestList: FC<ServiceRequestListProps> = ({sharingData, fh
             combinedServiceRequests = combinedServiceRequests.filter(({provider}) => filterOption.includes(provider));
         }
 
-        function convertDateFormat(dateString: string): string | null {
-            const date = new Date(dateString);
-            if (isNaN(date.getTime())) {
-                return null;
-            }
-            const month = ('0' + (date.getMonth() + 1)).slice(-2);
-            const day = ('0' + date.getDate()).slice(-2);
-            const year = date.getFullYear();
-            return `${month}/${day}/${year}`;
-        }
-
         // Apply sorting
         switch (sortOption) {
             case 'alphabetical-az':
@@ -116,78 +105,10 @@ export const ServiceRequestList: FC<ServiceRequestListProps> = ({sharingData, fh
                 combinedServiceRequests.sort((a, b) => (b.serviceRequest.code?.text || '').localeCompare(a.serviceRequest.code?.text || ''));
                 break;
             case 'newest':
-                combinedServiceRequests.sort((a, b) => {
-                    let trimmedFinalDateA: string | null = null;
-                    let trimmedFinalDateB: string | null = null;
-
-                    const dateA = a.serviceRequest.authoredOn ?? "";
-                    const dateB = b.serviceRequest.authoredOn ?? "";
-
-                    if (dateA) {
-                        const parsedDateA = displayDate(dateA);
-                        const indexA = parsedDateA?.search('until');
-                        if (indexA !== -1 && parsedDateA) {
-                            trimmedFinalDateA = convertDateFormat(String(parsedDateA).slice(0, indexA));
-                            console.log("trimmedFinalDateA", trimmedFinalDateA);
-                        }
-                    }
-
-                    if (dateB) {
-                        const parsedDateB = displayDate(dateB);
-                        const indexB = parsedDateB?.search('until');
-                        if (indexB !== -1 && parsedDateB) {
-                            trimmedFinalDateB = convertDateFormat(String(parsedDateB).slice(0, indexB));
-                            console.log("trimmedFinalDateB", trimmedFinalDateB);
-                        }
-                    }
-
-                    if (trimmedFinalDateA && trimmedFinalDateB) {
-                        return trimmedFinalDateA.localeCompare(trimmedFinalDateB);
-                    } else if (trimmedFinalDateA) {
-                        return -1;
-                    } else if (trimmedFinalDateB) {
-                        return 1;
-                    } else {
-                        return 0;
-                    }
-                });
+                combinedServiceRequests.sort((a, b) => (b.serviceRequest?.authoredOn || '').localeCompare(a.serviceRequest?.authoredOn || ''));
                 break;
             case 'oldest':
-                combinedServiceRequests.sort((a, b) => {
-                    let trimmedFinalDateA: string | null = null;
-                    let trimmedFinalDateB: string | null = null;
-
-                    const dateA = a.serviceRequest.authoredOn ?? "";
-                    const dateB = b.serviceRequest.authoredOn ?? "";
-
-                    if (dateA) {
-                        const parsedDateA = displayDate(dateA);
-                        const indexA = parsedDateA?.search('until');
-                        if (indexA !== -1 && parsedDateA) {
-                            trimmedFinalDateA = convertDateFormat(String(parsedDateA).slice(0, indexA));
-                            console.log("trimmedFinalDateA", trimmedFinalDateA);
-                        }
-                    }
-
-                    if (dateB) {
-                        const parsedDateB = displayDate(dateB);
-                        const indexB = parsedDateB?.search('until');
-                        if (indexB !== -1 && parsedDateB) {
-                            trimmedFinalDateB = convertDateFormat(String(parsedDateB).slice(0, indexB));
-                            console.log("trimmedFinalDateB", trimmedFinalDateB);
-                        }
-                    }
-
-                    if (trimmedFinalDateA && trimmedFinalDateB) {
-                        return trimmedFinalDateB.localeCompare(trimmedFinalDateA);
-                    } else if (trimmedFinalDateA) {
-                        return -1;
-                    } else if (trimmedFinalDateB) {
-                        return 1;
-                    } else {
-                        return 0;
-                    }
-                });
+                combinedServiceRequests.sort((a, b) => (a.serviceRequest?.authoredOn || '').localeCompare(b.serviceRequest?.authoredOn || ''));
                 break;
             default:
                 break;
@@ -200,16 +121,16 @@ export const ServiceRequestList: FC<ServiceRequestListProps> = ({sharingData, fh
         <div className="home-view">
             <div className="welcome">
 
-                {(fhirDataCollection === undefined || sharingData) && (
-                    <div>
-                        <h6>{progressTitle}</h6>
-                        <DeterminateProgress progressValue={progressValue}/>
-                        <p>{progressMessage}...<span style={{paddingLeft: '10px'}}><CircularProgress
-                            size="1rem"/></span></p>
-                    </div>
-                )}
+                {/*{(fhirDataCollection === undefined || sharingData) && (*/}
+                {/*    <div>*/}
+                {/*        <h6>{progressTitle}</h6>*/}
+                {/*        <DeterminateProgress progressValue={progressValue}/>*/}
+                {/*        <p>{progressMessage}...<span style={{paddingLeft: '10px'}}><CircularProgress*/}
+                {/*            size="1rem"/></span></p>*/}
+                {/*    </div>*/}
+                {/*)}*/}
 
-                <h4 className="title">Planned Activities</h4>
+                <h4 className="title">Upcoming Tests and Procedures</h4>
 
                 {fhirDataCollection && fhirDataCollection.length === 1 ? (
                     <a className="text-right" onClick={() => setShowModal(true)}>
