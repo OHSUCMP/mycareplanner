@@ -64,7 +64,7 @@ import {VitalsList} from "./components/summaries/VitalsList";
 import {CareTeamList} from "./components/summaries/CareTeamList";
 import {AssessmentList} from "./components/summaries/AssessmentList";
 import {ImmunizationList} from "./components/summaries/ImmunizationList";
-import {ServiceRequestList} from "./components/summaries/ServiceRequestList";
+import {InteractionList} from "./components/summaries/InteractionList";
 
 import {QuestionnaireHandler} from "./components/questionnaire/QuestionnaireHandler";
 import {ConfirmationPage} from './components/confirmation-page/ConfirmationPage'
@@ -135,7 +135,7 @@ const tabList = {
     5: "Goals",
     6: "Concerns",
     7: "Medications",
-    8: "Activities",
+    8: "Interactions",
     9: "Tests",
     10: "Vitals",
     11: "Immunization",
@@ -1232,7 +1232,7 @@ class App extends React.Component<AppProps, AppState> {
                                                 <Tab label="Goals" value="5" wrapped/>
                                                 <Tab label="Concerns" value="6" wrapped/>
                                                 <Tab label="Medications" value="7" wrapped/>
-                                                <Tab label="Activities" value="8" wrapped/>
+                                                <Tab label="Interactions" value="8" wrapped/>
                                             </TabList>
                                             <TabPanel value="5" sx={{padding: '0px 15px'}}>
                                                 <GoalList sharingData={this.state.sharingData}
@@ -1262,11 +1262,11 @@ class App extends React.Component<AppProps, AppState> {
                                                                 medicationSummaryMatrix={this.state.medicationSummaries}/>
                                             </TabPanel>
                                             <TabPanel value="8" sx={{padding: '0px 15px'}}>
-                                                <ServiceRequestList sharingData={this.state.sharingData}
-                                                                    fhirDataCollection={this.state.fhirDataCollection}
-                                                                    progressTitle={this.state.progressTitle}
-                                                                    progressValue={this.state.progressValue}
-                                                                    progressMessage={this.state.progressMessage}/>
+                                                <InteractionList sharingData={this.state.sharingData}
+                                                                 fhirDataCollection={this.state.fhirDataCollection}
+                                                                 progressTitle={this.state.progressTitle}
+                                                                 progressValue={this.state.progressValue}
+                                                                 progressMessage={this.state.progressMessage}/>
                                             </TabPanel>
                                         </TabContext>
                                     </TabPanel>

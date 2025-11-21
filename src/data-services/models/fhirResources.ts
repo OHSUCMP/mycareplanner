@@ -112,8 +112,8 @@ export function displayDate(dateString?: string): string | undefined {
     } else {
         // If time is not included, then parse only Year Month Day parts
         // In JavaScript, January is 0. Subtract 1 from month Int.
-        var parts = dateString!.split('-');
-        var jsDate: Date = (dateString?.includes('T'))
+        let parts = dateString!.split('-');
+        let jsDate: Date = (dateString?.includes('T'))
             ? new Date(dateString!)
             : new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]))
 
@@ -146,11 +146,43 @@ export function displayDateTime(dateString?: string): string | undefined {
     }
 }
 
+// provider type valueset: http://hl7.org/fhir/R4/valueset-encounter-participant-type.html
+export function isEncounterParticipantTypeAReferrer(type: CodeableConcept[]): boolean {
+    if (type && type.length > 0) {
+        for (let codeable of type) {
+            if (codeable.coding) {
+                for (let code of codeable.coding) {
+                    if (code.system === 'http://terminology.hl7.org/CodeSystem/v3-ParticipationType' &&
+                        code.code === 'REF') {
+                        return true;
+                    }
+                }
+            }
+        }
+    }
+    return false;
+}
+
+// participant type valueset: https://hl7.org/fhir/R4/valueset-encounter-participant-type.html
+export function displayParticipant(encounter: Encounter): string | undefined {
+    let participant: string | undefined = undefined;
+    if (encounter.participant) {
+        for (let p of encounter.participant) {
+            if (p.individual && p.individual.display && p.type && ! isEncounterParticipantTypeAReferrer(p.type)) {
+                participant = p.individual.display;
+                break;
+            }
+
+        }
+    }
+    return participant;
+}
+
 export function displayConcept(codeable: CodeableConcept | undefined): string | undefined {
     if (codeable?.text !== undefined) {
         return codeable?.text
     } else {
-        // use the first codeing.display that has a value
+        // use the first coding.display that has a value
         return codeable?.coding?.filter((c) => c.display !== undefined)?.[0]?.display
     }
 }
@@ -167,7 +199,17 @@ export function displayPeriod(period: Period | undefined): string | undefined {
     let startDate = displayDate(period?.start)
     let endDate = displayDate(period?.end)
 
-    return (startDate ?? '') + ((endDate !== undefined) ? ` until ${endDate}` : '')
+    if (startDate && endDate) {
+        return (startDate == endDate) ?
+            startDate :
+            `${startDate} to ${endDate}`
+    } else if (startDate) {
+        return 'Began ' + startDate
+    } else if (endDate) {
+        return 'Ended ' + endDate
+    } else {
+        return undefined
+    }
 }
 
 export function displayValue(obs: Observation): string | undefined {
