@@ -3,7 +3,7 @@ import {
     getSessionId,
     sessionIdExistsInLocalForage,
     saveSessionId,
-    getAuthorizedPatientId
+    getCredentials
 } from '../data-services/persistenceService';
 
 const API_PATH = process.env.REACT_APP_LOG_ENDPOINT_URI;
@@ -64,7 +64,7 @@ export const doLog = async (request: LogRequest): Promise<void> => {
         }
     };
 
-    const credentials: string | undefined = await getAuthorizedPatientId();
+    const credentials: string | undefined = await getCredentials();
 
     const logRequest = {...request, sessionId, credentials};
 

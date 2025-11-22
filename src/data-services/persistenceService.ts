@@ -419,18 +419,18 @@ export const getLauncherData = async (): Promise<LauncherData | null | undefined
 }
 
 
-export const getAuthorizedPatientId = async(): Promise<string | undefined> => {
-    let patientId: string | undefined = undefined;
+export const getCredentials = async(): Promise<string | undefined> => {
+    let patientId: string | null = null;
+    let userId: string | null = null;
     try {
         const launcherData = await getLauncherData();
-        let iss: string | undefined = launcherData!.config?.iss;
-        let state: fhirclient.ClientState | undefined = iss ? await getStateForEndpoint(iss) : undefined;
-        patientId = state?.tokenResponse?.patient;
+        patientId = launcherData?.patientId || null;
+        userId = launcherData?.userId || null;
 
     } catch (err) {
-        console.error("getAuthorizedPatientId: caught exception: " + err);
+        console.error("getCredentials: caught exception: " + err);
     }
-    return patientId;
+    return "{User=" + userId + ", Patient=Patient/" + patientId + "}";
 }
 
 // storer: commenting out this function as it's never called
@@ -449,7 +449,7 @@ export const getAuthorizedPatientId = async(): Promise<string | undefined> => {
 //   }
 // }
 
-export const persistStateAsLauncherData = async (state: fhirclient.ClientState) => {
+export const persistLauncherData = async (state: fhirclient.ClientState, patientId: string | null, userId: string | null) => {
   // Convert clientState to ProviderEndpoint
   const stateLauncherData: LauncherData | undefined = await getLauncherDataForState(state)
 
@@ -467,7 +467,9 @@ export const persistStateAsLauncherData = async (state: fhirclient.ClientState) 
       redirectUri: "./index.html",
       clientId: state.clientId,
       scope: state.scope
-    }
+    },
+    patientId: patientId,
+    userId: userId
   }
   console.log('persistLauncherData: launcherDataToSave=', launcherDataToSave)
 
