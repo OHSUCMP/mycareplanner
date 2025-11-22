@@ -16,6 +16,8 @@ export class LauncherData {
   useProxy?: boolean
   fhirQueryConfig?: Map<String, FhirQueryConfig>
   config?: fhirclient.AuthorizeParams
+  patientId?: string | null
+  userId?: string | null
 
   constructor(name: string,
               useProxy: boolean,
