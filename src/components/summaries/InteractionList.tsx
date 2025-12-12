@@ -197,13 +197,12 @@ export const InteractionList: FC<InteractionListProps> = ({sharingData, fhirData
             case 'alphabetical-za':
                 combinedServiceRequests.sort((a, b) => (b.serviceRequest.code?.text || '').localeCompare(a.serviceRequest.code?.text || ''));
                 break;
-            case 'newest':
-                combinedServiceRequests.sort((a, b) => (b.serviceRequest?.authoredOn || '').localeCompare(a.serviceRequest?.authoredOn || ''));
-                break;
             case 'oldest':
                 combinedServiceRequests.sort((a, b) => (a.serviceRequest?.authoredOn || '').localeCompare(b.serviceRequest?.authoredOn || ''));
                 break;
             default:
+            case 'newest':
+                combinedServiceRequests.sort((a, b) => (b.serviceRequest?.authoredOn || '').localeCompare(a.serviceRequest?.authoredOn || ''));
                 break;
         }
 
@@ -391,18 +390,17 @@ const buildEncounterRows = (encounter: Encounter, theSource?: string, provenance
         data2: ''
     });
 
-    let status: string | undefined = encounter.status ?? '';
+    let serviceType: string | undefined = displayConcept(encounter.serviceType) ?? '';
     let period: string | undefined = displayPeriod(encounter.period) ?? '';
-    if (status !== '' || period !== '') {
+    if (serviceType || period) {
         rows.push({
             isHeader: false,
             twoColumns: true,
-            data1: status !== '' ? 'Status: ' + status : '',
-            data2: period !== '' ? 'Date (range): ' + period : ''
+            data1: serviceType ? 'Type: ' + serviceType : '',
+            data2: period ? 'Date (range): ' + period : ''
         })
     }
 
-    let serviceType: string | undefined = displayConcept(encounter.serviceType) ?? '';
 
     let reason: string | undefined = undefined;
     if (encounter.reasonCode && encounter.reasonCode[0]) {
@@ -410,27 +408,17 @@ const buildEncounterRows = (encounter: Encounter, theSource?: string, provenance
     } else if (encounter.reasonReference && encounter.reasonReference[0].display) {
         reason = encounter.reasonReference[0].display
     }
-
-    if (serviceType !== '' || reason !== '') {
+    let participant: string | undefined = displayParticipant(encounter) ?? '';
+    if (reason || participant) {
         rows.push({
             isHeader: false,
             twoColumns: true,
-            data1: serviceType !== '' ? 'Service Type: ' + serviceType : '',
-            data2: reason !== '' ? 'Reason: ' + reason : ''
+            data1: reason ? 'Reason: ' + reason : '',
+            data2: participant ? 'Participant: ' + participant : ''
         })
     }
 
-    let participant: string | undefined = displayParticipant(encounter) ?? '';
-    if (participant !== '') {
-        rows.push({
-            isHeader: false,
-            twoColumns: false,
-            data1: 'Participant: ' + participant,
-            data2: ''
-        })
-    }
-
-    if (theSource || (provenance !== undefined)) {
+    if (provenance || theSource) {
         rows.push({
             isHeader: false,
             twoColumns: false,
