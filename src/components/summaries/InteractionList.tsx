@@ -197,13 +197,12 @@ export const InteractionList: FC<InteractionListProps> = ({sharingData, fhirData
             case 'alphabetical-za':
                 combinedServiceRequests.sort((a, b) => (b.serviceRequest.code?.text || '').localeCompare(a.serviceRequest.code?.text || ''));
                 break;
-            case 'newest':
-                combinedServiceRequests.sort((a, b) => (b.serviceRequest?.authoredOn || '').localeCompare(a.serviceRequest?.authoredOn || ''));
-                break;
             case 'oldest':
                 combinedServiceRequests.sort((a, b) => (a.serviceRequest?.authoredOn || '').localeCompare(b.serviceRequest?.authoredOn || ''));
                 break;
             default:
+            case 'newest':
+                combinedServiceRequests.sort((a, b) => (b.serviceRequest?.authoredOn || '').localeCompare(a.serviceRequest?.authoredOn || ''));
                 break;
         }
 
