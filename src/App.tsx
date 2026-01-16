@@ -795,6 +795,16 @@ class App extends React.Component<AppProps, AppState> {
     getRxClass(rxcui: string): Promise<RxClassSummary[]> {
         console.log("getRxClassNames: testing RxCUI=" + rxcui);  // 197770
 
+        // note : it may be the case that this RxCUI has been replaced by another RxCUI in the RxNav system
+        //        consider these two medications:
+        //            404673 - memantine - RxNav remapped to 996563
+        //            153357 - donepezil - RxNav remapped to 997224
+        //        see: https://mor.nlm.nih.gov/RxNav/search?searchBy=NameOrCode&searchTerm=153357
+        //        the old RxCUI won't return any data in the fetch downcode, just an empty JSON object.
+        //
+        // todo : investigate to see if there's an API that can give us the current RxCUI for a given RxCUI
+        //        and put that here, so that downstream logic is using the current RxCUI
+
         // ATC1-4 RxClass classes we're interested in:
         // -------------------------------------------
         // N05A: Antipsychotics
@@ -826,15 +836,33 @@ class App extends React.Component<AppProps, AppState> {
                 }).then(json => {
                     console.log("getRxClassNames: json=" + JSON.stringify(json));
                     let arr: RxClassSummary[] = [];
+                    if (json && json.rxclassDrugInfoList && json.rxclassDrugInfoList.rxclassDrugInfo) {
+                        let foundList: string[] = [];
+                        for (let rxcdi of json?.rxclassDrugInfoList?.rxclassDrugInfo) {
+                            try {
+                                let rxcmci = rxcdi?.rxclassMinConceptItem;
+                                if (rxcmci?.classType === "ATC1-4") {
+                                    let classId = rxcmci.classId;
+                                    if (classId && ! foundList.includes(classId) ) {
+                                        let className = rxcmci.className;
+                                        console.log("getRxClassNames: adding classId=" + classId + ", className=" + className + " for RxCui=" + rxcui);
 
-                    // todo : replace this with real information from json
-                    let obj: RxClassSummary = {
-                        RxCui: rxcui,
-                        ClassId: 'test-class-id',
-                        ClassName: 'test-class-name'
-                    };
+                                        let obj: RxClassSummary = {
+                                            RxCui: rxcui,
+                                            ClassId: classId,
+                                            ClassName: className
+                                        };
 
-                    arr.push(obj);
+                                        arr.push(obj);
+                                        foundList.push(classId);
+                                    }
+                                }
+
+                            } catch (err) {
+                                console.error("getRxClassNames: error processing rxcdi for RxCui=" + rxcui + ": " + err);
+                            }
+                        }
+                    }
 
                     resolve(arr);
 
