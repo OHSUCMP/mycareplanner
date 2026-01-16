@@ -102,7 +102,15 @@ export interface MedicationSummary {
   Reasons?: string[],
   Notes?: string[],
   Provenance?: ProvenanceSummary[],
-  LearnMore?: string
+  LearnMore?: string,
+  RxCui?: string,
+  RxClass?: RxClassSummary[]
+}
+
+export interface RxClassSummary {
+  RxCui: string,
+  ClassId: string,
+  ClassName: string
 }
 
 export interface ObservationSummary {
