@@ -137,8 +137,27 @@ define function ReportMedication(medReq MedicationRequest, category String):
     Reasons: MedicationReasons(medReq),
     Notes: ToString(medReq.note),
     Provenance: ReportProvenance(medReq),
-    LearnMore: LearnMoreURL(medReq.medication as CodeableConcept)
+    LearnMore: LearnMoreURL(medReq.medication as CodeableConcept),
+    RxCui: getRxNormCoding(medReq).code.value
   }
+
+    define function getRxNormCoding(Rx MedicationRequest):
+      singleton from (
+        (
+          if Rx.medication is FHIR.CodeableConcept then
+            Rx.medication.coding
+          else
+            getMedication(Rx).code.coding
+        ) C
+          where C.system.value = 'http://www.nlm.nih.gov/research/umls/rxnorm'
+            or C.system.value = 'urn:oid:2.16.840.1.113883.6.88'
+      )
+
+define function getMedication(Rx MedicationRequest):
+  if Rx.medication is FHIR.Reference then
+    singleton from ([Medication: id in Last(Split(Rx.medication.reference, '/'))])
+  else
+    Medication {code: Rx.medication}
 
 define function MedicationReasons(medReq MedicationRequest):
   ConceptDisplayNames(medReq.reasonCode)

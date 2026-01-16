@@ -17,8 +17,9 @@ import Home from "./Home";
 import {Resource} from './data-services/fhir-types/fhir-r4';
 import {allShareableResources, FHIRData} from './data-services/models/fhirResources';
 import FHIR from 'fhirclient';
+
 import Client from 'fhirclient/lib/Client';
-import {PatientSummary, ScreeningSummary, EditFormData} from './data-services/models/cqlSummary';
+import {PatientSummary, ScreeningSummary, EditFormData, RxClassSummary} from './data-services/models/cqlSummary';
 import {
     getFHIRData,
     createAndPersistClientForNewProvider,
@@ -760,11 +761,88 @@ class App extends React.Component<AppProps, AppState> {
             await this.setSummaries('getGoalSummaries()', 'goalSummaries', getGoalSummaries);
             await this.setSummaries('getConditionSummaries()', 'conditionSummaries', getConditionSummaries)
             await this.setSummaries('getMedicationSummaries()', 'medicationSummaries', getMedicationSummaries)
+            await this.appendRxClassInfoToMedicationSummaries()
             await this.setSummaries('getLabResultSummaries()', 'labResultSummaries', getLabResultSummaries)
             await this.setSummaries('getVitalSignSummaries()', 'vitalSignSummaries', getVitalSignSummaries)
 
             await this.updateLogSummariesCount(this.state.fhirDataCollection) // Logging the count for the patient details bundle.
         }
+    }
+
+    appendRxClassInfoToMedicationSummaries = async (): Promise<void> => {
+        if ( ! this.state.medicationSummaries ) return;
+
+        for (let medicationSummaries of this.state.medicationSummaries) {
+            for (let summary of medicationSummaries) {
+                try {
+                    if (summary.RxCui) {
+                        // storer: RxCui will be null if the MedicationRequest's medication is represented as a reference to a Medication resource,
+                        //         because the Medication resource isn't included in the source resource array.  Medication resources appear to not be pulled
+                        //         in addition to their referencing MedicationRequest resources.
+                        console.log("got Medication with RxCui: " + summary.RxCui);
+                        summary.RxClass = await this.getRxClass(summary.RxCui);
+
+                    } else {
+                        console.log("Medication Summary had no Coding");
+                    }
+                } catch (err) {
+                    console.error("Error getting RxClass for RxCui=" + summary.RxCui + ": " + err);
+                }
+            }
+        }
+    }
+
+    getRxClass(rxcui: string): Promise<RxClassSummary[]> {
+        console.log("getRxClassNames: testing RxCUI=" + rxcui);  // 197770
+
+        // ATC1-4 RxClass classes we're interested in:
+        // -------------------------------------------
+        // N05A: Antipsychotics
+        // N06A: Antidepressants
+        // N05B: Anxiolytics
+        // N07B: Drugs Used in Addictive Disorders
+        //
+        // You can use this API to get information about a class:
+        // https://rxnav.nlm.nih.gov/REST/rxclass/class/byId.json?classId=N07B
+        //   {"rxclassMinConceptList":{"rxclassMinConcept":[{"classId":"N07B","className":"DRUGS USED IN ADDICTIVE DISORDERS","classType":"ATC1-4"}]}}
+        //
+        // ALL CLASS TYPES: https://rxnav.nlm.nih.gov/REST/rxclass/classTypes.json
+        // ALL ATC1-4 CLASSES: https://rxnav.nlm.nih.gov/REST/rxclass/allClasses.json?classType=ATC1-4
+        // ATC1-4 CLASS SEARCH BY NAME: https://rxnav.nlm.nih.gov/REST/rxclass/class/byName.json?className=DRUGS USED IN ADDICTIVE DISORDERS&classTypes=ATC1-4
+
+        // This is the call:
+        // https://rxnav.nlm.nih.gov/REST/rxclass/class/byRxcui.json?rxcui=197770&relaSource=ATCPROD
+
+
+        return new Promise<RxClassSummary[]>((resolve, reject) => {
+            fetch('https://rxnav.nlm.nih.gov/REST/rxclass/class/byRxcui.json?rxcui=' + rxcui + '&relaSource=ATCPROD')
+                .then(response => {
+                    if (response.ok) {
+                        return response.json();
+                    } else {
+                        throw new Error('Network response was not OK (' + response.status + ')');
+                    }
+
+                }).then(json => {
+                    console.log("getRxClassNames: json=" + JSON.stringify(json));
+                    let arr: RxClassSummary[] = [];
+
+                    // todo : replace this with real information from json
+                    let obj: RxClassSummary = {
+                        RxCui: rxcui,
+                        ClassId: 'test-class-id',
+                        ClassName: 'test-class-name'
+                    };
+
+                    arr.push(obj);
+
+                    resolve(arr);
+
+                }).catch(err => {
+                    console.error("getRxClassNames: error=" + err);
+                    reject(err);
+                });
+            });
     }
 
     setSummaries = async (message: string, propertyName: keyof AppState, summariesProcessor: SummaryFunctionType): Promise<void> => {
