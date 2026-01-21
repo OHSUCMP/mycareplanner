@@ -19,7 +19,7 @@ import {allShareableResources, FHIRData} from './data-services/models/fhirResour
 import FHIR from 'fhirclient';
 
 import Client from 'fhirclient/lib/Client';
-import {PatientSummary, ScreeningSummary, EditFormData, RxClassSummary} from './data-services/models/cqlSummary';
+import {PatientSummary, ScreeningSummary, EditFormData} from './data-services/models/cqlSummary';
 import {
     getFHIRData,
     createAndPersistClientForNewProvider,
@@ -81,6 +81,8 @@ import SessionProtected from './components/session-timeout/SessionProtected';
 import {SessionTimeoutPage} from './components/session-timeout/SessionTimeoutPage';
 import localforage from 'localforage';
 import AuthDialog from './components/modal/AuthDialog';
+import MedicationFlagConfig from "./data-services/rxnorm/medicationFlagConfig.json";
+import {MedicationFlag, RxClassSummary} from "./data-services/rxnorm/rxnormService";
 
 interface AppProps extends RouteComponentProps {
 }
@@ -772,6 +774,8 @@ class App extends React.Component<AppProps, AppState> {
     appendRxClassInfoToMedicationSummaries = async (): Promise<void> => {
         if ( ! this.state.medicationSummaries ) return;
 
+        let medicationFlagArr : Array<MedicationFlag> = JSON.parse(JSON.stringify(MedicationFlagConfig).toString());
+
         for (let medicationSummaries of this.state.medicationSummaries) {
             for (let summary of medicationSummaries) {
                 try {
@@ -782,8 +786,19 @@ class App extends React.Component<AppProps, AppState> {
                         console.log("got Medication with RxCui: " + summary.RxCui);
                         summary.RxClass = await this.getRxClass(summary.RxCui);
 
+                        if (summary.RxClass && summary.RxClass.length > 0) {
+                            let rxClassList : string[] = summary.RxClass.map(r => r.ClassId);
+                            let flags: MedicationFlag[] = [];
+                            medicationFlagArr.forEach((flag: MedicationFlag) => {
+                                if (rxClassList.some(r => flag.rxClassList.includes(r))) {
+                                    flags.push(flag);
+                                }
+                            });
+                            summary.Flags = flags;
+                        }
+
                     } else {
-                        console.log("Medication Summary had no Coding");
+                        console.log("Medication Summary had no RxCui");
                     }
                 } catch (err) {
                     console.error("Error getting RxClass for RxCui=" + summary.RxCui + ": " + err);
@@ -861,6 +876,22 @@ class App extends React.Component<AppProps, AppState> {
                             } catch (err) {
                                 console.error("getRxClassNames: error processing rxcdi for RxCui=" + rxcui + ": " + err);
                             }
+                        }
+
+                    } else {
+                        try {
+                            console.warn("getRxClassNames: No RxClass info found for RxCui=" + rxcui +
+                                " - perhaps this has been replaced by another RxCui?");
+
+                            doLog({
+                                level: 'warn',
+                                event: 'RxClass Integration',
+                                page: 'n/a',
+                                message: `No RxClass info found for RxCui=${rxcui} - perhaps this has been replaced by another RxCui?`
+                            });
+
+                        } catch (err) {
+                            console.error("getRxClassNames: error logging warning for RxCui=" + rxcui + ": " + err);
                         }
                     }
 

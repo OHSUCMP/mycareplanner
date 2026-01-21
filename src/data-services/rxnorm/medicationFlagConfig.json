@@ -1,0 +1,26 @@
+[
+  {
+    "label": "Antipsychotics",
+    "rxClassList": ["N05A"],
+    "backgroundColor": "#FFCC00",
+    "textColor": "#000000"
+  },
+  {
+    "label": "Antidepressants",
+    "rxClassList": ["N06A"],
+    "backgroundColor": "#3399FF",
+    "textColor": "#000000"
+  },
+  {
+    "label": "Anxiolytics",
+    "rxClassList": ["N05B"],
+    "backgroundColor": "#33CC33",
+    "textColor": "#000000"
+  },
+  {
+    "label": "Substance Use",
+    "rxClassList": ["N07B"],
+    "backgroundColor": "#FF0000",
+    "textColor": "#000000"
+  }
+]
