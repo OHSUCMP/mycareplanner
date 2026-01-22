@@ -15,7 +15,7 @@ export const SummaryRow: React.FC<SummaryRowProps> = (props: SummaryRowProps) =>
     return (
       <Grid item xs={12}>
         <Typography variant={props.isHeader ? "h6" : "body2"} component={props.isHeader ? "h6" : "div"}>
-          {props.data1}
+            {typeof props.data1 === 'string' ? <span dangerouslySetInnerHTML={{ __html: props.data1 }} /> : props.data1}
         </Typography>
       </Grid>
     )

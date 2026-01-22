@@ -189,14 +189,29 @@ const buildRows = (med: MedicationSummary, theSource?: string): SummaryRowItems 
         }
     ]
 
+    if (med.Flags && med.Flags.length > 0) {
+        let renderedFlags: string[] = [];
+        for (const flag of med.Flags) {
+            let s: string = `<span class="medication-flag" style="color: ${flag.textColor}; background-color: ${flag.backgroundColor}">${flag.label}</span>`;
+            renderedFlags.push(s);
+        }
+        const flags: SummaryRowItem = {
+            isHeader: false,
+            twoColumns: false,
+            data1: renderedFlags.join(' '),
+            data2: ''
+        }
+        rows.push(flags);
+    }
+
     if (med.Requester || med.AuthoredOn) {
         const requester: SummaryRowItem = {
             isHeader: false,
             twoColumns: true,
             data1: med.AuthoredOn ? 'Ordered On: ' + displayDate(med.AuthoredOn) : '',
-            data2: med.Requester ? 'By: ' + (med.Requester) : '',
+            data2: med.Requester ? 'By: ' + (med.Requester) : ''
         }
-        rows.push(requester)
+        rows.push(requester);
     }
 
     if (med.DosageInstruction) {
@@ -204,9 +219,9 @@ const buildRows = (med: MedicationSummary, theSource?: string): SummaryRowItems 
             isHeader: false,
             twoColumns: false,
             data1: med.DosageInstruction,
-            data2: '',
+            data2: ''
         }
-        rows.push(requester)
+        rows.push(requester);
     }
 
     const reasons: SummaryRowItems | undefined = med.Reasons?.map((reason) => (
@@ -214,7 +229,7 @@ const buildRows = (med: MedicationSummary, theSource?: string): SummaryRowItems 
             isHeader: false,
             twoColumns: false,
             data1: 'Reason: ' + reason,
-            data2: '',
+            data2: ''
         }
     ));
     if (reasons?.length) {
@@ -226,7 +241,7 @@ const buildRows = (med: MedicationSummary, theSource?: string): SummaryRowItems 
             isHeader: false,
             twoColumns: false,
             data1: 'Note: ' + note,
-            data2: '',
+            data2: ''
         }
     ));
     if (notes?.length) {
@@ -238,11 +253,11 @@ const buildRows = (med: MedicationSummary, theSource?: string): SummaryRowItems 
             isHeader: false,
             twoColumns: false,
             data1: 'Source: ' + (provenance.Transmitter ?? ''),
-            data2: provenance.Author ?? '',
+            data2: provenance.Author ?? ''
         }
     ))
     if (provenance?.length) {
-        rows = rows.concat(provenance)
+        rows = rows.concat(provenance);
     }
 
     const hasProvenance = med.Provenance?.length ?? 0 > 0
@@ -251,9 +266,9 @@ const buildRows = (med: MedicationSummary, theSource?: string): SummaryRowItems 
             isHeader: false,
             twoColumns: false,
             data1: 'Source: ' + theSource,
-            data2: '',
+            data2: ''
         }
-        rows.push(source)
+        rows.push(source);
     }
 
     return rows;
