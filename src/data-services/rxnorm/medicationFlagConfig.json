@@ -1,0 +1,26 @@
+[
+  {
+    "label": "Antipsychotics",
+    "rxClassList": ["N05A", "N05AA", "N05AB", "N05AC", "N05AD", "N05AE", "N05AF", "N05AG", "N05AH", "N05AL", "N05AN", "N05AX"],
+    "backgroundColor": "#FFCC00",
+    "textColor": "#000000"
+  },
+  {
+    "label": "Antidepressants",
+    "rxClassList": ["N06A", "N06AA", "N06AB", "N06AF", "N06AG", "N06AX"],
+    "backgroundColor": "#3399FF",
+    "textColor": "#000000"
+  },
+  {
+    "label": "Anxiolytics",
+    "rxClassList": ["N05B", "N05BA", "N05BB", "N05BC", "N05BD", "N05BE", "N05BX"],
+    "backgroundColor": "#33CC33",
+    "textColor": "#000000"
+  },
+  {
+    "label": "Substance Use",
+    "rxClassList": ["N07B", "N07BA", "N07BB", "N07BC"],
+    "backgroundColor": "#FF0000",
+    "textColor": "#000000"
+  }
+]

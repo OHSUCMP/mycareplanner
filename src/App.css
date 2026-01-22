@@ -133,3 +133,10 @@ svg path {
     padding: 10px;
     border-radius: 0 0 5px 5px;
 }
+
+.medication-flag {
+    border: 1px solid black;
+    height: 15px;
+    padding: 2px;
+    border-radius: 5px;
+}

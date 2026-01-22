@@ -1,5 +1,6 @@
 import { FHIRData } from './fhirResources';
 import Client from 'fhirclient/lib/Client'
+import {MedicationFlag, RxClassSummary} from "../rxnorm/rxnormService";
 
 export interface CQLLibrary {
   // cql.Library reference
@@ -102,7 +103,10 @@ export interface MedicationSummary {
   Reasons?: string[],
   Notes?: string[],
   Provenance?: ProvenanceSummary[],
-  LearnMore?: string
+  LearnMore?: string,
+  RxCui?: string,
+  RxClass?: RxClassSummary[],
+  Flags?: MedicationFlag[]
 }
 
 export interface ObservationSummary {
