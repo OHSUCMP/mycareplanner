@@ -20,18 +20,6 @@ const questionnairesMetadata: QuestionnaireMetadata[] = [
         },
     },
     {
-        "id": "GAD-7",
-        "label": "Anxiety Screening",
-        "resource_id": "69737-5",
-        "url": "http://ohsu.edu/fhir/Questionnaire/GAD-7",
-        "isScored": true,
-        "code":
-        {
-            "system": "http://loinc.org",
-            "code": "69737-5"
-        },
-    },
-    {
         "id": "PROMIS-29-questionnaire",
         "label": "General Health Assessment",
         "resource_id": "62337-1",
@@ -204,11 +192,12 @@ function sumValueDecimals(questionnaireResponse: QuestionnaireResponse) {
     return total;
 }  
 
-function scoreSum(questionnaireResponse: QuestionnaireResponse, linkId: string, text: string) {
+// TODO: This should be generalized. Currently relies on the specific link being in the loaded resource in a certain location
+function scorePHQ9(questionnaireResponse: QuestionnaireResponse) {
     const totalScore = sumValueDecimals(questionnaireResponse);
     let score = {
-        'linkId': linkId, 
-        'text': text, 
+        'linkId': '/44261-6', 
+        'text': 'Patient health questionnaire 9 item total score', 
         'answer': [
             {
                 'valueQuantity': {
@@ -412,11 +401,8 @@ export function submitQuestionnaireResponse(questionnaireId: String, questionnai
     const questionnaireMetadata = findQuestionnaireMetadataByResourceId(questionnaireId);
     if (questionnaireMetadata !== null && questionnaireMetadata.id) {
         return getLocalQuestionnaire(questionnaireMetadata.id).then(questionnaireDef => {
-            if (["PHQ-9", "GAD-7"].some(e => e === questionnaireMetadata?.id) && requiredQuestionsComplete(questionnaireDef?.item || [], questionnaireResponse?.item || [])) {
-                const scoreItem = findScoreItem(questionnaireDef?.item || []);
-                if (scoreItem) {
-                    questionnaireResponse = scoreSum(questionnaireResponse, scoreItem.linkId, scoreItem.text || 'Total Score');
-                }
+            if (questionnaireMetadata?.id === 'PHQ-9' && requiredQuestionsComplete(questionnaireDef?.item || [], questionnaireResponse?.item || [])) {
+                questionnaireResponse = scorePHQ9(questionnaireResponse);
             }
             return getSupplementalDataClient()
                 .then((client: Client | undefined) => {

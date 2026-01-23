@@ -11,7 +11,7 @@ import Client from 'fhirclient/lib/Client'
 import {ClientProxy} from "./models/clientProxy"
 import {
     persistStateAsCurrent, getStateForEndpoint,
-    persistLauncherData
+    persistStateAsLauncherData
 } from './persistenceService'
 import {buildQuestionnaireBundles} from './questionnaireService'
 import {doLog} from '../log';
@@ -551,7 +551,7 @@ export const getFHIRData = async (authorized: boolean, serverUrl: string | null,
             await persistStateAsCurrent(clientState)
             if (!authorized && !serverUrl) {
                 // Likely a launcher ***TODO: May need further identification***
-                await persistLauncherData(clientState, client.getPatientId(), client.getFhirUser())
+                await persistStateAsLauncherData(clientState)
             }
         } else {
             console.log("getFHIRData: Unable to persist data as no client?.state<fhirclient.ClientState> is available")
