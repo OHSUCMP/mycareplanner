@@ -725,7 +725,7 @@
                }, {
                   "name" : "LearnMore",
                   "value" : {
-                     "name" : "LearnMoreURL",
+                     "name" : "LearnMoreURLFromCodeableConcept",
                      "libraryName" : "DE",
                      "type" : "FunctionRef",
                      "annotation" : [ ],

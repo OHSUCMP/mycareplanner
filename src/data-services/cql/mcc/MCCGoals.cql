@@ -33,7 +33,7 @@ define function ReportGoal(goal Goal):
     AchievementStatus: DE.ConceptText(goal.achievementStatus),
     Notes: DE.ToString(goal.note),
     Provenance: DE.ReportProvenance(goal),
-    LearnMore: DE.LearnMoreURL(goal.target[0].measure),
+    LearnMore: DE.LearnMoreURLFromCodeableConcept(goal.target[0].measure),
     Overdue: DueDate(goal) before Today()
   }
 

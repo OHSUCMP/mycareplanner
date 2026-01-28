@@ -112,7 +112,7 @@ define function ReportCondition(condition Condition, category String, commonName
     Asserter: condition.asserter.display.value,
     Notes: ToString(condition.note),
     Provenance: ReportProvenance(condition),
-    LearnMore: LearnMoreURL(condition.code)
+    LearnMore: LearnMoreURLFromCodeableConcept(condition.code)
   }
 
 // Returns a list of Goals that address this Condition
@@ -127,7 +127,6 @@ define function ReportMedications(medRequests List<MedicationRequest>, category 
 
 define function ReportMedication(medReq MedicationRequest, category String):
   {
-    // TODO: support Medication reference
     Category: category,
     ConceptName: MedicationDisplayFromRequest(medReq),
     AuthoredOn: ToString(medReq.authoredOn),
@@ -137,31 +136,28 @@ define function ReportMedication(medReq MedicationRequest, category String):
     Reasons: MedicationReasons(medReq),
     Notes: ToString(medReq.note),
     Provenance: ReportProvenance(medReq),
-    LearnMore: LearnMoreURL(medReq.medication as CodeableConcept),
+    LearnMore: LearnMoreURLFromMedicationRequest(medReq),
     RxCui: getRxNormCoding(medReq).code.value
   }
 
 define function MedicationDisplayFromRequest(mr FHIR.MedicationRequest):
   if mr is null then null
-  else
+  else if mr.medication is FHIR.CodeableConcept then
+    ConceptText(mr.medication as FHIR.CodeableConcept)
+  else if mr.medication is FHIR.Reference then
     Coalesce(
-      // Case 1: MedicationRequest.medication is a CodeableConcept
-      ConceptText(mr.medication as FHIR.CodeableConcept),
-
-      // Case 2: MedicationRequest.medication is a Reference
-      Coalesce(
-        // Prefer the resolved Medication.code display
-        ConceptText(
-          First(
-            [FHIR.Medication] M
-              where M.id.value =
-                Last(Split(((mr.medication as FHIR.Reference).reference).value, '/'))
-          ).code
-        ),
-        // Fallback: the Reference.display, if provided
-        ((mr.medication as FHIR.Reference).display).value
-      )
+      // Prefer the resolved Medication.code display
+      ConceptText(
+        First(
+          [FHIR.Medication] M
+            where M.id.value =
+              Last(Split(((mr.medication as FHIR.Reference).reference).value, '/'))
+        ).code
+      ),
+      // Fallback: the Reference.display, if provided
+      ((mr.medication as FHIR.Reference).display).value
     )
+  else null
 
 define function getRxNormCoding(Rx MedicationRequest):
   singleton from (
@@ -178,12 +174,15 @@ define function getRxNormCoding(Rx MedicationRequest):
 
 define function MedicationFromRequest(mr FHIR.MedicationRequest):
   if mr is null then null
-  else if (mr.medication as FHIR.Reference) is null then null
-  else
-    First(
-      [FHIR.Medication] M
-        where M.id.value = Last(Split(((mr.medication as FHIR.Reference).reference).value, '/'))
-    )
+  else if mr.medication is FHIR.CodeableConcept then null
+  else if mr.medication is FHIR.Reference then
+    if (mr.medication as FHIR.Reference) is null then null
+    else
+      First(
+        [FHIR.Medication] M
+          where M.id.value = Last(Split(((mr.medication as FHIR.Reference).reference).value, '/'))
+      )
+  else null
 
 define function MedicationReasons(medReq MedicationRequest):
   ConceptDisplayNames(medReq.reasonCode)
@@ -261,7 +260,7 @@ define function ReportObservations(o Observation, history List<Observation>, dis
     Performer: First(o.performer).display.value,
     Notes: ToString(o.note),
     Provenance: ReportProvenance(o),
-    LearnMore: LearnMoreURL(o.code),
+    LearnMore: LearnMoreURLFromCodeableConcept(o.code),
     History: ReportObservationHistory(history except {o})
   }
 
@@ -326,9 +325,9 @@ define function ReferenceRangeFlag(o FHIR.Observation):
 
 define function Interpretation(o FHIR.Observation):
   // If Blood pressure observation, then extract component values and override interpretation.
-  if o.code ~ "Blood pressure" and 
-   exists (o.component C where (C.code ~ "Systolic blood pressure")) and 
-   exists (o.component C where (C.code ~ "Diastolic blood pressure")) then
+  if o.code ~ "Blood pressure" and
+    exists (o.component C where (C.code ~ "Systolic blood pressure")) and
+    exists (o.component C where (C.code ~ "Diastolic blood pressure")) then
       Interpret(
         singleton from (o.component C where (C.code ~ "Systolic blood pressure")).value.value, 
         singleton from (o.component C where (C.code ~ "Diastolic blood pressure")).value.value)
@@ -467,8 +466,16 @@ define function RangeText(r FHIR.Range):
   Helper functions to construct URLs for MedLindPlus content.
 */
 
+define function LearnMoreURLFromMedicationRequest(mr MedicationRequest):
+  if mr.medication is FHIR.CodeableConcept then
+    LearnMoreURLFromCodeableConcept(mr.medication)
+  else if mr.medication is FHIR.Reference then
+    LearnMoreURLFromCodeableConcept(MedicationFromRequest(mr).code)
+  else
+    null
+
 /// Returns web URL for MedlinePlus content using resource system/code
-define function LearnMoreURL(concept FHIR.CodeableConcept):
+define function LearnMoreURLFromCodeableConcept(concept FHIR.CodeableConcept):
   if LearnMoreCode(concept) is not null then
     'https://connect.medlineplus.gov/application?'
       + 'mainSearchCriteria.v.cs=' + LearnMoreCode(concept).system
