@@ -3,7 +3,7 @@ import {fhirclient} from 'fhirclient/lib/types'
 import {
     Resource, Patient, Practitioner, RelatedPerson, CarePlan, CareTeam, Encounter, Condition, DiagnosticReport, Goal,
     Observation, Procedure, Immunization, MedicationRequest, ServiceRequest, Provenance, Reference, Questionnaire,
-    QuestionnaireResponse, Medication
+    QuestionnaireResponse
 } from './fhir-types/fhir-r4'
 import {QuestionnaireBundle, FHIRData, hasScope} from './models/fhirResources'
 import {format} from 'date-fns'
@@ -815,7 +815,7 @@ const getFHIRQueries = async (clientProxy: ClientProxy, clientScope: string | un
 
     // Retrieve MedicationRequest and included requester Practitioner resources.
     curResourceName = 'Medication Request'
-    let medicationRequests: MedicationRequest[] | undefined
+    let medications: MedicationRequest[] | undefined
     setAndLogProgressState(`${curResourceName} request: ` + new Date().toLocaleTimeString(), 80)
     try {
         if (hasScope(clientScope, 'MedicationRequest.read')) {
@@ -847,40 +847,15 @@ const getFHIRQueries = async (clientProxy: ClientProxy, clientScope: string | un
             setAndLogProgressState('Found ' + (inactiveMeds?.length ?? 0) + ' inactive medication requests (after removing duplicates).', 83)
             medicationRequestData = (medicationRequestData ?? []).concat(inactiveMeds ?? [])
 
-            medicationRequests = medicationRequestData?.filter((item: any) => item.resourceType === 'MedicationRequest') as MedicationRequest[]
+            medications = medicationRequestData?.filter((item: any) => item.resourceType === 'MedicationRequest') as MedicationRequest[]
             recordProvenance(medicationRequestData)
         } else {
-            medicationRequests = undefined
+            medications = undefined
         }
     } catch (err) {
         await setAndLogNonTerminatingErrorMessageStateForResource(curResourceName, err, setAndLogErrorMessageState)
     } finally {
-        medicationRequests && setResourcesLoadedCountState(++resourcesLoadedCount)
-    }
-
-    let medications: Medication[] | undefined = []
-    if (medicationRequests && medicationRequests.length > 0) {
-        // Retrieve Medication for any MedicationRequest resources that reference a Medication.
-        curResourceName = 'Medication'
-        try {
-            if (hasScope(clientScope, 'Medication.read')) {
-                // Individually read Medication resources for each MedicationRequest resource that references one
-                for (const mr of medicationRequests) {
-                    if (mr.medicationReference?.reference !== undefined) {
-                        let medication: Medication | undefined = await clientProxy.read(mr.medicationReference.reference);
-                        if (medication) {
-                            medications.push(medication);
-                        }
-                    }
-                }
-            } else {
-                medications = undefined
-            }
-        } catch (err) {
-            await setAndLogNonTerminatingErrorMessageStateForResource(curResourceName, err, setAndLogErrorMessageState)
-        } finally {
-            medications && setResourcesLoadedCountState(++resourcesLoadedCount)
-        }
+        medications && setResourcesLoadedCountState(++resourcesLoadedCount)
     }
 
     // const serviceRequests: ServiceRequest[] | undefined = await loadFHIRQuery<ServiceRequest>('ServiceRequest', 'ServiceRequest',
@@ -1040,7 +1015,6 @@ const getFHIRQueries = async (clientProxy: ClientProxy, clientScope: string | un
         diagnosticReports,
         goals,
         immunizations,
-        medicationRequests,
         medications,
         serviceRequests,
         labResults,
