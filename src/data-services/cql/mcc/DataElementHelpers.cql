@@ -129,7 +129,7 @@ define function ReportMedication(medReq MedicationRequest, category String):
   {
     // TODO: support Medication reference
     Category: category,
-    ConceptName: Coalesce(ConceptText(medReq.medication as CodeableConcept), (medReq.medication as Reference).display.value),
+    ConceptName: MedicationDisplayFromRequest(medReq),
     AuthoredOn: ToString(medReq.authoredOn),
     Requester: Coalesce(FullName(ResolvePractitioner(medReq.requester)), medReq.requester.display.value),
     // DosageInstruction: Coalesce(First(medReq.dosageInstruction).text.value, First(medReq.dosageInstruction).patientInstruction.value),
@@ -141,23 +141,49 @@ define function ReportMedication(medReq MedicationRequest, category String):
     RxCui: getRxNormCoding(medReq).code.value
   }
 
-    define function getRxNormCoding(Rx MedicationRequest):
-      singleton from (
-        (
-          if Rx.medication is FHIR.CodeableConcept then
-            Rx.medication.coding
-          else
-            getMedication(Rx).code.coding
-        ) C
-          where C.system.value = 'http://www.nlm.nih.gov/research/umls/rxnorm'
-            or C.system.value = 'urn:oid:2.16.840.1.113883.6.88'
-      )
-
-define function getMedication(Rx MedicationRequest):
-  if Rx.medication is FHIR.Reference then
-    singleton from ([Medication: id in Last(Split(Rx.medication.reference, '/'))])
+define function MedicationDisplayFromRequest(mr FHIR.MedicationRequest):
+  if mr is null then null
   else
-    Medication {code: Rx.medication}
+    Coalesce(
+      // Case 1: MedicationRequest.medication is a CodeableConcept
+      ConceptText(mr.medication as FHIR.CodeableConcept),
+
+      // Case 2: MedicationRequest.medication is a Reference
+      Coalesce(
+        // Prefer the resolved Medication.code display
+        ConceptText(
+          First(
+            [FHIR.Medication] M
+              where M.id.value =
+                Last(Split(((mr.medication as FHIR.Reference).reference).value, '/'))
+          ).code
+        ),
+        // Fallback: the Reference.display, if provided
+        ((mr.medication as FHIR.Reference).display).value
+      )
+    )
+
+define function getRxNormCoding(Rx MedicationRequest):
+  singleton from (
+    (
+      if Rx.medication is FHIR.CodeableConcept then
+        Rx.medication.coding
+      else if Rx.medication is FHIR.Reference then
+        MedicationFromRequest(Rx).code.coding
+      else null
+    ) C
+      where C.system.value = 'http://www.nlm.nih.gov/research/umls/rxnorm'
+        or C.system.value = 'urn:oid:2.16.840.1.113883.6.88'
+  )
+
+define function MedicationFromRequest(mr FHIR.MedicationRequest):
+  if mr is null then null
+  else if (mr.medication as FHIR.Reference) is null then null
+  else
+    First(
+      [FHIR.Medication] M
+        where M.id.value = Last(Split(((mr.medication as FHIR.Reference).reference).value, '/'))
+    )
 
 define function MedicationReasons(medReq MedicationRequest):
   ConceptDisplayNames(medReq.reasonCode)

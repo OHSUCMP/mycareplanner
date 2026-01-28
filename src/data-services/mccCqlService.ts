@@ -3,7 +3,7 @@ import cql from 'cql-execution';
 // @ts-ignore
 import cqlfhir from 'cql-exec-fhir';
 
-import { Resource, Practitioner } from './fhir-types/fhir-r4';
+import {Resource, Practitioner} from './fhir-types/fhir-r4';
 import { FHIRData } from './models/fhirResources';
 import { ConditionSummary, GoalSummary, MedicationSummary, ObservationSummary } from './models/cqlSummary';
 
@@ -17,30 +17,33 @@ function getBundleEntries(resources?: Resource[]) {
 function getPatientSource(data: FHIRData, cqlType: string): unknown {
   const practitioners: Practitioner[] = []
   data.resourceRequesters?.forEach((practitioner, id) =>
-    practitioners.concat(practitioner)
-  )
+    practitioners.push(practitioner)
+  );
   const fhirBundle = {
     resourceType: 'Bundle',
-    entry: [{ resource: data.patient }, { resource: data.patientPCP },
-    ...(cqlType === 'conditions' || cqlType === 'goals'
-      ? getBundleEntries(data.conditions)
-      : []),
-    ...(cqlType === 'medications'
-      ? getBundleEntries(data.medications)
-      : []),
-    ...getBundleEntries(data.serviceRequests), // Not used?
-    ...(cqlType === 'labResults' || cqlType === 'goals'
-      ? getBundleEntries(data.labResults)
-      : []),
-    ...(cqlType === 'vitalSigns' || cqlType === 'goals'
-      ? getBundleEntries(data.vitalSigns)
-      : []),
-    ...getBundleEntries(data.surveyResults), // Maybe used for Screenings?
-    ...(cqlType === 'goals'
-      ? getBundleEntries(data.goals)
-      : []),
-    ...getBundleEntries(data.provenance),
-    ...getBundleEntries(practitioners),
+    entry: [{resource: data.patient}, {resource: data.patientPCP},
+      ...(cqlType === 'conditions' || cqlType === 'goals'
+          ? getBundleEntries(data.conditions)
+          : []),
+      ...(cqlType === 'medications'
+          ? getBundleEntries(data.medicationRequests)
+          : []),
+      ...(cqlType === 'medications'
+          ? getBundleEntries(data.medications)
+          : []),
+      ...getBundleEntries(data.serviceRequests), // Not used?
+      ...(cqlType === 'labResults' || cqlType === 'goals'
+          ? getBundleEntries(data.labResults)
+          : []),
+      ...(cqlType === 'vitalSigns' || cqlType === 'goals'
+          ? getBundleEntries(data.vitalSigns)
+          : []),
+      ...getBundleEntries(data.surveyResults), // Maybe used for Screenings?
+      ...(cqlType === 'goals'
+          ? getBundleEntries(data.goals)
+          : []),
+      ...getBundleEntries(data.provenance),
+      ...getBundleEntries(practitioners)
     ]
   }
 
@@ -125,12 +128,13 @@ const extractMedicationSummary = (fhirData?: FHIRData): MedicationSummary[] | un
   // console.log("MedicationSummary: ", JSON.stringify(extractedSummary.MedicationSummary))
   return extractedSummary?.MedicationSummary
 }
+
 export const getMedicationSummaries = (fhirDataCollection?: FHIRData[]): MedicationSummary[][] | undefined => {
   if (fhirDataCollection === undefined) { return undefined }
 
   let medSummariesMatrix: MedicationSummary[][] | undefined = []
   for (const curFhirData of fhirDataCollection) {
-    if (curFhirData.medications && curFhirData.medications.length > 0) {
+    if (curFhirData.medicationRequests && curFhirData.medicationRequests.length > 0) {
       const medSummary: MedicationSummary[] | undefined = extractMedicationSummary(curFhirData)
       medSummariesMatrix.push(medSummary ? medSummary : [])
     }
