@@ -47,7 +47,7 @@ define function DisplayName(resource Resource):
       // Coalesce is limited to 5 arguments
       ConceptText((resource as Condition).code),
       ConceptText((resource as Goal).description),
-      ConceptText((resource as MedicationRequest).medication as CodeableConcept),
+      MedicationDisplayFromRequest(resource as MedicationRequest),
       ConceptText((resource as Observation).code),
       ConceptText((resource as Procedure).code)
     ),
@@ -131,13 +131,12 @@ define function ReportMedication(medReq MedicationRequest, category String):
     ConceptName: MedicationDisplayFromRequest(medReq),
     AuthoredOn: ToString(medReq.authoredOn),
     Requester: Coalesce(FullName(ResolvePractitioner(medReq.requester)), medReq.requester.display.value),
-    // DosageInstruction: Coalesce(First(medReq.dosageInstruction).text.value, First(medReq.dosageInstruction).patientInstruction.value),
     DosageInstruction: First(medReq.dosageInstruction).patientInstruction.value,
     Reasons: MedicationReasons(medReq),
     Notes: ToString(medReq.note),
     Provenance: ReportProvenance(medReq),
     LearnMore: LearnMoreURLFromMedicationRequest(medReq),
-    RxCui: getRxNormCoding(medReq).code.value
+    RxCui: RxNormCoding(medReq).code.value
   }
 
 define function MedicationDisplayFromRequest(mr FHIR.MedicationRequest):
@@ -159,13 +158,13 @@ define function MedicationDisplayFromRequest(mr FHIR.MedicationRequest):
     )
   else null
 
-define function getRxNormCoding(Rx MedicationRequest):
+define function RxNormCoding(mr MedicationRequest):
   singleton from (
     (
-      if Rx.medication is FHIR.CodeableConcept then
-        Rx.medication.coding
-      else if Rx.medication is FHIR.Reference then
-        MedicationFromRequest(Rx).code.coding
+      if mr.medication is FHIR.CodeableConcept then
+        mr.medication.coding
+      else if mr.medication is FHIR.Reference then
+        MedicationFromRequest(mr).code.coding
       else null
     ) C
       where C.system.value = 'http://www.nlm.nih.gov/research/umls/rxnorm'
