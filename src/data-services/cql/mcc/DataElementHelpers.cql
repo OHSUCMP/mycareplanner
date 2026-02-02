@@ -47,7 +47,7 @@ define function DisplayName(resource Resource):
       // Coalesce is limited to 5 arguments
       ConceptText((resource as Condition).code),
       ConceptText((resource as Goal).description),
-      ConceptText((resource as MedicationRequest).medication as CodeableConcept),
+      MedicationDisplayFromRequest(resource as MedicationRequest),
       ConceptText((resource as Observation).code),
       ConceptText((resource as Procedure).code)
     ),
@@ -112,7 +112,7 @@ define function ReportCondition(condition Condition, category String, commonName
     Asserter: condition.asserter.display.value,
     Notes: ToString(condition.note),
     Provenance: ReportProvenance(condition),
-    LearnMore: LearnMoreURL(condition.code)
+    LearnMore: LearnMoreURLFromCodeableConcept(condition.code)
   }
 
 // Returns a list of Goals that address this Condition
@@ -127,37 +127,61 @@ define function ReportMedications(medRequests List<MedicationRequest>, category 
 
 define function ReportMedication(medReq MedicationRequest, category String):
   {
-    // TODO: support Medication reference
     Category: category,
-    ConceptName: Coalesce(ConceptText(medReq.medication as CodeableConcept), (medReq.medication as Reference).display.value),
+    ConceptName: MedicationDisplayFromRequest(medReq),
     AuthoredOn: ToString(medReq.authoredOn),
     Requester: Coalesce(FullName(ResolvePractitioner(medReq.requester)), medReq.requester.display.value),
-    // DosageInstruction: Coalesce(First(medReq.dosageInstruction).text.value, First(medReq.dosageInstruction).patientInstruction.value),
     DosageInstruction: First(medReq.dosageInstruction).patientInstruction.value,
     Reasons: MedicationReasons(medReq),
     Notes: ToString(medReq.note),
     Provenance: ReportProvenance(medReq),
-    LearnMore: LearnMoreURL(medReq.medication as CodeableConcept),
-    RxCui: getRxNormCoding(medReq).code.value
+    LearnMore: LearnMoreURLFromMedicationRequest(medReq),
+    RxCui: RxNormCoding(medReq).code.value
   }
 
-    define function getRxNormCoding(Rx MedicationRequest):
-      singleton from (
-        (
-          if Rx.medication is FHIR.CodeableConcept then
-            Rx.medication.coding
-          else
-            getMedication(Rx).code.coding
-        ) C
-          where C.system.value = 'http://www.nlm.nih.gov/research/umls/rxnorm'
-            or C.system.value = 'urn:oid:2.16.840.1.113883.6.88'
-      )
+define function MedicationDisplayFromRequest(mr FHIR.MedicationRequest):
+  if mr is null then null
+  else if mr.medication is FHIR.CodeableConcept then
+    ConceptText(mr.medication as FHIR.CodeableConcept)
+  else if mr.medication is FHIR.Reference then
+    Coalesce(
+      // Prefer the resolved Medication.code display
+      ConceptText(
+        First(
+          [FHIR.Medication] M
+            where M.id.value =
+              Last(Split(((mr.medication as FHIR.Reference).reference).value, '/'))
+        ).code
+      ),
+      // Fallback: the Reference.display, if provided
+      ((mr.medication as FHIR.Reference).display).value
+    )
+  else null
 
-define function getMedication(Rx MedicationRequest):
-  if Rx.medication is FHIR.Reference then
-    singleton from ([Medication: id in Last(Split(Rx.medication.reference, '/'))])
-  else
-    Medication {code: Rx.medication}
+define function RxNormCoding(mr MedicationRequest):
+  singleton from (
+    (
+      if mr.medication is FHIR.CodeableConcept then
+        mr.medication.coding
+      else if mr.medication is FHIR.Reference then
+        MedicationFromRequest(mr).code.coding
+      else null
+    ) C
+      where C.system.value = 'http://www.nlm.nih.gov/research/umls/rxnorm'
+        or C.system.value = 'urn:oid:2.16.840.1.113883.6.88'
+  )
+
+define function MedicationFromRequest(mr FHIR.MedicationRequest):
+  if mr is null then null
+  else if mr.medication is FHIR.CodeableConcept then null
+  else if mr.medication is FHIR.Reference then
+    if (mr.medication as FHIR.Reference) is null then null
+    else
+      First(
+        [FHIR.Medication] M
+          where M.id.value = Last(Split(((mr.medication as FHIR.Reference).reference).value, '/'))
+      )
+  else null
 
 define function MedicationReasons(medReq MedicationRequest):
   ConceptDisplayNames(medReq.reasonCode)
@@ -182,10 +206,6 @@ define function ReferenceDisplayName(ref Reference):
 //           or Cond.clinicalStatus ~ FC."recurrence")
 //       and Cond.verificationStatus ~ FC."confirmed"
 //     sort by recordedDate.value descending
-
-define function SelectActiveMedications(medRequests List<MedicationRequest>):
-  medRequests MedReq
-    where MedReq.status in {'active'}
 
 define function MostRecentProcedure(procedures List<Procedure>):
   First(
@@ -235,7 +255,7 @@ define function ReportObservations(o Observation, history List<Observation>, dis
     Performer: First(o.performer).display.value,
     Notes: ToString(o.note),
     Provenance: ReportProvenance(o),
-    LearnMore: LearnMoreURL(o.code),
+    LearnMore: LearnMoreURLFromCodeableConcept(o.code),
     History: ReportObservationHistory(history except {o})
   }
 
@@ -300,9 +320,9 @@ define function ReferenceRangeFlag(o FHIR.Observation):
 
 define function Interpretation(o FHIR.Observation):
   // If Blood pressure observation, then extract component values and override interpretation.
-  if o.code ~ "Blood pressure" and 
-   exists (o.component C where (C.code ~ "Systolic blood pressure")) and 
-   exists (o.component C where (C.code ~ "Diastolic blood pressure")) then
+  if o.code ~ "Blood pressure" and
+    exists (o.component C where (C.code ~ "Systolic blood pressure")) and
+    exists (o.component C where (C.code ~ "Diastolic blood pressure")) then
       Interpret(
         singleton from (o.component C where (C.code ~ "Systolic blood pressure")).value.value, 
         singleton from (o.component C where (C.code ~ "Diastolic blood pressure")).value.value)
@@ -441,8 +461,16 @@ define function RangeText(r FHIR.Range):
   Helper functions to construct URLs for MedLindPlus content.
 */
 
+define function LearnMoreURLFromMedicationRequest(mr MedicationRequest):
+  if mr.medication is FHIR.CodeableConcept then
+    LearnMoreURLFromCodeableConcept(mr.medication)
+  else if mr.medication is FHIR.Reference then
+    LearnMoreURLFromCodeableConcept(MedicationFromRequest(mr).code)
+  else
+    null
+
 /// Returns web URL for MedlinePlus content using resource system/code
-define function LearnMoreURL(concept FHIR.CodeableConcept):
+define function LearnMoreURLFromCodeableConcept(concept FHIR.CodeableConcept):
   if LearnMoreCode(concept) is not null then
     'https://connect.medlineplus.gov/application?'
       + 'mainSearchCriteria.v.cs=' + LearnMoreCode(concept).system

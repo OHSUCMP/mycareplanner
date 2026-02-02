@@ -22,23 +22,27 @@ define MCCMedicationSummary:
     DE.ReportMedications("Vitamin D", 'Vitamin D')
   }
 
+define function SelectActiveMedicationRequests(medRequests List<MedicationRequest>):
+  medRequests MedReq
+    where MedReq.status in {'active'}
+
 define ActiveMedications:
-  (DE.SelectActiveMedications([MedicationRequest])) M
+  (SelectActiveMedicationRequests([MedicationRequest])) M
     sort by authoredOn.value descending
 
 // FHIR MedicationRequest resources with active status.
 
 define "ACEis and ARBs":
-  DE.SelectActiveMedications([MedicationRequest: Cx."ACEis and ARBs"])
+  SelectActiveMedicationRequests([MedicationRequest: Cx."ACEis and ARBs"])
 
 define "Erythropoiesis Stimulating Agent":
-  DE.SelectActiveMedications([MedicationRequest: Cx."Erythropoiesis Stimulating Agent"])
+  SelectActiveMedicationRequests([MedicationRequest: Cx."Erythropoiesis Stimulating Agent"])
 
 define "Iron Supplement":
-  DE.SelectActiveMedications([MedicationRequest: Cx."Iron Supplement"])
+  SelectActiveMedicationRequests([MedicationRequest: Cx."Iron Supplement"])
 
 define "Phosphate Binders":
-  DE.SelectActiveMedications([MedicationRequest: Cx."Phosphate Binders"])
+  SelectActiveMedicationRequests([MedicationRequest: Cx."Phosphate Binders"])
 
 define "Vitamin D":
-  DE.SelectActiveMedications([MedicationRequest: Cx."Vitamin D"])
+  SelectActiveMedicationRequests([MedicationRequest: Cx."Vitamin D"])
