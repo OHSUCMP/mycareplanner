@@ -20,7 +20,6 @@ function getPatientSource(data: FHIRData): unknown {
     ...getBundleEntries(data.conditions),
     ...getBundleEntries(data.procedures),
     ...getBundleEntries(data.diagnosticReports),
-    ...getBundleEntries(data.medicationRequests),
     ...getBundleEntries(data.medications),
     ...getBundleEntries(data.immunizations),
     ...getBundleEntries(data.labResults),

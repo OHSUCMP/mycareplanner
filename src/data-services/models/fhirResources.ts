@@ -22,8 +22,7 @@ import {
     CodeableConcept,
     Period,
     Timing,
-    TimingRepeat,
-    Medication
+    TimingRepeat
 } from '../fhir-types/fhir-r4';
 
 export interface QuestionnaireMetadata {
@@ -61,8 +60,7 @@ export interface FHIRData {
     diagnosticReports?: DiagnosticReport[],
     goals?: Goal[],
     immunizations?: Immunization[],
-    medicationRequests?: MedicationRequest[],
-    medications?: Medication[],
+    medications?: MedicationRequest[],
     serviceRequests?: ServiceRequest[],
     procedures?: Procedure[],
     labResults?: Observation[],
@@ -79,21 +77,21 @@ export interface FHIRData {
 export function allShareableResources(fhirData: FHIRData|undefined): Resource[] {
     let arr: Resource[] = [];
     if (fhirData !== undefined) {
-        if (fhirData.patient)               arr.push(fhirData.patient);
-        if (fhirData.encounters)            arr.push(...fhirData.encounters);
-        if (fhirData.conditions)            arr.push(...fhirData.conditions);
-        if (fhirData.goals)                 arr.push(...fhirData.goals);
-        if (fhirData.immunizations)         arr.push(...fhirData.immunizations);
-        if (fhirData.medicationRequests)    arr.push(...fhirData.medicationRequests);
-        if (fhirData.serviceRequests)       arr.push(...fhirData.serviceRequests);
-        if (fhirData.procedures)            arr.push(...fhirData.procedures);
-        if (fhirData.labResults)            arr.push(...fhirData.labResults);
-        if (fhirData.vitalSigns)            arr.push(...fhirData.vitalSigns);
-        if (fhirData.socialHistory)         arr.push(...fhirData.socialHistory);
-        if (fhirData.diagnosticReports)     arr.push(...fhirData.diagnosticReports);
-        if (fhirData.surveyResults)         arr.push(...fhirData.surveyResults);
-        if (fhirData.carePlans)             arr.push(...fhirData.carePlans);
-        if (fhirData.careTeams)             arr.push(...fhirData.careTeams);
+        if (fhirData.patient)           arr.push(fhirData.patient);
+        if (fhirData.encounters)        arr.push(...fhirData.encounters);
+        if (fhirData.conditions)        arr.push(...fhirData.conditions);
+        if (fhirData.goals)             arr.push(...fhirData.goals);
+        if (fhirData.immunizations)     arr.push(...fhirData.immunizations);
+        if (fhirData.medications)       arr.push(...fhirData.medications);
+        if (fhirData.serviceRequests)   arr.push(...fhirData.serviceRequests);
+        if (fhirData.procedures)        arr.push(...fhirData.procedures);
+        if (fhirData.labResults)        arr.push(...fhirData.labResults);
+        if (fhirData.vitalSigns)        arr.push(...fhirData.vitalSigns);
+        if (fhirData.socialHistory)     arr.push(...fhirData.socialHistory);
+        if (fhirData.diagnosticReports) arr.push(...fhirData.diagnosticReports);
+        if (fhirData.surveyResults)     arr.push(...fhirData.surveyResults);
+        if (fhirData.carePlans)         arr.push(...fhirData.carePlans);
+        if (fhirData.careTeams)         arr.push(...fhirData.careTeams);
         //TODO: AEY Do I need to share these?
         //if (fhirData.questionnaireResponses)     arr.push(...fhirData.questionnaireResponses);
     }
