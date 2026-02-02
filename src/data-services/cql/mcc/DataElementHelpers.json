@@ -5074,10 +5074,18 @@
             "type" : "FunctionDef",
             "annotation" : [ ],
             "expression" : {
-               "type" : "SingletonFrom",
+               "type" : "First",
                "annotation" : [ ],
-               "signature" : [ ],
-               "operand" : {
+               "signature" : [ {
+                  "type" : "ListTypeSpecifier",
+                  "annotation" : [ ],
+                  "elementType" : {
+                     "name" : "{http://hl7.org/fhir}Coding",
+                     "type" : "NamedTypeSpecifier",
+                     "annotation" : [ ]
+                  }
+               } ],
+               "source" : {
                   "type" : "Query",
                   "annotation" : [ ],
                   "source" : [ {
