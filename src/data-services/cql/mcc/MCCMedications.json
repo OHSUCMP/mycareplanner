@@ -89,6 +89,71 @@
                }
             }
          }, {
+            "name" : "SelectActiveMedicationRequests",
+            "context" : "Patient",
+            "accessLevel" : "Public",
+            "type" : "FunctionDef",
+            "annotation" : [ ],
+            "expression" : {
+               "type" : "Query",
+               "annotation" : [ ],
+               "source" : [ {
+                  "alias" : "MedReq",
+                  "annotation" : [ ],
+                  "expression" : {
+                     "name" : "medRequests",
+                     "type" : "OperandRef",
+                     "annotation" : [ ]
+                  }
+               } ],
+               "let" : [ ],
+               "relationship" : [ ],
+               "where" : {
+                  "type" : "In",
+                  "annotation" : [ ],
+                  "signature" : [ ],
+                  "operand" : [ {
+                     "name" : "ToString",
+                     "libraryName" : "FHIRHelpers",
+                     "type" : "FunctionRef",
+                     "annotation" : [ ],
+                     "signature" : [ {
+                        "name" : "{http://hl7.org/fhir}MedicationRequestStatus",
+                        "type" : "NamedTypeSpecifier",
+                        "annotation" : [ ]
+                     } ],
+                     "operand" : [ {
+                        "path" : "status",
+                        "scope" : "MedReq",
+                        "type" : "Property",
+                        "annotation" : [ ]
+                     } ]
+                  }, {
+                     "type" : "List",
+                     "annotation" : [ ],
+                     "element" : [ {
+                        "valueType" : "{urn:hl7-org:elm-types:r1}String",
+                        "value" : "active",
+                        "type" : "Literal",
+                        "annotation" : [ ]
+                     } ]
+                  } ]
+               }
+            },
+            "operand" : [ {
+               "name" : "medRequests",
+               "annotation" : [ ],
+               "operandTypeSpecifier" : {
+                  "type" : "ListTypeSpecifier",
+                  "annotation" : [ ],
+                  "elementType" : {
+                     "name" : "{http://hl7.org/fhir}MedicationRequest",
+                     "type" : "NamedTypeSpecifier",
+                     "annotation" : [ ]
+                  }
+               }
+            } ]
+         }, {
             "name" : "ActiveMedications",
             "context" : "Patient",
             "accessLevel" : "Public",
@@ -100,8 +165,7 @@
                   "alias" : "M",
                   "annotation" : [ ],
                   "expression" : {
-                     "name" : "SelectActiveMedications",
-                     "libraryName" : "DE",
+                     "name" : "SelectActiveMedicationRequests",
                      "type" : "FunctionRef",
                      "annotation" : [ ],
                      "signature" : [ ],
@@ -166,8 +230,7 @@
             "accessLevel" : "Public",
             "annotation" : [ ],
             "expression" : {
-               "name" : "SelectActiveMedications",
-               "libraryName" : "DE",
+               "name" : "SelectActiveMedicationRequests",
                "type" : "FunctionRef",
                "annotation" : [ ],
                "signature" : [ ],
@@ -326,8 +389,7 @@
             "accessLevel" : "Public",
             "annotation" : [ ],
             "expression" : {
-               "name" : "SelectActiveMedications",
-               "libraryName" : "DE",
+               "name" : "SelectActiveMedicationRequests",
                "type" : "FunctionRef",
                "annotation" : [ ],
                "signature" : [ ],
@@ -486,8 +548,7 @@
             "accessLevel" : "Public",
             "annotation" : [ ],
             "expression" : {
-               "name" : "SelectActiveMedications",
-               "libraryName" : "DE",
+               "name" : "SelectActiveMedicationRequests",
                "type" : "FunctionRef",
                "annotation" : [ ],
                "signature" : [ ],
@@ -646,8 +707,7 @@
             "accessLevel" : "Public",
             "annotation" : [ ],
             "expression" : {
-               "name" : "SelectActiveMedications",
-               "libraryName" : "DE",
+               "name" : "SelectActiveMedicationRequests",
                "type" : "FunctionRef",
                "annotation" : [ ],
                "signature" : [ ],
@@ -806,8 +866,7 @@
             "accessLevel" : "Public",
             "annotation" : [ ],
             "expression" : {
-               "name" : "SelectActiveMedications",
-               "libraryName" : "DE",
+               "name" : "SelectActiveMedicationRequests",
                "type" : "FunctionRef",
                "annotation" : [ ],
                "signature" : [ ],

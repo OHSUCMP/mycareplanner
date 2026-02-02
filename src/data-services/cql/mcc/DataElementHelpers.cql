@@ -207,10 +207,6 @@ define function ReferenceDisplayName(ref Reference):
 //       and Cond.verificationStatus ~ FC."confirmed"
 //     sort by recordedDate.value descending
 
-define function SelectActiveMedications(medRequests List<MedicationRequest>):
-  medRequests MedReq
-    where MedReq.status in {'active'}
-
 define function MostRecentProcedure(procedures List<Procedure>):
   First(
     procedures P
