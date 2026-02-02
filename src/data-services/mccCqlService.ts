@@ -160,10 +160,14 @@ export const getMedicationSummaries = (fhirDataCollection?: FHIRData[]): Medicat
 
     let medSummariesMatrix: MedicationSummary[][] | undefined = []
     for (const curFhirData of fhirDataCollection) {
-        if (curFhirData.medicationRequests && curFhirData.medicationRequests.length > 0) {
-            const medSummary: MedicationSummary[] | undefined = extractMedicationSummary(curFhirData)
-            console.debug("getMedicationSummaries: medSummary=" + JSON.stringify(medSummary));
-            medSummariesMatrix.push(medSummary ? medSummary : [])
+        try {
+            if (curFhirData.medicationRequests && curFhirData.medicationRequests.length > 0) {
+                const medSummary: MedicationSummary[] | undefined = extractMedicationSummary(curFhirData)
+                console.debug("getMedicationSummaries: medSummary=" + JSON.stringify(medSummary));
+                medSummariesMatrix.push(medSummary ? medSummary : [])
+            }
+        } catch (err) {
+            console.error("Error extracting MedicationSummary: " + err);
         }
     }
     return medSummariesMatrix
