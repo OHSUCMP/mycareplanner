@@ -20,7 +20,7 @@ function getBundleEntries(resources?: Resource[]) {
     return resources?.map((r: Resource) => ({resource: r})) || []
 }
 
-function getPatientSource(data: FHIRData, cqlType: string): unknown {
+function getPatientSource(data: FHIRData): unknown {
     const practitioners: Practitioner[] = []
     data.resourceRequesters?.forEach((practitioner, id) =>
         practitioners.push(practitioner)
@@ -28,26 +28,13 @@ function getPatientSource(data: FHIRData, cqlType: string): unknown {
     const fhirBundle = {
         resourceType: 'Bundle',
         entry: [{resource: data.patient}, {resource: data.patientPCP},
-            ...(cqlType === 'conditions' || cqlType === 'goals'
-                ? getBundleEntries(data.conditions)
-                : []),
-            ...(cqlType === 'medications'
-                ? getBundleEntries(data.medicationRequests)
-                : []),
-            ...(cqlType === 'medications'
-                ? getBundleEntries(data.medications)
-                : []),
-            ...getBundleEntries(data.serviceRequests), // Not used?
-            ...(cqlType === 'labResults' || cqlType === 'goals'
-                ? getBundleEntries(data.labResults)
-                : []),
-            ...(cqlType === 'vitalSigns' || cqlType === 'goals'
-                ? getBundleEntries(data.vitalSigns)
-                : []),
-            ...getBundleEntries(data.surveyResults), // Maybe used for Screenings?
-            ...(cqlType === 'goals'
-                ? getBundleEntries(data.goals)
-                : []),
+            ...getBundleEntries(data.conditions),
+            ...getBundleEntries(data.medications),
+            ...getBundleEntries(data.serviceRequests),
+            ...getBundleEntries(data.labResults),
+            ...getBundleEntries(data.vitalSigns),
+            ...getBundleEntries(data.surveyResults),
+            ...getBundleEntries(data.goals),
             ...getBundleEntries(data.provenance),
             ...getBundleEntries(practitioners)
         ]
@@ -63,7 +50,7 @@ const extractConditionSummary = (fhirData?: FHIRData): ConditionSummary[] | unde
     if (fhirData === undefined) {
         return undefined
     }
-    const patientSource = getPatientSource(fhirData!, 'conditions')
+    const patientSource = getPatientSource(fhirData!)
     const extractedSummary = executeLibrary(mccConditionsLibrary, mccCodeService, patientSource)
 
     // console.log("CQL Results in extractConditionSummary: " + JSON.stringify(extractedSummary))
@@ -77,10 +64,8 @@ export const getConditionSummaries = (fhirDataCollection?: FHIRData[]): Conditio
 
     let conditionSummariesMatrix: ConditionSummary[][] | undefined = []
     for (const curFhirData of fhirDataCollection) {
-        if (curFhirData.conditions && curFhirData.conditions.length > 0) {
-            const conSummary: ConditionSummary[] | undefined = extractConditionSummary(curFhirData)
-            conditionSummariesMatrix.push(conSummary ? conSummary : [])
-        }
+        const conSummary: ConditionSummary[] | undefined = extractConditionSummary(curFhirData)
+        conditionSummariesMatrix.push(conSummary ? conSummary : [])
     }
     return conditionSummariesMatrix
 }
@@ -89,7 +74,7 @@ const extractGoalSummary = (fhirData?: FHIRData): GoalSummary[] | undefined => {
     if (fhirData === undefined) {
         return undefined
     }
-    const patientSource = getPatientSource(fhirData!, 'goals')
+    const patientSource = getPatientSource(fhirData!)
     const extractedSummary = executeLibrary(mccGoalsLibrary, mccCodeService, patientSource)
 
     // console.log("CQL extractedSummary: ", extractedSummary)
@@ -103,10 +88,8 @@ export const getGoalSummaries = (fhirDataCollection?: FHIRData[]): GoalSummary[]
 
     let goalSummariesMatrix: GoalSummary[][] | undefined = []
     for (const curFhirData of fhirDataCollection) {
-        if (curFhirData.goals && curFhirData.goals.length > 0) {
-            const goalSummary: GoalSummary[] | undefined = extractGoalSummary(curFhirData)
-            goalSummariesMatrix.push(goalSummary ? goalSummary : [])
-        }
+        const goalSummary: GoalSummary[] | undefined = extractGoalSummary(curFhirData)
+        goalSummariesMatrix.push(goalSummary ? goalSummary : [])
     }
     return goalSummariesMatrix
 }
@@ -115,7 +98,7 @@ const extractLabResultSummary = (fhirData?: FHIRData): ObservationSummary[] | un
     if (fhirData === undefined) {
         return undefined
     }
-    const patientSource = getPatientSource(fhirData!, 'labResults')
+    const patientSource = getPatientSource(fhirData!)
     const extractedSummary = executeLibrary(mccLabResultsLibrary, mccCodeService, patientSource)
 
     // console.log("CQL Results in extractLabResultSummary: " + JSON.stringify(extractedSummary))
@@ -129,10 +112,8 @@ export const getLabResultSummaries = (fhirDataCollection?: FHIRData[]): Observat
 
     let labSummariesMatrix: ObservationSummary[][] | undefined = []
     for (const curFhirData of fhirDataCollection) {
-        if (curFhirData.labResults && curFhirData.labResults.length > 0) {
-            const labSummary: ObservationSummary[] | undefined = extractLabResultSummary(curFhirData)
-            labSummariesMatrix.push(labSummary ? labSummary : [])
-        }
+        const labSummary: ObservationSummary[] | undefined = extractLabResultSummary(curFhirData)
+        labSummariesMatrix.push(labSummary ? labSummary : [])
     }
     return labSummariesMatrix
 }
@@ -145,7 +126,7 @@ const extractMedicationSummary = (fhirData?: FHIRData): MedicationSummary[] | un
     console.debug("in extractMedicationSummary.  medicationRequests=" + fhirData.medicationRequests?.length +
         ", medications=" + fhirData.medications?.length);
 
-    const patientSource = getPatientSource(fhirData!, 'medications')
+    const patientSource = getPatientSource(fhirData!)
     const extractedSummary = executeLibrary(mccMedicationsLibrary, mccCodeService, patientSource)
 
     // console.log("CQL Results in extractMedicationSummary: " + JSON.stringify(extractedSummary))
@@ -161,11 +142,9 @@ export const getMedicationSummaries = (fhirDataCollection?: FHIRData[]): Medicat
     let medSummariesMatrix: MedicationSummary[][] | undefined = []
     for (const curFhirData of fhirDataCollection) {
         try {
-            if (curFhirData.medicationRequests && curFhirData.medicationRequests.length > 0) {
-                const medSummary: MedicationSummary[] | undefined = extractMedicationSummary(curFhirData)
-                console.debug("getMedicationSummaries: medSummary=" + JSON.stringify(medSummary));
-                medSummariesMatrix.push(medSummary ? medSummary : [])
-            }
+            const medSummary: MedicationSummary[] | undefined = extractMedicationSummary(curFhirData)
+            console.debug("getMedicationSummaries: medSummary=" + JSON.stringify(medSummary));
+            medSummariesMatrix.push(medSummary ? medSummary : [])
         } catch (err) {
             console.error("Error extracting MedicationSummary: " + err);
         }
@@ -177,7 +156,7 @@ const extractVitalSignSummary = (fhirData?: FHIRData): ObservationSummary[] | un
     if (fhirData === undefined) {
         return undefined
     }
-    const patientSource = getPatientSource(fhirData!, 'vitalSigns')
+    const patientSource = getPatientSource(fhirData!)
     const extractedSummary = executeLibrary(mccVitalSignsLibrary, mccCodeService, patientSource)
 
     // console.log("CQL Results in extractVitalSignSummary: " + JSON.stringify(extractedSummary))
@@ -191,10 +170,8 @@ export const getVitalSignSummaries = (fhirDataCollection?: FHIRData[]): Observat
 
     let vitalSignSummariesMatrix: ObservationSummary[][] | undefined = []
     for (const curFhirData of fhirDataCollection) {
-        if (curFhirData.vitalSigns && curFhirData.vitalSigns.length > 0) {
-            const vitalSummary: ObservationSummary[] | undefined = extractVitalSignSummary(curFhirData)
-            vitalSignSummariesMatrix.push(vitalSummary ? vitalSummary : [])
-        }
+        const vitalSummary: ObservationSummary[] | undefined = extractVitalSignSummary(curFhirData)
+        vitalSignSummariesMatrix.push(vitalSummary ? vitalSummary : [])
     }
     return vitalSignSummariesMatrix
 }
