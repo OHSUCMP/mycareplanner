@@ -763,7 +763,7 @@ class App extends React.Component<AppProps, AppState> {
             await this.setSummaries('getGoalSummaries()', 'goalSummaries', getGoalSummaries);
             await this.setSummaries('getConditionSummaries()', 'conditionSummaries', getConditionSummaries)
             await this.setSummaries('getMedicationSummaries()', 'medicationSummaries', getMedicationSummaries)
-            await this.appendFlagsToMedicationSummaries()
+//            await this.appendFlagsToMedicationSummaries()
             await this.setSummaries('getLabResultSummaries()', 'labResultSummaries', getLabResultSummaries)
             await this.setSummaries('getVitalSignSummaries()', 'vitalSignSummaries', getVitalSignSummaries)
 
