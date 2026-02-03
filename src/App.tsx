@@ -763,7 +763,7 @@ class App extends React.Component<AppProps, AppState> {
             await this.setSummaries('getGoalSummaries()', 'goalSummaries', getGoalSummaries);
             await this.setSummaries('getConditionSummaries()', 'conditionSummaries', getConditionSummaries)
             await this.setSummaries('getMedicationSummaries()', 'medicationSummaries', getMedicationSummaries)
-            await this.appendRxClassInfoToMedicationSummaries()
+            await this.appendFlagsToMedicationSummaries()
             await this.setSummaries('getLabResultSummaries()', 'labResultSummaries', getLabResultSummaries)
             await this.setSummaries('getVitalSignSummaries()', 'vitalSignSummaries', getVitalSignSummaries)
 
@@ -771,7 +771,7 @@ class App extends React.Component<AppProps, AppState> {
         }
     }
 
-    appendRxClassInfoToMedicationSummaries = async (): Promise<void> => {
+    appendFlagsToMedicationSummaries = async (): Promise<void> => {
         if ( ! this.state.medicationSummaries ) return;
 
         let medicationFlagArr : Array<MedicationFlag> = JSON.parse(JSON.stringify(MedicationFlagConfig).toString());
@@ -783,7 +783,7 @@ class App extends React.Component<AppProps, AppState> {
                         // storer: RxCui will be null if the MedicationRequest's medication is represented as a reference to a Medication resource,
                         //         because the Medication resource isn't included in the source resource array.  Medication resources appear to not be pulled
                         //         in addition to their referencing MedicationRequest resources.
-                        console.log("got Medication with RxCui: " + summary.RxCui);
+                        console.debug("got Medication with RxCui: " + summary.RxCui);
                         summary.RxClass = await this.getRxClass(summary.RxCui);
 
                         if (summary.RxClass && summary.RxClass.length > 0) {
@@ -798,7 +798,7 @@ class App extends React.Component<AppProps, AppState> {
                         }
 
                     } else {
-                        console.log("Medication Summary had no RxCui");
+                        console.debug("Medication Summary had no RxCui");
                     }
                 } catch (err) {
                     console.error("Error getting RxClass for RxCui=" + summary.RxCui + ": " + err);
@@ -808,7 +808,7 @@ class App extends React.Component<AppProps, AppState> {
     }
 
     getRxClass(rxcui: string): Promise<RxClassSummary[]> {
-        console.log("getRxClassNames: testing RxCUI=" + rxcui);  // 197770
+        console.debug("getRxClassNames: testing RxCUI=" + rxcui);  // 197770
 
         // note : it may be the case that this RxCUI has been replaced by another RxCUI in the RxNav system
         //        consider these two medications:
@@ -849,7 +849,7 @@ class App extends React.Component<AppProps, AppState> {
                     }
 
                 }).then(json => {
-                    console.log("getRxClassNames: json=" + JSON.stringify(json));
+                    console.debug("getRxClassNames: json=" + JSON.stringify(json));
                     let arr: RxClassSummary[] = [];
                     if (json && json.rxclassDrugInfoList && json.rxclassDrugInfoList.rxclassDrugInfo) {
                         let foundList: string[] = [];
@@ -860,7 +860,7 @@ class App extends React.Component<AppProps, AppState> {
                                     let classId = rxcmci.classId;
                                     if (classId && ! foundList.includes(classId) ) {
                                         let className = rxcmci.className;
-                                        console.log("getRxClassNames: adding classId=" + classId + ", className=" + className + " for RxCui=" + rxcui);
+                                        console.debug("getRxClassNames: adding classId=" + classId + ", className=" + className + " for RxCui=" + rxcui);
 
                                         let obj: RxClassSummary = {
                                             RxCui: rxcui,
