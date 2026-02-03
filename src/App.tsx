@@ -766,9 +766,9 @@ class App extends React.Component<AppProps, AppState> {
             await this.setSummaries('getLabResultSummaries()', 'labResultSummaries', getLabResultSummaries)
             await this.setSummaries('getVitalSignSummaries()', 'vitalSignSummaries', getVitalSignSummaries)
 
-            await this.updateLogSummariesCount(this.state.fhirDataCollection) // Logging the count for the patient details bundle.
-
             await this.appendFlagsToMedicationSummaries()
+
+            await this.updateLogSummariesCount(this.state.fhirDataCollection) // Logging the count for the patient details bundle.
         }
     }
 
