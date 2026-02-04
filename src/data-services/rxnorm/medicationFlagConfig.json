@@ -9,7 +9,7 @@
     "label": "Antidepressants",
     "rxClassList": ["N06A", "N06AA", "N06AB", "N06AF", "N06AG", "N06AX"],
     "backgroundColor": "#3399FF",
-    "textColor": "#000000"
+    "textColor": "#FFFFFF"
   },
   {
     "label": "Anxiolytics",
@@ -20,7 +20,13 @@
   {
     "label": "Substance Use",
     "rxClassList": ["N07B", "N07BA", "N07BB", "N07BC"],
-    "backgroundColor": "#FF0000",
+    "backgroundColor": "#990000",
+    "textColor": "#FFFFFF"
+  },
+  {
+    "label": "Opioids",
+    "rxClassList": ["N02A", "N02AA", "N02AB", "N02AC", "N02AD", "N02AE", "N02AF", "N02AG", "N02AJ", "N02AX"],
+    "backgroundColor": "#FF3333",
     "textColor": "#000000"
   }
 ]
