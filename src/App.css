@@ -137,6 +137,6 @@ svg path {
 .medication-flag {
     border: 1px solid black;
     height: 15px;
-    padding: 2px;
+    padding: 3px;
     border-radius: 5px;
 }
