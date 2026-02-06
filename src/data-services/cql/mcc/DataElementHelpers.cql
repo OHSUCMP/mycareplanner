@@ -159,7 +159,7 @@ define function MedicationDisplayFromRequest(mr FHIR.MedicationRequest):
   else null
 
 define function RxNormCoding(mr MedicationRequest):
-  First(
+  (
     (
       if mr.medication is FHIR.CodeableConcept then
         mr.medication.coding

@@ -780,15 +780,17 @@ class App extends React.Component<AppProps, AppState> {
         for (let medicationSummaries of this.state.medicationSummaries) {
             for (let summary of medicationSummaries) {
                 try {
-                    if (summary.RxCui) {
+                    if (summary.RxCui && summary.RxCui.length > 0) {
                         // storer: RxCui will be null if the MedicationRequest's medication is represented as a reference to a Medication resource,
                         //         because the Medication resource isn't included in the source resource array.  Medication resources appear to not be pulled
                         //         in addition to their referencing MedicationRequest resources.
-                        console.debug("got Medication with RxCui: " + summary.RxCui);
+                        console.debug("appendFlagsToMedicationSummaries: got Medication with RxCui: " + summary.RxCui);
                         summary.RxClass = await this.getRxClass(summary.RxCui);
 
                         if (summary.RxClass && summary.RxClass.length > 0) {
-                            let rxClassList : string[] = summary.RxClass.map(r => r.ClassId);
+                            console.debug("appendFlagsToMedicationSummaries: got RxClass=" + JSON.stringify(summary.RxClass));
+                            let rxClassList : string[] = Array.from(new Set<string>(summary.RxClass.map(r => r.ClassId)));
+                            console.debug("appendFlagsToMedicationSummaries: RxClassList=" + rxClassList);
                             let flags: MedicationFlag[] = [];
                             medicationFlagArr.forEach((flag: MedicationFlag) => {
                                 if (rxClassList.some(r => flag.rxClassList.includes(r))) {
@@ -799,7 +801,7 @@ class App extends React.Component<AppProps, AppState> {
                         }
 
                     } else {
-                        console.debug("Medication Summary had no RxCui");
+                        console.debug("appendFlagsToMedicationSummaries: Medication Summary had no RxCui");
                     }
                 } catch (err) {
                     console.error("Error getting RxClass for RxCui=" + summary.RxCui + ": " + err);
@@ -808,8 +810,8 @@ class App extends React.Component<AppProps, AppState> {
         }
     }
 
-    getRxClass(rxcui: string): Promise<RxClassSummary[]> {
-        console.debug("getRxClassNames: testing RxCUI=" + rxcui);  // 197770
+    async getRxClass(rxcuiList: string[]): Promise<RxClassSummary[]> {
+        console.debug("getRxClass: executing with RxCUI=" + rxcuiList);  // 197770
 
         // note : it may be the case that this RxCUI has been replaced by another RxCUI in the RxNav system
         //        consider these two medications:
@@ -839,70 +841,106 @@ class App extends React.Component<AppProps, AppState> {
         // This is the call:
         // https://rxnav.nlm.nih.gov/REST/rxclass/class/byRxcui.json?rxcui=197770&relaSource=ATCPROD
 
+        let promiseArr: Promise<RxClassSummary[]>[] = [];
+        for (let rxcui of rxcuiList) {
+            try {
+                console.debug("getRxClass: building Promise for RxCUI=" + rxcui);
+                let promise: Promise<RxClassSummary[]> = new Promise<RxClassSummary[]>((resolve, reject) => {
+                    fetch('https://rxnav.nlm.nih.gov/REST/rxclass/class/byRxcui.json?rxcui=' + rxcui + '&relaSource=ATCPROD')
+                        .then(response => {
+                            if (response.ok) {
+                                return response.json();
+                            } else {
+                                throw new Error('Network response was not OK (' + response.status + ')');
+                            }
 
-        return new Promise<RxClassSummary[]>((resolve, reject) => {
-            fetch('https://rxnav.nlm.nih.gov/REST/rxclass/class/byRxcui.json?rxcui=' + rxcui + '&relaSource=ATCPROD')
-                .then(response => {
-                    if (response.ok) {
-                        return response.json();
-                    } else {
-                        throw new Error('Network response was not OK (' + response.status + ')');
-                    }
+                        }).then(json => {
+                        console.debug("getRxClass: json=" + JSON.stringify(json));
+                        let arr: RxClassSummary[] = [];
+                        if (json && json.rxclassDrugInfoList && json.rxclassDrugInfoList.rxclassDrugInfo) {
+//                            let foundList: string[] = [];
+                            for (let rxcdi of json?.rxclassDrugInfoList?.rxclassDrugInfo) {
+                                try {
+                                    // first, ensure that we only consider those rxclassDrugInfo items that reference
+                                    // RxCuis that we care about
+                                    let mc = rxcdi?.minConcept;
+                                    if ( ! rxcuiList.includes(mc.rxcui) ) {
+                                        continue;
+                                    }
 
-                }).then(json => {
-                    console.debug("getRxClassNames: json=" + JSON.stringify(json));
-                    let arr: RxClassSummary[] = [];
-                    if (json && json.rxclassDrugInfoList && json.rxclassDrugInfoList.rxclassDrugInfo) {
-                        let foundList: string[] = [];
-                        for (let rxcdi of json?.rxclassDrugInfoList?.rxclassDrugInfo) {
-                            try {
-                                let rxcmci = rxcdi?.rxclassMinConceptItem;
-                                if (rxcmci?.classType === "ATC1-4") {
-                                    let classId = rxcmci.classId;
-                                    if (classId && ! foundList.includes(classId) ) {
-                                        let className = rxcmci.className;
-                                        console.debug("getRxClassNames: adding classId=" + classId + ", className=" + className + " for RxCui=" + rxcui);
+                                    console.debug("getRxClass: found minConcept with RxCui=" + mc.rxcui);
+
+                                    // this rxClassDrugInfo item references a minConcept with an rxcui that is in the list
+                                    // that we care about.  grab its class and add it to the list
+
+                                    let rxcmci = rxcdi?.rxclassMinConceptItem;
+                                    if (rxcmci?.classType === "ATC1-4") {
+                                        console.debug("getRxClass: adding classId=" + rxcmci.classId +
+                                            ", className=" + rxcmci.className + " for RxCui=" + mc.rxcui);
 
                                         let obj: RxClassSummary = {
-                                            RxCui: rxcui,
-                                            ClassId: classId,
-                                            ClassName: className
+                                            RxCui: mc.rxcui,
+                                            ClassId: rxcmci.classId,
+                                            ClassName: rxcmci.className
                                         };
 
                                         arr.push(obj);
-                                        foundList.push(classId);
                                     }
+
+                                } catch (err) {
+                                    console.error("getRxClass: error processing rxcdi for RxCui=" + rxcui + ": " + err);
                                 }
+                            }
+
+                        } else {
+                            try {
+                                console.warn("getRxClass: No RxClass info found for RxCui=" + rxcui +
+                                    " - perhaps this has been replaced by another RxCui?");
+
+                                doLog({
+                                    level: 'warn',
+                                    event: 'RxClass Integration',
+                                    page: 'n/a',
+                                    message: `No RxClass info found for RxCui=${rxcui} - perhaps this has been replaced by another RxCui?`
+                                });
 
                             } catch (err) {
-                                console.error("getRxClassNames: error processing rxcdi for RxCui=" + rxcui + ": " + err);
+                                console.error("getRxClass: error logging warning for RxCui=" + rxcui + ": " + err);
                             }
                         }
 
-                    } else {
-                        try {
-                            console.warn("getRxClassNames: No RxClass info found for RxCui=" + rxcui +
-                                " - perhaps this has been replaced by another RxCui?");
+                        resolve(arr);
 
-                            doLog({
-                                level: 'warn',
-                                event: 'RxClass Integration',
-                                page: 'n/a',
-                                message: `No RxClass info found for RxCui=${rxcui} - perhaps this has been replaced by another RxCui?`
-                            });
-
-                        } catch (err) {
-                            console.error("getRxClassNames: error logging warning for RxCui=" + rxcui + ": " + err);
-                        }
-                    }
-
-                    resolve(arr);
-
-                }).catch(err => {
-                    console.error("getRxClassNames: error=" + err);
-                    reject(err);
+                    }).catch(err => {
+                        console.error("getRxClass: error=" + err);
+                        reject(err);
+                    });
                 });
-            });
+                promiseArr.push(promise);
+
+            } catch (err) {
+                console.error("getRxClass: error building Promise for RxCui=" + rxcui + ": " + err);
+            }
+        }
+
+        const settled = await Promise.allSettled(promiseArr);
+        console.debug("getRxClass: all promises settled!  iterating -");
+
+        let results: RxClassSummary[] = [];
+        let foundList: string[] = [];
+        settled.forEach((value) => {
+            if (value.status === 'fulfilled') {
+                for (let rxClassSummary of value.value) {
+                    let key: string = rxClassSummary.RxCui + "-" + rxClassSummary.ClassId;
+                    if ( ! foundList.includes(key) ) {
+                        results.push(rxClassSummary);
+                        foundList.push(key);
+                    }
+                }
+            }
+        });
+
+        return results;
     }
 
     setSummaries = async (message: string, propertyName: keyof AppState, summariesProcessor: SummaryFunctionType): Promise<void> => {
