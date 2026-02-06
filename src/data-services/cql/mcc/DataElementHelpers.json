@@ -3830,23 +3830,101 @@
                }, {
                   "name" : "RxCui",
                   "value" : {
-                     "path" : "value",
-                     "type" : "Property",
+                     "type" : "Query",
                      "annotation" : [ ],
-                     "source" : {
-                        "path" : "code",
-                        "type" : "Property",
+                     "source" : [ {
+                        "alias" : "$this",
                         "annotation" : [ ],
-                        "source" : {
-                           "name" : "RxNormCoding",
-                           "type" : "FunctionRef",
+                        "expression" : {
+                           "type" : "Query",
+                           "annotation" : [ ],
+                           "source" : [ {
+                              "alias" : "$this",
+                              "annotation" : [ ],
+                              "expression" : {
+                                 "name" : "RxNormCoding",
+                                 "type" : "FunctionRef",
+                                 "annotation" : [ ],
+                                 "signature" : [ ],
+                                 "operand" : [ {
+                                    "name" : "medReq",
+                                    "type" : "OperandRef",
+                                    "annotation" : [ ]
+                                 } ]
+                              }
+                           } ],
+                           "let" : [ ],
+                           "relationship" : [ ],
+                           "where" : {
+                              "type" : "Not",
+                              "annotation" : [ ],
+                              "signature" : [ ],
+                              "operand" : {
+                                 "type" : "IsNull",
+                                 "annotation" : [ ],
+                                 "signature" : [ ],
+                                 "operand" : {
+                                    "path" : "code",
+                                    "type" : "Property",
+                                    "annotation" : [ ],
+                                    "source" : {
+                                       "name" : "$this",
+                                       "type" : "AliasRef",
+                                       "annotation" : [ ]
+                                    }
+                                 }
+                              }
+                           },
+                           "return" : {
+                              "distinct" : false,
+                              "annotation" : [ ],
+                              "expression" : {
+                                 "path" : "code",
+                                 "type" : "Property",
+                                 "annotation" : [ ],
+                                 "source" : {
+                                    "name" : "$this",
+                                    "type" : "AliasRef",
+                                    "annotation" : [ ]
+                                 }
+                              }
+                           }
+                        }
+                     } ],
+                     "let" : [ ],
+                     "relationship" : [ ],
+                     "where" : {
+                        "type" : "Not",
+                        "annotation" : [ ],
+                        "signature" : [ ],
+                        "operand" : {
+                           "type" : "IsNull",
                            "annotation" : [ ],
                            "signature" : [ ],
-                           "operand" : [ {
-                              "name" : "medReq",
-                              "type" : "OperandRef",
+                           "operand" : {
+                              "path" : "value",
+                              "type" : "Property",
+                              "annotation" : [ ],
+                              "source" : {
+                                 "name" : "$this",
+                                 "type" : "AliasRef",
+                                 "annotation" : [ ]
+                              }
+                           }
+                        }
+                     },
+                     "return" : {
+                        "distinct" : false,
+                        "annotation" : [ ],
+                        "expression" : {
+                           "path" : "value",
+                           "type" : "Property",
+                           "annotation" : [ ],
+                           "source" : {
+                              "name" : "$this",
+                              "type" : "AliasRef",
                               "annotation" : [ ]
-                           } ]
+                           }
                         }
                      }
                   }
@@ -5074,24 +5152,50 @@
             "type" : "FunctionDef",
             "annotation" : [ ],
             "expression" : {
-               "type" : "First",
+               "type" : "Query",
                "annotation" : [ ],
-               "signature" : [ {
-                  "type" : "ListTypeSpecifier",
+               "source" : [ {
+                  "alias" : "C",
                   "annotation" : [ ],
-                  "elementType" : {
-                     "name" : "{http://hl7.org/fhir}Coding",
-                     "type" : "NamedTypeSpecifier",
-                     "annotation" : [ ]
-                  }
-               } ],
-               "source" : {
-                  "type" : "Query",
-                  "annotation" : [ ],
-                  "source" : [ {
-                     "alias" : "C",
+                  "expression" : {
+                     "type" : "If",
                      "annotation" : [ ],
-                     "expression" : {
+                     "condition" : {
+                        "type" : "Is",
+                        "annotation" : [ ],
+                        "signature" : [ ],
+                        "operand" : {
+                           "path" : "medication",
+                           "type" : "Property",
+                           "annotation" : [ ],
+                           "source" : {
+                              "name" : "mr",
+                              "type" : "OperandRef",
+                              "annotation" : [ ]
+                           }
+                        },
+                        "isTypeSpecifier" : {
+                           "name" : "{http://hl7.org/fhir}CodeableConcept",
+                           "type" : "NamedTypeSpecifier",
+                           "annotation" : [ ]
+                        }
+                     },
+                     "then" : {
+                        "path" : "coding",
+                        "type" : "Property",
+                        "annotation" : [ ],
+                        "source" : {
+                           "path" : "medication",
+                           "type" : "Property",
+                           "annotation" : [ ],
+                           "source" : {
+                              "name" : "mr",
+                              "type" : "OperandRef",
+                              "annotation" : [ ]
+                           }
+                        }
+                     },
+                     "else" : {
                         "type" : "If",
                         "annotation" : [ ],
                         "condition" : {
@@ -5109,7 +5213,7 @@
                               }
                            },
                            "isTypeSpecifier" : {
-                              "name" : "{http://hl7.org/fhir}CodeableConcept",
+                              "name" : "{http://hl7.org/fhir}Reference",
                               "type" : "NamedTypeSpecifier",
                               "annotation" : [ ]
                            }
@@ -5119,145 +5223,106 @@
                            "type" : "Property",
                            "annotation" : [ ],
                            "source" : {
-                              "path" : "medication",
+                              "path" : "code",
                               "type" : "Property",
                               "annotation" : [ ],
                               "source" : {
-                                 "name" : "mr",
-                                 "type" : "OperandRef",
-                                 "annotation" : [ ]
+                                 "name" : "MedicationFromRequest",
+                                 "type" : "FunctionRef",
+                                 "annotation" : [ ],
+                                 "signature" : [ ],
+                                 "operand" : [ {
+                                    "name" : "mr",
+                                    "type" : "OperandRef",
+                                    "annotation" : [ ]
+                                 } ]
                               }
                            }
                         },
                         "else" : {
-                           "type" : "If",
+                           "type" : "As",
                            "annotation" : [ ],
-                           "condition" : {
-                              "type" : "Is",
+                           "signature" : [ ],
+                           "operand" : {
+                              "type" : "Null",
+                              "annotation" : [ ]
+                           },
+                           "asTypeSpecifier" : {
+                              "type" : "ListTypeSpecifier",
                               "annotation" : [ ],
-                              "signature" : [ ],
-                              "operand" : {
-                                 "path" : "medication",
-                                 "type" : "Property",
-                                 "annotation" : [ ],
-                                 "source" : {
-                                    "name" : "mr",
-                                    "type" : "OperandRef",
-                                    "annotation" : [ ]
-                                 }
-                              },
-                              "isTypeSpecifier" : {
-                                 "name" : "{http://hl7.org/fhir}Reference",
+                              "elementType" : {
+                                 "name" : "{http://hl7.org/fhir}Coding",
                                  "type" : "NamedTypeSpecifier",
                                  "annotation" : [ ]
-                              }
-                           },
-                           "then" : {
-                              "path" : "coding",
-                              "type" : "Property",
-                              "annotation" : [ ],
-                              "source" : {
-                                 "path" : "code",
-                                 "type" : "Property",
-                                 "annotation" : [ ],
-                                 "source" : {
-                                    "name" : "MedicationFromRequest",
-                                    "type" : "FunctionRef",
-                                    "annotation" : [ ],
-                                    "signature" : [ ],
-                                    "operand" : [ {
-                                       "name" : "mr",
-                                       "type" : "OperandRef",
-                                       "annotation" : [ ]
-                                    } ]
-                                 }
-                              }
-                           },
-                           "else" : {
-                              "type" : "As",
-                              "annotation" : [ ],
-                              "signature" : [ ],
-                              "operand" : {
-                                 "type" : "Null",
-                                 "annotation" : [ ]
-                              },
-                              "asTypeSpecifier" : {
-                                 "type" : "ListTypeSpecifier",
-                                 "annotation" : [ ],
-                                 "elementType" : {
-                                    "name" : "{http://hl7.org/fhir}Coding",
-                                    "type" : "NamedTypeSpecifier",
-                                    "annotation" : [ ]
-                                 }
                               }
                            }
                         }
                      }
-                  } ],
-                  "let" : [ ],
-                  "relationship" : [ ],
-                  "where" : {
-                     "type" : "Or",
-                     "annotation" : [ ],
-                     "signature" : [ ],
-                     "operand" : [ {
-                        "type" : "Equal",
-                        "annotation" : [ ],
-                        "signature" : [ {
-                           "name" : "{urn:hl7-org:elm-types:r1}String",
-                           "type" : "NamedTypeSpecifier",
-                           "annotation" : [ ]
-                        }, {
-                           "name" : "{urn:hl7-org:elm-types:r1}String",
-                           "type" : "NamedTypeSpecifier",
-                           "annotation" : [ ]
-                        } ],
-                        "operand" : [ {
-                           "path" : "value",
-                           "type" : "Property",
-                           "annotation" : [ ],
-                           "source" : {
-                              "path" : "system",
-                              "scope" : "C",
-                              "type" : "Property",
-                              "annotation" : [ ]
-                           }
-                        }, {
-                           "valueType" : "{urn:hl7-org:elm-types:r1}String",
-                           "value" : "http://www.nlm.nih.gov/research/umls/rxnorm",
-                           "type" : "Literal",
-                           "annotation" : [ ]
-                        } ]
-                     }, {
-                        "type" : "Equal",
-                        "annotation" : [ ],
-                        "signature" : [ {
-                           "name" : "{urn:hl7-org:elm-types:r1}String",
-                           "type" : "NamedTypeSpecifier",
-                           "annotation" : [ ]
-                        }, {
-                           "name" : "{urn:hl7-org:elm-types:r1}String",
-                           "type" : "NamedTypeSpecifier",
-                           "annotation" : [ ]
-                        } ],
-                        "operand" : [ {
-                           "path" : "value",
-                           "type" : "Property",
-                           "annotation" : [ ],
-                           "source" : {
-                              "path" : "system",
-                              "scope" : "C",
-                              "type" : "Property",
-                              "annotation" : [ ]
-                           }
-                        }, {
-                           "valueType" : "{urn:hl7-org:elm-types:r1}String",
-                           "value" : "urn:oid:2.16.840.1.113883.6.88",
-                           "type" : "Literal",
-                           "annotation" : [ ]
-                        } ]
-                     } ]
                   }
+               } ],
+               "let" : [ ],
+               "relationship" : [ ],
+               "where" : {
+                  "type" : "Or",
+                  "annotation" : [ ],
+                  "signature" : [ ],
+                  "operand" : [ {
+                     "type" : "Equal",
+                     "annotation" : [ ],
+                     "signature" : [ {
+                        "name" : "{urn:hl7-org:elm-types:r1}String",
+                        "type" : "NamedTypeSpecifier",
+                        "annotation" : [ ]
+                     }, {
+                        "name" : "{urn:hl7-org:elm-types:r1}String",
+                        "type" : "NamedTypeSpecifier",
+                        "annotation" : [ ]
+                     } ],
+                     "operand" : [ {
+                        "path" : "value",
+                        "type" : "Property",
+                        "annotation" : [ ],
+                        "source" : {
+                           "path" : "system",
+                           "scope" : "C",
+                           "type" : "Property",
+                           "annotation" : [ ]
+                        }
+                     }, {
+                        "valueType" : "{urn:hl7-org:elm-types:r1}String",
+                        "value" : "http://www.nlm.nih.gov/research/umls/rxnorm",
+                        "type" : "Literal",
+                        "annotation" : [ ]
+                     } ]
+                  }, {
+                     "type" : "Equal",
+                     "annotation" : [ ],
+                     "signature" : [ {
+                        "name" : "{urn:hl7-org:elm-types:r1}String",
+                        "type" : "NamedTypeSpecifier",
+                        "annotation" : [ ]
+                     }, {
+                        "name" : "{urn:hl7-org:elm-types:r1}String",
+                        "type" : "NamedTypeSpecifier",
+                        "annotation" : [ ]
+                     } ],
+                     "operand" : [ {
+                        "path" : "value",
+                        "type" : "Property",
+                        "annotation" : [ ],
+                        "source" : {
+                           "path" : "system",
+                           "scope" : "C",
+                           "type" : "Property",
+                           "annotation" : [ ]
+                        }
+                     }, {
+                        "valueType" : "{urn:hl7-org:elm-types:r1}String",
+                        "value" : "urn:oid:2.16.840.1.113883.6.88",
+                        "type" : "Literal",
+                        "annotation" : [ ]
+                     } ]
+                  } ]
                }
             },
             "operand" : [ {

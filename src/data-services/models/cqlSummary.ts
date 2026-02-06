@@ -104,7 +104,7 @@ export interface MedicationSummary {
   Notes?: string[],
   Provenance?: ProvenanceSummary[],
   LearnMore?: string,
-  RxCui?: string,
+  RxCui?: string[],
   RxClass?: RxClassSummary[],
   Flags?: MedicationFlag[]
 }
