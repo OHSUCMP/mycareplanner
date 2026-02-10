@@ -18,7 +18,7 @@
     "textColor": "#000000"
   },
   {
-    "label": "Substance Use Treatment",
+    "label": "Recovery Support",
     "rxClassList": ["N07B", "N07BA", "N07BB", "N07BC"],
     "backgroundColor": "#990000",
     "textColor": "#FFFFFF"
