@@ -99,7 +99,7 @@ export function allShareableResources(fhirData: FHIRData|undefined): Resource[] 
                         if (med && med.code && med.code.coding && med.code.coding.length > 0) {
                             delete medReq.medicationReference;
                             medReq.medicationCodeableConcept = med.code;
-                            console.log(`Modified MedicationRequest ${medReq.id} that previously referenced Medication ${med.id} to now include its code as CodeableConcept ${JSON.stringify(med.code)}`);
+                            console.debug(`Modified MedicationRequest ${medReq.id} that previously referenced Medication ${med.id} to now include its code as CodeableConcept ${JSON.stringify(med.code)}`);
                         }
                     }
                     medicationRequests.push(medReq);
