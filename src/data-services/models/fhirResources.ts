@@ -84,7 +84,41 @@ export function allShareableResources(fhirData: FHIRData|undefined): Resource[] 
         if (fhirData.conditions)            arr.push(...fhirData.conditions);
         if (fhirData.goals)                 arr.push(...fhirData.goals);
         if (fhirData.immunizations)         arr.push(...fhirData.immunizations);
-        if (fhirData.medicationRequests)    arr.push(...fhirData.medicationRequests);
+
+        // fix for https://github.com/OHSUCMP/mycareplanner/issues/167
+        if (fhirData.medicationRequests) {
+            if (fhirData.medications && fhirData.medications.length > 0) {
+                let medicationsMap = new Map<string, Medication>();
+                fhirData.medications?.forEach(med => medicationsMap.set(med.id!, med));
+
+                let medicationRequests: MedicationRequest[] = [];
+                fhirData.medicationRequests?.forEach(medReq => {
+                    if (medReq.medicationReference && medReq.medicationReference.reference) {
+                        let medId = medReq.medicationReference.reference.split('/')[1];
+                        let med = medicationsMap.get(medId);
+                        if (med && med.code && med.code.coding && med.code.coding.length > 0) {
+                            let display: string | undefined = medReq.medicationReference.display;
+
+                            delete medReq.medicationReference;
+
+                            medReq.medicationCodeableConcept = med.code;
+
+                            if (display && ! medReq.medicationCodeableConcept.text) {
+                                medReq.medicationCodeableConcept.text = display;
+                            }
+
+                            console.debug(`Modified MedicationRequest ${medReq.id} that previously referenced Medication ${med.id} to now include its code as CodeableConcept ${JSON.stringify(med.code)}`);
+                        }
+                    }
+                    medicationRequests.push(medReq);
+                });
+                arr.push(...medicationRequests);
+
+            } else {
+                arr.push(...fhirData.medicationRequests);
+            }
+        }
+
         if (fhirData.serviceRequests)       arr.push(...fhirData.serviceRequests);
         if (fhirData.procedures)            arr.push(...fhirData.procedures);
         if (fhirData.labResults)            arr.push(...fhirData.labResults);
