@@ -97,9 +97,17 @@ export function allShareableResources(fhirData: FHIRData|undefined): Resource[] 
                         let medId = medReq.medicationReference.reference.split('/')[1];
                         let med = medicationsMap.get(medId);
                         if (med && med.code && med.code.coding && med.code.coding.length > 0) {
+                            let display: string | undefined = medReq.medicationReference.display;
+
                             delete medReq.medicationReference;
+
                             medReq.medicationCodeableConcept = med.code;
-                            console.log(`Modified MedicationRequest ${medReq.id} that previously referenced Medication ${med.id} to now include its code as CodeableConcept ${JSON.stringify(med.code)}`);
+
+                            if (display && ! medReq.medicationCodeableConcept.text) {
+                                medReq.medicationCodeableConcept.text = display;
+                            }
+
+                            console.debug(`Modified MedicationRequest ${medReq.id} that previously referenced Medication ${med.id} to now include its code as CodeableConcept ${JSON.stringify(med.code)}`);
                         }
                     }
                     medicationRequests.push(medReq);
