@@ -10,7 +10,8 @@
   "conditions": {
     "path": [
       "Condition?category=problem-list-item&clinical-status=active&_revinclude=Provenance:target",
-      "Condition?category=health-concern&clinical-status=active&_revinclude=Provenance:target"
+      "Condition?category=health-concern&clinical-status=active&_revinclude=Provenance:target",
+      "Condition?category=encounter-diagnosis&clinical-status=active&_revinclude=Provenance:target"
     ],
     "fhirOptions": {
       "pageLimit": 0
