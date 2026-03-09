@@ -43,6 +43,8 @@ interface HomeState {
 }
 
 const IS_DISPLAY_SDS_IN_ENDPOINT_CONNECTION_LIST: boolean = false
+const isTasksEnabled = process.env.REACT_APP_TASKS_ENABLED === 'true';
+const isPreventiveScreeningEnabled = process.env.REACT_APP_PREVENTIVE_SCREENING_ENABLED === 'true';
 
 export default class Home extends React.Component<HomeProps, HomeState> {
 
@@ -216,58 +218,54 @@ export default class Home extends React.Component<HomeProps, HomeState> {
                     </div>
                     : <div>
 
-                        <h5 style={{marginTop: '20px'}}>My Tasks</h5>
-
-                        <div>
-
-                        {availableQuestionnaires.map(({ id, label, url }) => {
-                            // Get the most recent authored date from the latestResponses map
-                            const latest = latestResponses && latestResponses[url];
-                            const authoredDate = (latest && latest.authored) ? new Date(latest.authored).toLocaleDateString() : null;
-                            return (
-                                <div key={id}>
-                                <Link
-                                    to={{
-                                    pathname: "/questionnaire",
-                                    state: {
-                                        questionnaireId: id
-                                    }
-                                    }}
-                                >
-                                <strong>{label}{authoredDate && <span className="text-muted small"> (Last Completed: {authoredDate})</span>}</strong>
-                                </Link>
-                                <br />
+                        {(!isTasksEnabled || availableQuestionnaires.length === 0)
+                            ? ''
+                            : <div> 
+                                <h5 style={{marginTop: '20px'}}>My Tasks</h5>
+                                <div>
+                                {availableQuestionnaires.map(({ id, label, url }) => {
+                                    // Get the most recent authored date from the latestResponses map
+                                    const latest = latestResponses && latestResponses[url];
+                                    const authoredDate = (latest && latest.authored) ? new Date(latest.authored).toLocaleDateString() : null;
+                                    return (
+                                        <div key={id}>
+                                        <Link
+                                            to={{
+                                            pathname: "/questionnaire",
+                                            state: {
+                                                questionnaireId: id
+                                            }
+                                            }}
+                                        >
+                                        <strong>{label}{authoredDate && <span className="text-muted small"> (Last Completed: {authoredDate})</span>}</strong>
+                                        </Link>
+                                        <br />
+                                        </div>
+                                    );
+                                })}
                                 </div>
-                            );
-                        })}
-                        </div>
+                            </div>
+                        }
 
-                        {/* {(tasks === undefined)
-                ? <p>You have no tasks today!</p>
-                : <ul>
-                    {tasks?.map((task, idx) => (
-                    <li key={idx.toString()}><Link to={{
-                            pathname: '/task',
-                            state: { patientSummary: this.props.patientSummary, task: task }
-                        }}>{task.description}</Link>
-                    </li>))}
-                </ul>
-            } */}
-
-                        <h5 style={{paddingTop: '20px'}}>Preventive Care</h5>
-                        {(screenings !== undefined && screenings.length === 0)
-                            ? <p>You have no screenings due.</p>
-                            : <ul>
-                                {screenings?.map((s, idx) => (
-                                    <li key={idx.toString()}><Link to={{
-                                        pathname: '/decision',
-                                        state: {patientSummaries: this.props.patientSummaries, screening: s}
-                                    }}>{s.name}</Link>
-                                        <ul>
-                                            <li>{s.title}</li>
-                                        </ul>
-                                    </li>))}
-                            </ul>
+                        {(!isPreventiveScreeningEnabled || screenings === undefined)
+                            ? ''
+                            : <div>
+                                <h5 style={{paddingTop: '20px'}}>Preventive Care</h5>
+                                {(screenings !== undefined && screenings.length === 0)
+                                    ? <p>You have no screenings due.</p>
+                                    : <ul>
+                                        {screenings?.map((s, idx) => (
+                                            <li key={idx.toString()}><Link to={{
+                                                pathname: '/decision',
+                                                state: {patientSummaries: this.props.patientSummaries, screening: s}
+                                            }}>{s.name}</Link>
+                                                <ul>
+                                                    <li>{s.title}</li>
+                                                </ul>
+                                            </li>))}
+                                      </ul>
+                                }
+                            </div>
                         }
 
 
