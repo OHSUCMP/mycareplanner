@@ -23,7 +23,8 @@ import {
     Period,
     Timing,
     TimingRepeat,
-    Medication
+    Medication,
+    DocumentReference
 } from '../fhir-types/fhir-r4';
 
 export interface QuestionnaireMetadata {
@@ -59,6 +60,7 @@ export interface FHIRData {
     encounters?: Encounter[],
     conditions?: Condition[],
     diagnosticReports?: DiagnosticReport[],
+    clinicalNotes?: DocumentReference[],
     goals?: Goal[],
     immunizations?: Immunization[],
     medicationRequests?: MedicationRequest[],
@@ -125,6 +127,7 @@ export function allShareableResources(fhirData: FHIRData|undefined): Resource[] 
         if (fhirData.vitalSigns)            arr.push(...fhirData.vitalSigns);
         if (fhirData.socialHistory)         arr.push(...fhirData.socialHistory);
         if (fhirData.diagnosticReports)     arr.push(...fhirData.diagnosticReports);
+        if (fhirData.clinicalNotes)         arr.push(...fhirData.clinicalNotes);
         if (fhirData.surveyResults)         arr.push(...fhirData.surveyResults);
         if (fhirData.carePlans)             arr.push(...fhirData.carePlans);
         if (fhirData.careTeams)             arr.push(...fhirData.careTeams);
