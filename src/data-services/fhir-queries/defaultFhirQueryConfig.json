@@ -7,6 +7,14 @@
       "pageLimit": 0
     }
   },
+  "clinicalNotes": {
+    "path": [
+      "DocumentReference?category=clinical-note&date=ge{TWO_YEARS_AGO}&_revinclude=Provenance:target"
+    ],
+    "fhirOptions": {
+      "pageLimit": 0
+    }
+  },
   "conditions": {
     "path": [
       "Condition?category=problem-list-item&clinical-status=active&_revinclude=Provenance:target",
