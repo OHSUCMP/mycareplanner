@@ -1051,6 +1051,8 @@ const getFHIRQueries = async (clientProxy: ClientProxy, clientScope: string | un
         provenanceMap,
         provenance,
         questionnaireBundles,
+        surveyObservations,
+        questionnaireResponses
     }
 }
 
