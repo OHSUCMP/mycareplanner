@@ -69,11 +69,12 @@ export interface FHIRData {
     vitalSigns?: Observation[],
     socialHistory?: Observation[],
     surveyResults?: Observation[],
-
+    questionnaireResponses?: QuestionnaireResponse[], // the subset of assessment data represented as FHIR QuestionnaireResponse resources.
+    surveyObservations?: Observation[], // the subset of the assessment data represented as FHIR Observation resources.
     // key = Resource.id, values = 0..* Provenance
     provenanceMap?: Map<string, Provenance[]>,
     provenance?: Provenance[],
-    questionnaireBundles?: QuestionnaireBundle[],
+    questionnaireBundles?: QuestionnaireBundle[]
 }
 
 export function allShareableResources(fhirData: FHIRData|undefined): Resource[] {
@@ -128,8 +129,8 @@ export function allShareableResources(fhirData: FHIRData|undefined): Resource[] 
         if (fhirData.surveyResults)         arr.push(...fhirData.surveyResults);
         if (fhirData.carePlans)             arr.push(...fhirData.carePlans);
         if (fhirData.careTeams)             arr.push(...fhirData.careTeams);
-        //TODO: AEY Do I need to share these?
-        //if (fhirData.questionnaireResponses)     arr.push(...fhirData.questionnaireResponses);
+        if (fhirData.surveyObservations)    arr.push(...fhirData.surveyObservations);
+        if (fhirData.questionnaireResponses) arr.push(...fhirData.questionnaireResponses);
     }
     return arr;
 }
