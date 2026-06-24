@@ -63,14 +63,14 @@ export const getConditionSummaries = (fhirDataCollection?: FHIRData[]): Conditio
         return undefined
     }
 
-    let conditionSummariesMatrix: ConditionSummary[][] | undefined = []
-    for (const curFhirData of fhirDataCollection) {
+    return fhirDataCollection.map(curFhirData => {
         if (curFhirData.conditions && curFhirData.conditions.length > 0) {
-            const conSummary: ConditionSummary[] | undefined = extractConditionSummary(curFhirData)
-            conditionSummariesMatrix.push(conSummary ? conSummary : [])
+            return extractConditionSummary(curFhirData) || []
         }
-    }
-    return conditionSummariesMatrix
+        // Return an empty array instead of skipping if there are no entries. 
+        // This maintains indexing so we can figure out the matching serverName in the components
+        return []
+    })
 }
 
 const extractGoalSummary = (fhirData?: FHIRData): GoalSummary[] | undefined => {
@@ -89,14 +89,14 @@ export const getGoalSummaries = (fhirDataCollection?: FHIRData[]): GoalSummary[]
         return undefined
     }
 
-    let goalSummariesMatrix: GoalSummary[][] | undefined = []
-    for (const curFhirData of fhirDataCollection) {
+    return fhirDataCollection.map(curFhirData => {
         if (curFhirData.goals && curFhirData.goals.length > 0) {
-            const goalSummary: GoalSummary[] | undefined = extractGoalSummary(curFhirData)
-            goalSummariesMatrix.push(goalSummary ? goalSummary : [])
+            return extractGoalSummary(curFhirData) || []
         }
-    }
-    return goalSummariesMatrix
+        // Return an empty array instead of skipping if there are no entries. 
+        // This maintains indexing so we can figure out the matching serverName in the components
+        return []
+    })
 }
 
 const extractLabResultSummary = (fhirData?: FHIRData): ObservationSummary[] | undefined => {
@@ -115,14 +115,14 @@ export const getLabResultSummaries = (fhirDataCollection?: FHIRData[]): Observat
         return undefined
     }
 
-    let labSummariesMatrix: ObservationSummary[][] | undefined = []
-    for (const curFhirData of fhirDataCollection) {
+    return fhirDataCollection.map(curFhirData => {
         if (curFhirData.labResults && curFhirData.labResults.length > 0) {
-            const labSummary: ObservationSummary[] | undefined = extractLabResultSummary(curFhirData)
-            labSummariesMatrix.push(labSummary ? labSummary : [])
+            return extractLabResultSummary(curFhirData) || []
         }
-    }
-    return labSummariesMatrix
+        // Return an empty array instead of skipping if there are no entries. 
+        // This maintains indexing so we can figure out the matching serverName in the components
+        return []
+    })
 }
 
 const extractMedicationSummary = (fhirData?: FHIRData): MedicationSummary[] | undefined => {
@@ -146,19 +146,14 @@ export const getMedicationSummaries = (fhirDataCollection?: FHIRData[]): Medicat
         return undefined
     }
 
-    let medSummariesMatrix: MedicationSummary[][] | undefined = []
-    for (const curFhirData of fhirDataCollection) {
-        try {
-            if (curFhirData.medicationRequests && curFhirData.medicationRequests.length > 0) {
-                const medSummary: MedicationSummary[] | undefined = extractMedicationSummary(curFhirData)
-                console.debug("getMedicationSummaries: medSummary=" + JSON.stringify(medSummary));
-                medSummariesMatrix.push(medSummary ? medSummary : [])
-            }
-        } catch (err) {
-            console.error("Error extracting MedicationSummary: " + err);
+    return fhirDataCollection.map(curFhirData => {
+        if (curFhirData.medicationRequests && curFhirData.medicationRequests.length > 0) {
+            return extractMedicationSummary(curFhirData) || []
         }
-    }
-    return medSummariesMatrix
+        // Return an empty array instead of skipping if there are no entries. 
+        // This maintains indexing so we can figure out the matching serverName in the components
+        return []
+    })
 }
 
 const extractVitalSignSummary = (fhirData?: FHIRData): ObservationSummary[] | undefined => {
@@ -177,14 +172,14 @@ export const getVitalSignSummaries = (fhirDataCollection?: FHIRData[]): Observat
         return undefined
     }
 
-    let vitalSignSummariesMatrix: ObservationSummary[][] | undefined = []
-    for (const curFhirData of fhirDataCollection) {
+    return fhirDataCollection.map(curFhirData => {
         if (curFhirData.vitalSigns && curFhirData.vitalSigns.length > 0) {
-            const vitalSummary: ObservationSummary[] | undefined = extractVitalSignSummary(curFhirData)
-            vitalSignSummariesMatrix.push(vitalSummary ? vitalSummary : [])
+            return extractVitalSignSummary(curFhirData) || []
         }
-    }
-    return vitalSignSummariesMatrix
+        // Return an empty array instead of skipping if there are no entries. 
+        // This maintains indexing so we can figure out the matching serverName in the components
+        return []
+    })
 }
 
 const executeLibrary = (library: any, codeService: any, patientSource: any): any => {
