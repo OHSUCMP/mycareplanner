@@ -153,7 +153,7 @@ export class ClientProxy {
 
     read<T = any>(reference: string, fhirOptions?: fhirclient.FhirOptions) : Promise<T> {
         if (this.useProxy) {
-            return new Promise<T> ((resolve, reject) => {
+            return new Promise<T>((resolve, reject) => {
                 const headers = new Headers();
                 headers.set('Content-Type', 'application/fhir+json');
                 headers.set('X-Proxy-Client-Id', <string>this.client.state.clientId);
@@ -191,6 +191,50 @@ export class ClientProxy {
                         doLog({
                             level: 'error',
                             event: 'read-proxy',
+                            page: 'n/a',
+                            message: `caught error='${error}' reading reference='${reference}' against endpoint='${this.client.state.serverUrl}'`
+                        })
+                        reject(error);
+                    });
+            });
+        } else if (reference.startsWith("Binary/")) {
+            // treat Binary special because it won't return the full JSON resource object unless _format=json is specified on the path, which
+            // you can't do using this.client.request().  so manually get it using fetch and force adding _format=json.  dumb
+
+            return new Promise<T>((resolve, reject) => {
+                const headers = new Headers();
+                headers.set('Content-Type', 'application/fhir+json');
+                headers.set('Authorization', 'Bearer ' + <string>this.client.state.tokenResponse?.access_token);
+
+                const requestOptions = {
+                    method: 'GET',
+                    headers: headers
+                }
+
+                // path in the form <resource>?<k1=v1>&<k2=v2>&...
+                let pathParts = new PathParts(reference);
+                pathParts.setParam("_format", "json");
+                let newPath = pathParts.resourceType + "?" + pathParts.getParamsString();
+
+                let url = this.client.state.serverUrl + "/" + newPath;
+
+                console.log("read: ", url);
+
+                fetch(url, requestOptions)
+                    .then(response => {
+                        if (response.ok) {
+                            return response.json();
+                        }
+                        throw new Error("request error: received " + response.status + " " + response.statusText);
+                    })
+                    .then(json => {
+                        resolve(json);
+                    })
+                    .catch(error => {
+                        console.log('error:', error)
+                        doLog({
+                            level: 'error',
+                            event: 'read',
                             page: 'n/a',
                             message: `caught error='${error}' reading reference='${reference}' against endpoint='${this.client.state.serverUrl}'`
                         })

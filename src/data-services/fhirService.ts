@@ -3,7 +3,7 @@ import {fhirclient} from 'fhirclient/lib/types'
 import {
     Resource, Patient, Practitioner, RelatedPerson, CarePlan, CareTeam, Encounter, Condition, DiagnosticReport, Goal,
     Observation, Procedure, Immunization, MedicationRequest, ServiceRequest, Provenance, Reference, Questionnaire,
-    QuestionnaireResponse, Medication
+    QuestionnaireResponse, Medication, DocumentReference
 } from './fhir-types/fhir-r4'
 import {QuestionnaireBundle, FHIRData, hasScope} from './models/fhirResources'
 import {format} from 'date-fns'
@@ -787,6 +787,44 @@ const getFHIRQueries = async (clientProxy: ClientProxy, clientScope: string | un
     diagnosticReports && setResourcesLoadedCountState(++resourcesLoadedCount)
     setAndLogProgressState('Found ' + (diagnosticReports?.length ?? 0) + ' Diagnostic Reports.', 65)
 
+    const clinicalNotes: DocumentReference[] | undefined = await loadFHIRQuery<DocumentReference>('Clinical Notes', 'DocumentReference',
+        "clinicalNotes", true, clientProxy, clientScope, 65, setAndLogProgressState, setAndLogErrorMessageState)
+    clinicalNotes && setResourcesLoadedCountState(++resourcesLoadedCount)
+    setAndLogProgressState('Found ' + (clinicalNotes?.length ?? 0) + ' Clinical Notes.', 67)
+
+    if (clinicalNotes && clinicalNotes.length > 0) {
+        // Retrieve Binary resources for any DocumentReference resources that reference one in an attachment
+        curResourceName = 'Clinical Notes'
+        try {
+            if (hasScope(clientScope, 'Binary.read')) {
+                // Individually read Binary resources for each DocumentReference resource that references one
+                for (const dr of clinicalNotes) {
+                    for (const contentItem of dr.content) {
+                        try {
+                            if (contentItem.attachment.url) {
+                                let binaryResource: any = await clientProxy.read(contentItem.attachment.url);
+                                const binaryData = binaryResource?.data ?? binaryResource?.content;
+                                if (binaryData) {
+                                    contentItem.attachment.data = binaryData;
+                                    delete contentItem.attachment.url;
+                                    if (binaryResource.contentType) {
+                                        contentItem.attachment.contentType = binaryResource.contentType;
+                                    }
+                                }
+                            }
+                        } catch (err) {
+                            console.error('Error reading Binary resource for DocumentReference with id=' + dr.id + ': ' + err.message);
+                        }
+                    }
+                }
+            }
+        } catch (err) {
+            await setAndLogNonTerminatingErrorMessageStateForResource(curResourceName, err, setAndLogErrorMessageState)
+        } finally {
+            setResourcesLoadedCountState(++resourcesLoadedCount)
+        }
+    }
+
     const immunizations: Immunization[] | undefined = await loadFHIRQuery<Immunization>('Immunizations', 'Immunization',
         "immunization", true, clientProxy, clientScope, 70, setAndLogProgressState, setAndLogErrorMessageState)
     immunizations && setResourcesLoadedCountState(++resourcesLoadedCount)
@@ -1038,6 +1076,7 @@ const getFHIRQueries = async (clientProxy: ClientProxy, clientScope: string | un
         encounters,
         conditions,
         diagnosticReports,
+        clinicalNotes,
         goals,
         immunizations,
         medicationRequests,
